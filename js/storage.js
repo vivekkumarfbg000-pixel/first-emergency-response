@@ -285,7 +285,6 @@ const Storage = {
         return await this.getPatientById(id);
     },
 
-    // ────── UPDATE PATIENT ──────
     updatePatient: async function (id, updatedData) {
         if (!id) return false;
 
@@ -297,23 +296,58 @@ const Storage = {
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
                 const queryField = isUUID ? 'id' : 'patient_id';
 
-                const dbUpdate = this.mapToDB({ ...updatedData, patientId: id });
-                delete dbUpdate.patient_id; // Never update the human-readable EMS ID
+                // Map only the fields that were provided in updatedData
+                const dbUpdate = {};
+                const mapping = {
+                    fullName: 'full_name',
+                    bloodGroup: 'blood_group',
+                    age: 'age',
+                    gender: 'gender',
+                    contact1_Name: 'contact1_name',
+                    contact1_Relation: 'contact1_relation',
+                    contact1_Phone: 'contact1_phone',
+                    contact2_Name: 'contact2_name',
+                    contact2_Relation: 'contact2_relation',
+                    contact2_Phone: 'contact2_phone',
+                    conditions: 'conditions',
+                    allergies: 'allergies',
+                    medications: 'medications',
+                    medicalNotes: 'medical_notes',
+                    organDonor: 'organ_donor'
+                };
 
-                if (userId) {
-                    dbUpdate.user_id = userId;
+                for (const [key, dbKey] of Object.entries(mapping)) {
+                    if (updatedData[key] !== undefined) {
+                        let val = updatedData[key];
+                        if (dbKey === 'age') val = parseInt(val) || 0;
+                        if (dbKey === 'organ_donor') val = (val === true || val === 'true');
+                        dbUpdate[dbKey] = val;
+                    }
                 }
 
-                const { error } = await this.db()
-                    .from('patients')
-                    .update(dbUpdate)
-                    .eq(queryField, id);
+                if (Object.keys(dbUpdate).length > 0) {
+                    const { error } = await this.db()
+                        .from('patients')
+                        .update(dbUpdate)
+                        .eq(queryField, id);
 
-                if (error) throw error;
-                console.log('[Storage] Cloud update SUCCESS for:', id);
+                    if (error) {
+                        console.error('[Storage] Supabase Update Error:', error);
+                        // If it's a 403/Forbidden, it likely means the row doesn't have the user_id yet
+                        if (error.code === '42501' || error.status === 403) {
+                            console.warn('[Storage] Permission denied. Attempting to "claim" row with user_id...');
+                            if (userId) {
+                                await this.db().from('patients').update({ user_id: userId }).eq(queryField, id);
+                                // Retry update once
+                                await this.db().from('patients').update(dbUpdate).eq(queryField, id);
+                            }
+                        }
+                    } else {
+                        console.log('[Storage] Cloud update SUCCESS for:', id);
+                    }
+                }
             } catch (err) {
-                console.error('[Storage] Cloud update error:', err.message);
-                // Don't throw - still update locally
+                console.error('[Storage] Cloud update exception:', err.message);
             }
         }
 
@@ -382,7 +416,9 @@ const Storage = {
 
         try {
             const jsonStr = JSON.stringify(qrData);
-            const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            // Use URL-safe Base64: + -> -, / -> _
+            let encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            encoded = encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
             console.log('[Storage] QR encoded length:', encoded.length, 'chars');
             return encoded;
         } catch (e) {
@@ -393,7 +429,12 @@ const Storage = {
 
     decodeFromURL: function (encodedStr) {
         try {
-            const jsonStr = decodeURIComponent(escape(atob(encodedStr)));
+            // Restore standard Base64 from URL-safe version
+            let base64 = encodedStr.replace(/-/g, '+').replace(/_/g, '/');
+            // Add padding if missing
+            while (base64.length % 4) base64 += '=';
+            
+            const jsonStr = decodeURIComponent(escape(atob(base64)));
             const d = JSON.parse(jsonStr);
             return {
                 patientId:     d.id  || '',

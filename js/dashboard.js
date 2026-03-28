@@ -162,7 +162,7 @@
         const baseUrl = window.location.href.split('dashboard.html')[0];
         // QR contains both the EMS-ID (for cloud lookup) and encoded data (for offline mode)
         const idToUse = currentPatient.id || currentPatient.patientId;
-        const url = `${baseUrl}emergency.html?id=${idToUse}&data=${encodedData}`;
+        const url = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
 
         console.log('[Dashboard] QR URL length:', url.length, 'chars');
 
