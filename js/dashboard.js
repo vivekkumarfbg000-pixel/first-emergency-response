@@ -160,17 +160,19 @@
         if (!encodedData) return;
 
         const baseUrl = window.location.href.split('dashboard.html')[0];
-        // QR points to the patient ID (UUID preferred) for real-time cloud lookup
+        // QR contains both the EMS-ID (for cloud lookup) and encoded data (for offline mode)
         const idToUse = currentPatient.id || currentPatient.patientId;
         const url = `${baseUrl}emergency.html?id=${idToUse}&data=${encodedData}`;
 
+        console.log('[Dashboard] QR URL length:', url.length, 'chars');
+
         QRCode.toCanvas(url, {
-            width: 170,
+            width: 200,
             margin: 1,
             color: { dark: '#0b0e14', light: '#ffffff' },
-            errorCorrectionLevel: 'M'
+            errorCorrectionLevel: 'L'  // Low = ~40% more data capacity, ideal for long URLs
         }, (err, canvas) => {
-            if (err) { console.error('QR Error:', err); return; }
+            if (err) { console.error('[Dashboard] QR generation error:', err); return; }
             qrCanvas = canvas;
             container.appendChild(canvas);
         });

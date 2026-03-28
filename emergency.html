@@ -283,6 +283,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/storage.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -338,9 +339,13 @@
                 else if (/Mac/.test(ua)) device = 'Mac / Safari';
 
                 try {
-                    await window.Storage.logScan(patient.patientId, 'qr_scan', device, 'Emergency View');
+                    // logScan works without auth for emergency view (local + best-effort cloud)
+                    if (window.Storage && window.Storage.logScan) {
+                        await window.Storage.logScan(patient.patientId, 'qr_scan', device, 'Emergency View');
+                    }
                 } catch(e) {
                     // Ignore scan logging errors — this should never block emergency view
+                    console.warn('[Emergency] logScan failed (non-critical):', e);
                 }
             }
 
