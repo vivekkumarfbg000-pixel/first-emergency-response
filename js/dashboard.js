@@ -46,17 +46,9 @@
 
         // 2. Admin Check
         const isAdmin = await window.Auth.isAdmin();
-        if (isAdmin) {
-            const sidebar = document.querySelector('.nav-items');
-            if (sidebar && !$('btn-admin-tab')) {
-                const adminTab = document.createElement('div');
-                adminTab.className = 'nav-item';
-                adminTab.id = 'btn-admin-tab';
-                adminTab.dataset.tab = 'admin';
-                adminTab.innerHTML = '<i data-lucide="shield-check"></i><span>Global Master</span>';
-                sidebar.insertBefore(adminTab, sidebar.lastElementChild);
-                lucide.createIcons();
-            }
+        const adminTab = $('nav-admin');
+        if (isAdmin && adminTab) {
+            adminTab.style.display = 'flex';
         }
 
         // 3. Load Data
@@ -381,9 +373,14 @@
                     // Actual cleanup would require more logic for cloud
                     localStorage.clear();
                     showToast('Data reset requested. Reloading...', 'info');
-                    setTimeout(() => window.location.reload(), 1500);
                 }
             });
+        }
+
+        // Cloud Test
+        const btnTestCloud = $('btn-test-cloud');
+        if (btnTestCloud) {
+            btnTestCloud.addEventListener('click', testCloudConnection);
         }
 
         // Search in patients tab
@@ -417,27 +414,73 @@
     window.closeModal = () => { $('editModal').style.display = 'none'; };
 
     async function saveChanges() {
-        const updated = {
-            fullName: $('edit_fullName').value,
-            bloodGroup: $('edit_bloodGroup').value,
-            age: $('edit_age').value,
-            gender: $('edit_gender').value,
-            contact1_Name: $('edit_contactName').value,
-            contact1_Phone: $('edit_contactPhone').value,
-            contact2_Name: $('edit_contact2Name').value,
-            contact2_Phone: $('edit_contact2Phone').value,
-            conditions: $('edit_conditions').value,
-            allergies: $('edit_allergies').value,
-            medications: $('edit_medications').value,
-            medicalNotes: $('edit_medicalNotes').value,
-        };
+        const btn = document.querySelector('#editForm button[type="submit"]');
+        const originalText = btn.textContent;
+        
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="animate-spin" data-lucide="loader"></i> Saving...';
+            if (window.lucide) lucide.createIcons();
 
-        const idToUse = currentPatient.id || currentPatient.patientId;
-        if (await window.Storage.updatePatient(idToUse, updated)) {
-            currentPatient = await window.Storage.getPatientById(idToUse);
+            const updated = {
+                fullName: $('edit_fullName').value,
+                bloodGroup: $('edit_bloodGroup').value,
+                age: $('edit_age').value,
+                gender: $('edit_gender').value,
+                contact1_Name: $('edit_contactName').value,
+                contact1_Phone: $('edit_contactPhone').value,
+                contact2_Name: $('edit_contact2Name').value,
+                contact2_Phone: $('edit_contact2Phone').value,
+                conditions: $('edit_conditions').value,
+                allergies: $('edit_allergies').value,
+                medications: $('edit_medications').value,
+                medicalNotes: $('edit_medicalNotes').value
+            };
+
+            await window.Storage.updatePatient(currentPatient.patientId, updated);
+            
+            currentPatient = await window.Storage.getPatientById(currentPatient.patientId);
             await renderAll();
             closeModal();
-            showToast('Cloud Profile Updated', 'success');
+            showToast('Profile Updated Successfully', 'success');
+        } catch (err) {
+            console.error('Update Error:', err);
+            showToast(err.message || 'Cloud Sync Failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async function testCloudConnection() {
+        const btn = $('btn-test-cloud');
+        const pill = $('connection-status-pill');
+        const details = $('connection-details');
+        
+        btn.disabled = true;
+        btn.textContent = 'Testing...';
+        pill.style.display = 'none';
+        details.style.display = 'none';
+
+        try {
+            const result = await window.Storage.testConnection();
+            
+            pill.style.display = 'inline-block';
+            pill.textContent = result.success ? 'Success' : 'Failed';
+            pill.style.background = result.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+            pill.style.color = result.success ? '#22c55e' : '#ef4444';
+            
+            details.style.display = 'block';
+            details.textContent = result.message;
+            
+            showToast(result.success ? 'Cloud Connection Verified' : 'Connection Failed', result.success ? 'success' : 'error');
+        } catch (err) {
+            details.style.display = 'block';
+            details.textContent = 'Error: ' + err.message;
+            showToast('Test Failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Test Cloud Connection';
         }
     }
 

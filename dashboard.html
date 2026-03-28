@@ -947,6 +947,19 @@
             <p style="font-size:0.8125rem; color:var(--text-muted); margin-top:0.25rem;">Configure your EMS dashboard.</p>
           </header>
 
+          <div class="settings-group" style="padding:1.5rem; border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-bottom:1.5rem;">
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+              <i data-lucide="cloud-lightning" style="width:18px; color:var(--accent);"></i>
+              Cloud Synchronization Diagnostics
+            </h3>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.25rem;">Verify your connection to Supabase and check if your profiles are correctly syncing to the cloud.</p>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <button id="btn-test-cloud" class="btn btn-primary btn-sm">Test Cloud Connection</button>
+              <div id="connection-status-pill" style="font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem; border-radius:20px; display:none;"></div>
+            </div>
+            <div id="connection-details" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem; font-family:monospace; display:none;"></div>
+          </div>
+
           <div class="settings-group">
             <div class="settings-group-title">Data Management</div>
             <div class="setting-row">
