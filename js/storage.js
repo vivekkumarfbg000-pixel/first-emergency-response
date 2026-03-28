@@ -9,26 +9,27 @@ const Storage = {
     },
 
     mapToDB: function(p) {
-        return {
+        const row = {
             patient_id: p.patientId,
             full_name: p.fullName,
             blood_group: p.bloodGroup,
-            age: parseInt(p.age),
+            age: parseInt(p.age) || 0,
             gender: p.gender,
             contact1_name: p.contact1_Name,
             contact1_relation: p.contact1_Relation,
             contact1_phone: p.contact1_Phone,
-            contact2_name: p.contact2_Name,
-            contact2_relation: p.contact2_Relation,
-            contact2_phone: p.contact2_Phone,
-            conditions: p.conditions,
-            allergies: p.allergies,
-            medications: p.medications,
-            medical_notes: p.medicalNotes,
-            organ_donor: p.organDonor,
-            user_id: p.userId, // Added for SaaS multi-tenancy
-            created_at: p.createdAt || new Date().toISOString()
+            contact2_name: p.contact2_Name || '',
+            contact2_relation: p.contact2_Relation || '',
+            contact2_phone: p.contact2_Phone || '',
+            conditions: p.conditions || '',
+            allergies: p.allergies || '',
+            medications: p.medications || '',
+            medical_notes: p.medicalNotes || '',
+            organ_donor: p.organDonor || false
         };
+        // Only include user_id if it has a value
+        if (p.userId) row.user_id = p.userId;
+        return row;
     },
 
     mapFromDB: function(row) {
@@ -134,6 +135,10 @@ const Storage = {
                 }
 
                 const dbRow = this.mapToDB(patientData);
+                if (user) {
+                    dbRow.user_id = user.id;
+                }
+
                 const { data: inserted, error } = await this.db()
                     .from('patients')
                     .insert([dbRow])
@@ -144,7 +149,8 @@ const Storage = {
                     patientData.id = inserted[0].id; // Assign Supabase UUID
                 }
             } catch (err) {
-                console.error('Supabase Save Error:', err);
+                console.error('Supabase Save Error:', err.message, err.details, err.hint, err);
+                // We still continue to save locally as fallback
             }
         }
 
@@ -160,26 +166,40 @@ const Storage = {
     },
 
     getAllPatients: async function() {
+        let cloudPatients = [];
         if (this.db()) {
             try {
-                const { data, error } = await this.db()
-                    .from('patients')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const user = await window.Auth.getUser();
+                let query = this.db().from('patients').select('*');
+                
+                if (user) {
+                    query = query.eq('user_id', user.id);
+                }
+
+                const { data, error } = await query.order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 if (data) {
-                    const mapped = data.map(r => this.mapFromDB(r));
-                    // Merge with local mock data if needed, or just return cloud data
-                    // For "Real Production Ready", we prioritize cloud data
-                    this._cache = mapped;
-                    return mapped;
+                    cloudPatients = data.map(r => this.mapFromDB(r));
+                    this._cache = cloudPatients;
                 }
             } catch (err) {
                 console.error('Supabase Fetch Error:', err);
             }
         }
-        return this.getAllPatientsLocal();
+
+        // Merge Strategy: Prioritize cloud, but include local-only records (like those just created)
+        const localPatients = this.getAllPatientsLocal();
+        const merged = [...cloudPatients];
+        
+        localPatients.forEach(lp => {
+            const existsInCloud = cloudPatients.some(cp => cp.patientId === lp.patientId);
+            if (!existsInCloud) {
+                merged.push(lp);
+            }
+        });
+
+        return merged;
     },
 
     getAllPatientsLocal: function() {
@@ -188,15 +208,21 @@ const Storage = {
     },
 
     getPatientById: async function(id) {
+        if (!id) return null;
         // Try Supabase first (UUID or patientId)
         if (this.db()) {
             try {
+                const user = await window.Auth.getUser();
                 const queryField = id.length > 20 ? 'id' : 'patient_id';
-                const { data, error } = await this.db()
-                    .from('patients')
-                    .select('*')
-                    .eq(queryField, id)
-                    .single();
+                let query = this.db().from('patients').select('*').eq(queryField, id);
+                
+                // For privacy, only owners or admins should see full details via this method 
+                // (Unless it's the public emergency view, which uses decodeFromURL)
+                if (user) {
+                    query = query.eq('user_id', user.id);
+                }
+
+                const { data, error } = await query.single();
                 
                 if (error && error.code !== 'PGRST116') throw error;
                 if (data) return this.mapFromDB(data);

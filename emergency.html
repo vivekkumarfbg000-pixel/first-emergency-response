@@ -291,9 +291,15 @@
             const params = new URLSearchParams(window.location.search);
             let patient = null;
 
-            // Method 1: Load from Supabase via ID (New ID-based lookup)
+            // Method 1: Decode from data param FIRST (base64-encoded, works fully OFFLINE)
+            const encodedData = params.get('data');
+            if (encodedData) {
+                patient = window.Storage.decodeFromURL(encodedData);
+            }
+
+            // Method 2: If no data param or decode failed, try cloud lookup by ID
             const id = params.get('id');
-            if (id) {
+            if (!patient && id) {
                 // Show loading state for cloud fetch
                 document.getElementById('app-root').innerHTML = `
                     <div class="error-state">
@@ -303,16 +309,26 @@
                     </div>
                 `;
                 lucide.createIcons();
-                patient = await window.Storage.getPatientById(id);
+                
+                // For emergency view, bypass user_id filter — responders won't be logged in
+                try {
+                    if (window.supabaseClient) {
+                        const queryField = id.length > 20 ? 'id' : 'patient_id';
+                        const { data: row, error } = await window.supabaseClient
+                            .from('patients')
+                            .select('*')
+                            .eq(queryField, id)
+                            .single();
+                        if (!error && row) {
+                            patient = window.Storage.mapFromDB(row);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Cloud lookup failed (may be offline):', err);
+                }
             }
 
-            // Method 2: Decode from data param (Legacy base64 QR scan)
-            const encodedData = params.get('data');
-            if (!patient && encodedData) {
-                patient = window.Storage.decodeFromURL(encodedData);
-            }
-
-            // Log the scan
+            // Log the scan (best effort, won't block if offline)
             if (patient) {
                 const ua = navigator.userAgent;
                 let device = 'Unknown Device';
@@ -321,7 +337,11 @@
                 else if (/Windows/.test(ua)) device = 'Windows / Browser';
                 else if (/Mac/.test(ua)) device = 'Mac / Safari';
 
-                await window.Storage.logScan(patient.patientId, 'qr_scan', device, 'Emergency View');
+                try {
+                    await window.Storage.logScan(patient.patientId, 'qr_scan', device, 'Emergency View');
+                } catch(e) {
+                    // Ignore scan logging errors — this should never block emergency view
+                }
             }
 
             // Error state
