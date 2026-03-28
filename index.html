@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First Emergency Response | Save Lives with QR</title>
+  <meta name="description" content="Empower first responders with instant access to your medical history and emergency contacts via a secure, scannable QR code.">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ─── Floating Nav ─── */
+    .glass-nav {
+      position: fixed;
+      top: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 3rem);
+      max-width: 1100px;
+      padding: 0.75rem 1.5rem;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 99px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, var(--primary), #e11d48);
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-links-main { display: flex; gap: 0.5rem; align-items: center; }
+    .nav-links-main a.btn { font-size: 0.8125rem; }
+
+    /* ─── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg-glow {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(255, 59, 59, 0.06) 0%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .hero-bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: -2;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      margin-bottom: 2rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--primary-glow);
+      animation: pulse 2s ease infinite;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.08;
+      margin-bottom: 1.5rem;
+      max-width: 750px;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--primary), #ff6b6b);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero h1 .text-gradient {
+      background: linear-gradient(to bottom right, #fff 30%, #64748b);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      max-width: 560px;
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      line-height: 1.65;
+    }
+
+    .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+
+    .heartbeat-icon {
+      display: inline-flex;
+      animation: heartbeat 1.4s ease-in-out infinite;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ─── Stats Banner ─── */
+    .stats-banner {
+      padding: 4rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stats-banner .stat {
+      text-align: center;
+    }
+
+    .stats-banner .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .stats-banner .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 0.25rem;
+    }
+
+    /* ─── How It Works ─── */
+    .how-section {
+      padding: 7rem 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header .overline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .section-header p {
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0.75rem auto 0;
+    }
+
+    .step-card {
+      padding: 2.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.125rem;
+      margin: 0 auto 1.5rem;
+    }
+
+    .step-card h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 0.625rem;
+    }
+
+    .step-card p {
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ─── Features ─── */
+    .features-section {
+      padding: 7rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .feature-card {
+      padding: 2.5rem;
+    }
+
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      margin-bottom: 0.625rem;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      padding: 7rem 0;
+      text-align: center;
+    }
+
+    .cta-card {
+      padding: 4rem 3rem;
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+      border: 1px solid rgba(255,59,59,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(255,59,59,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-card h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta-card p {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer p {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    /* ─── Scroll reveal ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.25rem; }
+      .hero p { font-size: 0.9375rem; }
+      .stats-banner .stat-number { font-size: 1.75rem; }
+      .step-card { padding: 2rem; }
+      .cta-card { padding: 2.5rem 1.5rem; }
+      .nav-links-main .btn-ghost { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Nav -->
+  <nav class="glass-card glass-nav" id="mainNav">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">
+        <i data-lucide="shield-plus" style="width: 16px; color: white;"></i>
+      </div>
+      <span>EMS RESPONSE</span>
+    </a>
+    <div class="nav-links-main" id="nav-actions">
+      <a href="#features" class="btn btn-ghost btn-sm">Features</a>
+      <a href="#pricing" class="btn btn-ghost btn-sm">Pricing</a>
+      <div class="nav-divider" style="width:1px; height:20px; background:rgba(255,255,255,0.1); margin:0 0.5rem;"></div>
+      <a href="login.html" class="btn btn-ghost btn-sm" id="nav-login">Login</a>
+      <a href="signup.html" class="btn btn-primary btn-sm" id="nav-signup">Sign Up Free</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="hero-bg-grid"></div>
+
+    <div class="heartbeat-icon">
+      <i data-lucide="heart-pulse" style="width: 40px; height: 40px;"></i>
+    </div>
+
+    <div class="hero-badge">
+      <span class="dot"></span>
+      <span>Life-Saving QR Technology</span>
+    </div>
+
+    <h1>
+      <span class="text-gradient">The profile that speaks</span><br>
+      <span class="highlight">when you can't.</span>
+    </h1>
+
+    <p>Empower first responders with instant access to your medical history, allergies, and emergency contacts — via a single QR code scan.</p>
+
+    <div class="hero-actions">
+      <a href="register.html" class="btn btn-primary btn-lg">
+        <i data-lucide="plus" style="width:18px;"></i>
+        Create Your Profile
+      </a>
+      <a href="dashboard.html" class="btn btn-outline btn-lg">
+        <i data-lucide="layout-dashboard" style="width:18px;"></i>
+        View Demo Dashboard
+      </a>
+    </div>
+  </section>
+
+  <!-- Stats Banner -->
+  <section class="stats-banner reveal" id="statsBanner">
+    <div class="container">
+      <div class="grid-4">
+        <div class="stat">
+          <div class="stat-number" data-count="1247">0</div>
+          <div class="stat-label">Profiles Created</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" data-count="3890">0</div>
+          <div class="stat-label">QR Scans</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" data-count="45">0</div>
+          <div class="stat-label">Cities Covered</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" data-count="98">0</div>
+          <div class="stat-label percent">% Uptime</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-section" id="how">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="overline">
+          <i data-lucide="zap" style="width:14px;"></i>
+          How It Works
+        </div>
+        <h2>Three steps to save a life</h2>
+        <p>Set up your emergency profile in under 60 seconds. It could be the difference that matters.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="glass-card glass-card-interactive step-card reveal" style="animation-delay:0.1s;">
+          <div class="step-number stat-icon" style="background: var(--primary-soft); color: var(--primary);">1</div>
+          <h3>Register Your Profile</h3>
+          <p>Enter your medical conditions, allergies, blood type, medications, and emergency contacts.</p>
+        </div>
+        <div class="glass-card glass-card-interactive step-card reveal" style="animation-delay:0.2s;">
+          <div class="step-number stat-icon" style="background: rgba(59,130,246,0.12); color: var(--secondary);">2</div>
+          <h3>Generate Your QR Code</h3>
+          <p>Get a unique QR code linked to your medical data. Save it as a wallpaper, print it, or carry it.</p>
+        </div>
+        <div class="glass-card glass-card-interactive step-card reveal" style="animation-delay:0.3s;">
+          <div class="step-number stat-icon" style="background: rgba(16,185,129,0.12); color: var(--accent);">3</div>
+          <h3>Scan in Emergency</h3>
+          <p>Any rescuer scans the QR and instantly sees your critical health data — no app needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="features-section" style="border-top:1px solid var(--border);">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="overline">
+          <i data-lucide="credit-card" style="width:14px;"></i>
+          Affordable Safety
+        </div>
+        <h2>Choose your life plan</h2>
+        <p>Start for free and upgrade as your family grows. Basic safety should never be a luxury.</p>
+      </div>
+
+      <div class="grid-3">
+        <!-- Free Tier -->
+        <div class="glass-card glass-card-interactive step-card reveal" style="border-top:4px solid #94a3b8;">
+          <div style="font-weight:700; color:var(--text-muted); margin-bottom:1rem;">BASIC</div>
+          <div style="font-size:3rem; font-weight:800; margin-bottom:0.5rem;">₹0<span style="font-size:1rem; color:var(--text-secondary);">/mo</span></div>
+          <ul style="text-align:left; color:var(--text-secondary); font-size:0.875rem; margin:1.5rem 0; display:flex; flex-direction:column; gap:0.75rem;">
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> 1 Secure Profile</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Dynamic QR with ID</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Basic Activity Log</li>
+            <li style="display:flex; align-items:center; gap:0.5rem; opacity:0.3;"><i data-lucide="x" style="width:14px;"></i> Multiple Profiles</li>
+          </ul>
+          <a href="signup.html?plan=free" class="btn btn-outline btn-block" style="margin-top:auto;">Get Started</a>
+        </div>
+
+        <!-- Pro Tier -->
+        <div class="glass-card glass-card-interactive step-card reveal" style="border-top:4px solid var(--primary); transform:scale(1.05); z-index:1; background:rgba(255,59,59,0.02);">
+          <div style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; font-size:0.625rem; font-weight:800; padding:2px 10px; border-radius:99px;">MOST POPULAR</div>
+          <div style="font-weight:700; color:var(--primary); margin-bottom:1rem;">PRO</div>
+          <div style="font-size:3rem; font-weight:800; margin-bottom:0.5rem;">₹49<span style="font-size:1rem; color:var(--text-secondary);">/mo</span></div>
+          <ul style="text-align:left; color:var(--white); font-size:0.875rem; margin:1.5rem 0; display:flex; flex-direction:column; gap:0.75rem;">
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Up to 5 Profiles</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Priority Cloud Sync</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Full Activity Export</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Custom Wallpaper QR</li>
+          </ul>
+          <a href="signup.html?plan=pro" class="btn btn-primary btn-block" style="margin-top:auto;">Go Pro Now</a>
+        </div>
+
+        <!-- Enterprise / Family -->
+        <div class="glass-card glass-card-interactive step-card reveal" style="border-top:4px solid var(--accent);">
+          <div style="font-weight:700; color:var(--accent); margin-bottom:1rem;">FAMILY</div>
+          <div style="font-size:3rem; font-weight:800; margin-bottom:0.5rem;">₹99<span style="font-size:1rem; color:var(--text-secondary);">/mo</span></div>
+          <ul style="text-align:left; color:var(--text-secondary); font-size:0.875rem; margin:1.5rem 0; display:flex; flex-direction:column; gap:0.75rem;">
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Unlimited Profiles</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> API Access</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> Dedicated Support</li>
+            <li style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="check" style="width:14px; color:var(--accent);"></i> SMS Alerts (Beta)</li>
+          </ul>
+          <a href="signup.html?plan=family" class="btn btn-outline btn-block" style="margin-top:auto;">Secure Family</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="overline">
+          <i data-lucide="layers" style="width:14px;"></i>
+          Features
+        </div>
+        <h2>Built for real emergencies</h2>
+        <p>Every feature is designed around a single question: will this help save a life?</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card glass-card-interactive feature-card reveal">
+          <div class="feature-icon-box" style="background: var(--primary-soft); color: var(--primary);">
+            <i data-lucide="heart-pulse"></i>
+          </div>
+          <h3>Medical Profiling</h3>
+          <p>Store chronic conditions, allergies, medications, and organ donor status securely in your profile. Designed for rapid triage.</p>
+        </div>
+
+        <div class="glass-card glass-card-interactive feature-card reveal">
+          <div class="feature-icon-box" style="background: rgba(59,130,246,0.12); color: var(--secondary);">
+            <i data-lucide="qr-code"></i>
+          </div>
+          <h3>Smart QR Identification</h3>
+          <p>Generate unique QR codes that encode your medical data directly. Works offline — no internet or app required for rescuers.</p>
+        </div>
+
+        <div class="glass-card glass-card-interactive feature-card reveal">
+          <div class="feature-icon-box" style="background: rgba(16,185,129,0.12); color: var(--accent);">
+            <i data-lucide="phone-call"></i>
+          </div>
+          <h3>One-Tap Emergency Calling</h3>
+          <p>Rescuers can call your emergency contacts or 112 with a single tap from the scanned profile.</p>
+        </div>
+
+        <div class="glass-card glass-card-interactive feature-card reveal">
+          <div class="feature-icon-box" style="background: rgba(139,92,246,0.12); color: var(--purple);">
+            <i data-lucide="shield-check"></i>
+          </div>
+          <h3>High-Contrast Rescuer View</h3>
+          <p>A specialized emergency view with bold colors and giant text — optimized for readability in high-stress, low-light situations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="glass-card cta-card reveal">
+        <div class="heartbeat-icon" style="margin-bottom:1.5rem;">
+          <i data-lucide="shield-plus" style="width:36px; height:36px; color: var(--primary);"></i>
+        </div>
+        <h2>Your data could save your life.</h2>
+        <p>Create your emergency QR profile now. It takes 60 seconds and costs nothing.</p>
+        <a href="register.html" class="btn btn-primary btn-lg">
+          <i data-lucide="arrow-right" style="width:18px;"></i>
+          Create Free Profile
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 First Emergency Response. Built for Professional Healthcare Standards.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

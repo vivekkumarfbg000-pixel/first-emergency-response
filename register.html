@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Emergency Profile | EMS Response</title>
+    <meta name="description" content="Register your medical details to generate your life-saving emergency QR code.">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .reg-layout {
+            display: flex;
+            justify-content: center;
+            padding: 5rem 1rem 4rem;
+            min-height: 100vh;
+        }
+
+        .reg-wrapper {
+            width: 100%;
+            max-width: 780px;
+        }
+
+        .reg-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .reg-header .overline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .reg-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.4rem;
+        }
+
+        .reg-header p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .reg-card {
+            padding: 2.5rem;
+        }
+
+        .form-section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.625rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section-title i { width: 15px; height: 15px; }
+
+        /* Preview Card */
+        .preview-card {
+            background: linear-gradient(135deg, #111827 0%, #060910 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, rgba(255,59,59,0.08) 0%, transparent 70%);
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .preview-body {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .preview-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), #e11d48);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .preview-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        .preview-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.125rem;
+        }
+
+        .preview-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        /* Wizard Navigation */
+        .wizard-nav {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .wizard-nav .btn { flex: 1; }
+
+        /* Toggle Switch */
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.875rem 1rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-label:hover {
+            border-color: var(--border-bright);
+        }
+
+        .toggle-label span {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 99px;
+            position: relative;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: var(--transition);
+        }
+
+        .toggle-input {
+            display: none;
+        }
+
+        .toggle-input:checked + .toggle-label .toggle-switch {
+            background: var(--accent);
+        }
+
+        .toggle-input:checked + .toggle-label .toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        /* Back link */
+        .back-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .back-link:hover { color: var(--text-primary); }
+        .back-link i { width: 16px; height: 16px; }
+
+        @media (max-width: 768px) {
+            .reg-layout { padding: 4rem 0.75rem 3rem; }
+            .reg-card { padding: 1.75rem; }
+            .reg-header h1 { font-size: 1.625rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">
+        <i data-lucide="arrow-left"></i>
+        <span>Back to Home</span>
+    </a>
+
+    <div class="reg-layout">
+        <div class="reg-wrapper animate-slide">
+            <header class="reg-header">
+                <div class="overline">
+                    <i data-lucide="shield-plus" style="width:14px;"></i>
+                    Emergency Profile Setup
+                </div>
+                <h1>Create Your Life-Saving Profile</h1>
+                <p>Your data is stored locally on your device and encoded directly into the QR code.</p>
+            </header>
+
+            <!-- Wizard Steps Indicator -->
+            <div class="wizard-steps">
+                <div class="wizard-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Personal</span>
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Contacts</span>
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Medical</span>
+                </div>
+            </div>
+
+            <!-- Live Preview Card -->
+            <div class="preview-card">
+                <div class="preview-header">
+                    <i data-lucide="eye" style="width:12px;"></i>
+                    Live Preview
+                </div>
+                <div class="preview-body">
+                    <div class="preview-avatar" id="prevAvatar">?</div>
+                    <div>
+                        <div class="preview-name" id="prevName">Your Name</div>
+                        <div class="preview-meta" id="prevMeta">Age • Gender • Blood Group</div>
+                    </div>
+                </div>
+                <div class="preview-tags" id="prevTags"></div>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="glass-card reg-card">
+                <form id="registerForm" novalidate>
+                    <!-- Step 1: Personal -->
+                    <div class="wizard-panel active" id="step1">
+                        <div class="form-section-title">
+                            <i data-lucide="user"></i>
+                            Personal Information
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label for="fullName">Full Name *</label>
+                                <input type="text" id="fullName" name="fullName" placeholder="e.g. Rahul Sharma" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="bloodGroup">Blood Group *</label>
+                                <select id="bloodGroup" name="bloodGroup" required>
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option><option value="A-">A-</option>
+                                    <option value="B+">B+</option><option value="B-">B-</option>
+                                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                    <option value="O+">O+</option><option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label for="age">Age *</label>
+                                <input type="number" id="age" name="age" placeholder="Age" min="0" max="120" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="gender">Gender *</label>
+                                <select id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="wizard-nav">
+                            <a href="index.html" class="btn btn-outline">Cancel</a>
+                            <button type="button" class="btn btn-primary" onclick="wizardNext(1)">
+                                Continue
+                                <i data-lucide="arrow-right" style="width:16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Emergency Contacts -->
+                    <div class="wizard-panel" id="step2">
+                        <div class="form-section-title">
+                            <i data-lucide="phone"></i>
+                            Emergency Contacts
+                        </div>
+
+                        <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.5rem;">
+                            These contacts will be shown to rescuers with a one-tap call button.
+                        </p>
+
+                        <div style="margin-bottom:1.5rem; padding:1.25rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.06em; margin-bottom:1rem;">Primary Contact</div>
+                            <div class="grid-2">
+                                <div class="input-group">
+                                    <label for="contact1_Name">Name *</label>
+                                    <input type="text" id="contact1_Name" name="contact1_Name" placeholder="Parent / Spouse / Guardian" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="contact1_Relation">Relation</label>
+                                    <input type="text" id="contact1_Relation" name="contact1_Relation" placeholder="e.g. Father, Wife">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="contact1_Phone">Phone *</label>
+                                <input type="tel" id="contact1_Phone" name="contact1_Phone" placeholder="+91 XXXXX XXXXX" required>
+                            </div>
+                        </div>
+
+                        <div style="padding:1.25rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:1rem;">Secondary Contact (Optional)</div>
+                            <div class="grid-2">
+                                <div class="input-group">
+                                    <label for="contact2_Name">Name</label>
+                                    <input type="text" id="contact2_Name" name="contact2_Name" placeholder="Another relative">
+                                </div>
+                                <div class="input-group">
+                                    <label for="contact2_Relation">Relation</label>
+                                    <input type="text" id="contact2_Relation" name="contact2_Relation" placeholder="e.g. Brother, Mother">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="contact2_Phone">Phone</label>
+                                <input type="tel" id="contact2_Phone" name="contact2_Phone" placeholder="+91 XXXXX XXXXX">
+                            </div>
+                        </div>
+
+                        <div class="wizard-nav">
+                            <button type="button" class="btn btn-outline" onclick="wizardBack(2)">
+                                <i data-lucide="arrow-left" style="width:16px;"></i>
+                                Back
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="wizardNext(2)">
+                                Continue
+                                <i data-lucide="arrow-right" style="width:16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Medical -->
+                    <div class="wizard-panel" id="step3">
+                        <div class="form-section-title">
+                            <i data-lucide="activity"></i>
+                            Medical Background
+                        </div>
+
+                        <div class="input-group">
+                            <label for="conditions">Chronic Conditions</label>
+                            <textarea id="conditions" name="conditions" rows="2" placeholder="e.g. Diabetes, Hypertension, Epilepsy..."></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label for="allergies">Critical Allergies</label>
+                            <textarea id="allergies" name="allergies" rows="2" placeholder="e.g. Penicillin, Peanuts, Latex..."></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label for="medications">Ongoing Medications</label>
+                            <textarea id="medications" name="medications" rows="2" placeholder="e.g. Metformin 500mg (Daily)..."></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label for="medicalNotes">Additional Notes for Responders</label>
+                            <textarea id="medicalNotes" name="medicalNotes" rows="2" placeholder="e.g. Pacemaker fitted, carries EpiPen..."></textarea>
+                        </div>
+
+                        <div class="input-group" style="margin-top:0.5rem;">
+                            <input type="checkbox" id="organDonor" name="organDonor" class="toggle-input">
+                            <label for="organDonor" class="toggle-label" style="text-transform:none; font-size:inherit; color:var(--text-primary); letter-spacing:0;">
+                                <span>🫀 I am an Organ Donor</span>
+                                <div class="toggle-switch"></div>
+                            </label>
+                        </div>
+
+                        <div class="wizard-nav" style="margin-top:2rem;">
+                            <button type="button" class="btn btn-outline" onclick="wizardBack(3)">
+                                <i data-lucide="arrow-left" style="width:16px;"></i>
+                                Back
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i data-lucide="shield-check" style="width:16px;"></i>
+                                Create Emergency Profile
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/register.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
