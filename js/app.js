@@ -14,11 +14,11 @@
 
         if (user) {
             actions.innerHTML = `
-                <a href="#features" class="btn btn-ghost btn-sm">Features</a>
-                <a href="#pricing" class="btn btn-ghost btn-sm">Pricing</a>
+                <a href="#how" class="btn btn-ghost btn-sm">How It Works</a>
+                <a href="register.html" class="btn btn-ghost btn-sm">Create Profile</a>
                 <div class="nav-divider" style="width:1px; height:20px; background:rgba(255,255,255,0.1); margin:0 0.5rem;"></div>
-                <a href="dashboard.html" class="btn btn-ghost btn-sm">Dashboard</a>
-                <button onclick="Auth.signOut()" class="btn btn-primary btn-sm">Sign Out</button>
+                <a href="dashboard.html" class="btn btn-primary btn-sm">Admin Dashboard</a>
+                <button onclick="window.Auth.signOut()" class="btn btn-ghost btn-sm">Sign Out</button>
             `;
         }
         lucide.createIcons();

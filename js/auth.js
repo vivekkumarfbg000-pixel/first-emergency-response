@@ -48,6 +48,12 @@ const Auth = {
     async signIn(email, password) {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
+        // Force admin-only login
+        const adminEmail = 'firstemergencyresponse4@gmail.com';
+        if (email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
+            throw new Error('Unauthorized: Only the master administrator can access the dashboard.');
+        }
+
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({
             email,
             password
@@ -83,7 +89,15 @@ const Auth = {
         const user = await this.getUser();
         if (!user) {
             const currentPath = window.location.pathname;
-            if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
+            // Public pages that don't need auth anymore
+            const isPublicPage = currentPath.includes('login.html') || 
+                                currentPath.includes('signup.html') || 
+                                currentPath.includes('register.html') ||
+                                currentPath.includes('profile-view.html') || // Assume view is public
+                                currentPath.endsWith('/') || 
+                                currentPath.includes('index.html');
+
+            if (!isPublicPage) {
                 console.warn('[Auth] No session found, redirecting to login...');
                 window.location.href = 'login.html';
             }

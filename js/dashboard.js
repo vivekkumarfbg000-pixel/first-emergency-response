@@ -79,7 +79,12 @@
         const p = currentPatient;
 
         // Header
-        txt('welcome-msg', `Records for ${p.fullName.split(' ')[0]}`);
+        const isAdmin = await window.Auth.isAdmin();
+        if (isAdmin) {
+            txt('welcome-msg', `Master Admin Panel | ${p.fullName}`);
+        } else {
+            txt('welcome-msg', `Records for ${p.fullName.split(' ')[0]}`);
+        }
 
         // Stats
         txt('stat-blood', p.bloodGroup);
@@ -135,6 +140,11 @@
         }
 
         // Sidebar badge & Switcher & QR
+        if (isAdmin) {
+            const navAdmin = $('nav-admin');
+            if (navAdmin) navAdmin.style.display = 'flex';
+        }
+        
         await renderSwitcher();
         generateQR();
         await renderRecentActivity();
@@ -383,6 +393,27 @@
         const btnTestCloud = $('btn-test-cloud');
         if (btnTestCloud) {
             btnTestCloud.addEventListener('click', testCloudConnection);
+        }
+
+        // Seed Cloud (Admin Only)
+        const btnSeedCloud = $('btn-seed-cloud');
+        if (btnSeedCloud) {
+            btnSeedCloud.addEventListener('click', async () => {
+                if (!confirm('This will create 3 mock profiles in Supabase. Proceed?')) return;
+                btnSeedCloud.disabled = true;
+                btnSeedCloud.textContent = 'Seeding...';
+                try {
+                    const count = await window.Storage.seedCloud();
+                    showToast(`Successfully seeded ${count} cloud records!`, 'success');
+                    await renderAdminTab();
+                } catch (e) {
+                    showToast('Cloud seeding failed: ' + e.message, 'error');
+                } finally {
+                    btnSeedCloud.disabled = false;
+                    btnSeedCloud.innerHTML = '<i data-lucide="database-zap"></i> Seed Cloud Mock Data';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
         }
 
         // Search in patients tab

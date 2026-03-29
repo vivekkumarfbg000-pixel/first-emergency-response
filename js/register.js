@@ -6,11 +6,8 @@
     'use strict';
 
     // ─── Auth Guard ───
-    async function initAuth() {
-        const user = await window.Auth.requireAuth();
-        if (!user) return;
-    }
-    initAuth();
+    // No auth required for public registration
+    // All profiles are linked to the master admin account
 
     let currentStep = 1;
     const totalSteps = 3;
