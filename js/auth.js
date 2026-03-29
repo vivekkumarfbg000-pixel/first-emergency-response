@@ -107,6 +107,17 @@ const Auth = {
         } catch (e) {
             return false;
         }
+    },
+
+    // ────── RESEND CONFIRMATION ──────
+    async resendConfirmation(email) {
+        if (!window.supabaseClient) throw new Error('Supabase client not initialized');
+        const { error } = await window.supabaseClient.auth.resend({
+            type: 'signup',
+            email: email
+        });
+        if (error) throw error;
+        return true;
     }
 };
 
