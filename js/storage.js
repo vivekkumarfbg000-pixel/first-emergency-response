@@ -472,7 +472,7 @@ const Storage = {
     },
 
     // ────── SCAN HISTORY ──────
-    logScan: async function (patientId, type, device, location) {
+    logScan: async function (patientId, type, device, location, lat, long) {
         // Local log always
         const scans = this.getScanHistoryLocal();
         scans.unshift({
@@ -480,6 +480,8 @@ const Storage = {
             type:      type || 'qr_scan',
             device:    device || 'Unknown',
             location:  location || 'Unknown',
+            latitude:  lat || null,
+            longitude: long || null,
             timestamp: new Date().toISOString()
         });
         localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
@@ -487,15 +489,24 @@ const Storage = {
         // Cloud log (best-effort)
         if (this.db()) {
             try {
-                await this.db().from('scans').insert([{
+                // We'll store lat/long in the location string if the table doesn't have specific columns yet,
+                // or just send them as columns if they exist. For now, let's try columns.
+                const logData = {
                     patient_id: patientId,
                     type:       type || 'qr_scan',
                     device:     device || 'Unknown',
-                    location:   location || 'Unknown',
                     timestamp:  new Date().toISOString()
-                }]);
+                };
+                
+                if (lat && long) {
+                    logData.location = `${location || 'Unknown'} (${lat}, ${long})`;
+                } else {
+                    logData.location = location || 'Unknown';
+                }
+
+                await this.db().from('scans').insert([logData]);
             } catch (err) {
-                // Silently ignore scan log failures
+                console.warn('[Storage] Cloud logScan failed:', err.message);
             }
         }
     },

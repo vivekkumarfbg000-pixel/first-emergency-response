@@ -206,13 +206,18 @@
             const { icon, color, bg, label } = getScanMeta(s.type);
             const timeAgo = getTimeAgo(s.timestamp);
             return `
-                <div class="activity-item">
+                <div class="activity-item animate-slide-in">
                     <div class="activity-icon" style="background:${bg}; color:${color};">
                         <i data-lucide="${icon}"></i>
                     </div>
-                    <div>
+                    <div style="flex:1;">
                         <div class="activity-text">${label}</div>
                         <div class="activity-time">${timeAgo} • ${s.device}</div>
+                        ${s.latitude && s.longitude ? `
+                        <a href="https://www.google.com/maps?q=${s.latitude},${s.longitude}" target="_blank" class="activity-map-link">
+                            <i data-lucide="map-pin"></i> View on Map
+                        </a>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -252,6 +257,11 @@
                             <div>
                                 <div class="activity-text">${label}</div>
                                 <div class="activity-time">${name} • ${s.device}</div>
+                                ${s.latitude && s.longitude ? `
+                                <a href="https://www.google.com/maps?q=${s.latitude},${s.longitude}" target="_blank" class="activity-map-link">
+                                    <i data-lucide="map-pin"></i> Open Coordinates (Lat: ${s.latitude}, Long: ${s.longitude})
+                                </a>
+                                ` : ''}
                             </div>
                             <div style="text-align:right;">
                                 <div style="font-size:0.75rem; color:var(--text-secondary);">${timeAgo}</div>
@@ -301,6 +311,19 @@
                 showToast(`Switched to ${p.fullName}`, 'info');
             }
         });
+
+        // Real-time Scan Alerts
+        if (window.supabaseClient) {
+            window.supabaseClient
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: 'INSERT', table: 'scans' }, (payload) => {
+                    console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
+                    showToast('🚨 NEW EMERGENCY SCAN DETECTED!', 'error');
+                    // Play a subtle medical alert sound if possible, or just the toast
+                    renderAll(); // Refresh dashboard data
+                })
+                .subscribe();
+        }
 
         // Sidebar Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -367,7 +390,23 @@
 
         // Management
         $('btn-edit-main').addEventListener('click', openEditModal);
-        $('btn-print').addEventListener('click', () => window.print());
+        $('btn-print').addEventListener('click', async () => {
+            showToast('Generating ID Card...', 'info');
+            try {
+                if (!window.CardGenerator) throw new Error('Card Generator not loaded');
+                const dataUrl = await window.CardGenerator.generate(currentPatient);
+                if (dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `EMS_CARD_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                    showToast('✅ Medical ID Card Ready', 'success');
+                }
+            } catch (err) {
+                console.error('[Dashboard] Card Gen Error:', err);
+                showToast('❌ Card Generation Failed', 'error');
+            }
+        });
         $('btn-delete').addEventListener('click', deleteCurrent);
         $('btn-export').addEventListener('click', () => {
             // Simplified export for this version

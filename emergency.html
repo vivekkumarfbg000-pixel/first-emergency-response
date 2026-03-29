@@ -303,6 +303,22 @@
                     if (patient) source = 'offline_qr';
                 } catch (e) { console.error('[Emergency] Offline decode failed:', e); }
             }
+            
+            // ─── GEOLOCATION CAPTURE ───
+            let lat = null, long = null;
+            if (navigator.geolocation && (params.get('id') || encodedData)) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        lat = pos.coords.latitude;
+                        long = pos.coords.longitude;
+                        if (patient) {
+                            window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Shared Location', lat, long);
+                        }
+                    },
+                    (err) => console.warn('[Emergency] Geolocation denied:', err.message),
+                    { timeout: 5000 }
+                );
+            }
 
             // 2. Fallback to cloud lookup ONLY if no patient decoded
             const id = params.get('id');
@@ -341,6 +357,14 @@
                 return;
             }
 
+            // ─── Log the scan (if not already logged by geo-success) ───
+            // We delay this briefly to see if geolocation succeeds first
+            setTimeout(() => {
+                if (!lat && !long) {
+                    window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'No Geo-Permission');
+                }
+            }, 2000);
+
             // ─── Render the emergency view ───
             const hasAllergies = patient.allergies && patient.allergies.toLowerCase() !== 'none' && patient.allergies.trim();
             const hasNotes = patient.medicalNotes && patient.medicalNotes.trim();
@@ -351,7 +375,7 @@
                 <!-- EMERGENCY HEADER -->
                 <div class="emergency-header">
                     <div class="em-label">
-                        <span class="pulse-dot"></span>
+                        <span class="pulse-dot animate-pulse-red"></span>
                         Medical Emergency Profile
                     </div>
                     ${source === 'offline_qr' ? `<div style="font-size:0.6rem; margin-top:0.4rem; color:rgba(255,255,255,0.7); font-weight:800; text-transform:uppercase;">Decoded from QR (Verified Offline)</div>` : ''}
