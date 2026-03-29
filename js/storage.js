@@ -413,24 +413,25 @@ const Storage = {
         }
     },
 
-    // ────── HYBRID VCARD ENCODING (Global Standard for Offline + Professional) ──────
+    // ────── HYBRID ELITE VCARD (Professional Medical Standard) ──────
     generateHybridVCard: function (p, profileUrl) {
         if (!p) return null;
         
-        // Optimized vCard fields to ensure visibility in phone camera previews
+        // Optimized vCard for maximum "At-a-glance" visibility in Camera Scanners
         const vcard = [
             'BEGIN:VCARD',
             'VERSION:3.0',
-            `FN:EMS ID: ${p.fullName} (${p.bloodGroup})`, // Boldest line in preview
-            `ORG:⚠️ Allergies: ${p.allergies || 'NONE'}`,  // Shown prominently under name
-            `TITLE:Contact: ${p.contact1_Name} (${p.contact1_Phone})`, // Visible info
-            `TEL;TYPE=CELL:${p.contact1_Phone}`, // One-tap calling
-            `NOTE:MEDICAL EMERGENCY DATA:\nBLOOD: ${p.bloodGroup}\nCONDITIONS: ${p.conditions || 'None Reported'}\nMEDS: ${p.medications || 'None Reported'}\nID: ${p.patientId}`,
-            `URL:${profileUrl}`, // Professional web link
+            `FN:⚕️ MEDICAL ID: ${p.fullName} (${p.bloodGroup})`,
+            `N:;${p.fullName};;;`,
+            `ORG:⚠️ ALLERGIES: ${p.allergies || 'NONE'}`,
+            `TITLE:📞 CALL: ${p.contact1_Name} (${p.contact1_Phone})`,
+            `TEL;TYPE=CELL:${p.contact1_Phone}`,
+            `NOTE:MEDICAL EMERGENCY PROFILE:\nBLOOD: ${p.bloodGroup}\nCONDITIONS: ${p.conditions || 'None Reported'}\nMEDS: ${p.medications || 'None Reported'}\nID: ${p.patientId}`,
+            `URL:${profileUrl}`,
             'END:VCARD'
         ].join('\n');
         
-        console.log('[Storage] Hybrid vCard generated, length:', vcard.length);
+        console.log('[Storage] Hybrid Elite vCard generated, length:', vcard.length);
         return vcard;
     },
 
