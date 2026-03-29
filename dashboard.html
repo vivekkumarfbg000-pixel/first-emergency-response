@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Health Dashboard | EMS Response</title>
   <meta name="description" content="Manage emergency medical profiles, generate QR codes, and monitor scan activity.">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -1108,5 +1109,15 @@
   <script src="js/auth.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/dashboard.js"></script>
+
+  <script>
+      if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+              navigator.serviceWorker.register('service-worker.js')
+                  .then(reg => console.log('ServiceWorker registered:', reg.scope))
+                  .catch(e => console.error('ServiceWorker error:', e));
+          });
+      }
+  </script>
 </body>
 </html>

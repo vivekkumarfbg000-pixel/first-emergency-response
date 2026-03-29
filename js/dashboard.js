@@ -172,14 +172,10 @@
         const baseUrl = window.location.href.split('dashboard.html')[0];
         const idToUse = currentPatient.id || currentPatient.patientId;
         const profileUrl = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
-        
-        // Generate Plain Text format for immediate offline-visibility
-        const qrText = window.Storage.generateEmergencyText(currentPatient, profileUrl);
 
         console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
-        console.log('[Dashboard] QR Text length:', qrText.length, 'chars');
 
-        QRCode.toCanvas(qrText, {
+        QRCode.toCanvas(profileUrl, {
             width: 200,
             margin: 1,
             color: { dark: '#0b0e14', light: '#ffffff' },
