@@ -173,13 +173,13 @@
         const idToUse = currentPatient.id || currentPatient.patientId;
         const profileUrl = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
         
-        // Generate vCard string containing the profileUrl AND medical text
-        const vcardString = window.Storage.generateVCard(currentPatient, profileUrl);
+        // Generate Plain Text format for immediate offline-visibility
+        const qrText = window.Storage.generateEmergencyText(currentPatient, profileUrl);
 
         console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
-        console.log('[Dashboard] vCard length:', vcardString.length, 'chars');
+        console.log('[Dashboard] QR Text length:', qrText.length, 'chars');
 
-        QRCode.toCanvas(vcardString, {
+        QRCode.toCanvas(qrText, {
             width: 200,
             margin: 1,
             color: { dark: '#0b0e14', light: '#ffffff' },
