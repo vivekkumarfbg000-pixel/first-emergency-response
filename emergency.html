@@ -287,79 +287,57 @@
     <script src="js/storage.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
+            // Helper for Lucide icons (safe for offline)
+            const safeIcon = () => { if (typeof lucide !== 'undefined') lucide.createIcons(); };
+            safeIcon();
 
             const params = new URLSearchParams(window.location.search);
             let patient = null;
+            let source = 'unknown';
 
-            // Method 1: Decode from data param FIRST (base64-encoded, works fully OFFLINE)
+            // 1. Decode from 'data' param FIRST (Works OFFLINE)
             const encodedData = params.get('data');
             if (encodedData) {
-                patient = window.Storage.decodeFromURL(encodedData);
+                try {
+                    patient = window.Storage.decodeFromURL(encodedData);
+                    if (patient) source = 'offline_qr';
+                } catch (e) { console.error('[Emergency] Offline decode failed:', e); }
             }
 
-            // Method 2: If no data param or decode failed, try cloud lookup by ID
+            // 2. Fallback to cloud lookup ONLY if no patient decoded
             const id = params.get('id');
             if (!patient && id) {
-                // Show loading state for cloud fetch
                 document.getElementById('app-root').innerHTML = `
                     <div class="error-state">
-                        <i data-lucide="loader" class="animate-pulse"></i>
                         <h1>Fetching Medical Profile...</h1>
                         <p>Accessing secure cloud records</p>
                     </div>
                 `;
-                lucide.createIcons();
-                
-                // For emergency view, bypass user_id filter — responders won't be logged in
+
                 try {
                     if (window.supabaseClient) {
                         const queryField = id.length > 20 ? 'id' : 'patient_id';
                         const { data: row, error } = await window.supabaseClient
-                            .from('patients')
-                            .select('*')
-                            .eq(queryField, id)
-                            .single();
+                            .from('patients').select('*').eq(queryField, id).single();
                         if (!error && row) {
                             patient = window.Storage.mapFromDB(row);
+                            source = 'cloud';
                         }
                     }
-                } catch (err) {
-                    console.warn('Cloud lookup failed (may be offline):', err);
-                }
+                } catch (err) { console.warn('Cloud lookup failed:', err); }
             }
 
-            // Log the scan (best effort, won't block if offline)
-            if (patient) {
-                const ua = navigator.userAgent;
-                let device = 'Unknown Device';
-                if (/iPhone/.test(ua)) device = 'iPhone / Safari';
-                else if (/Android/.test(ua)) device = 'Android / Chrome';
-                else if (/Windows/.test(ua)) device = 'Windows / Browser';
-                else if (/Mac/.test(ua)) device = 'Mac / Safari';
-
-                try {
-                    // logScan works without auth for emergency view (local + best-effort cloud)
-                    if (window.Storage && window.Storage.logScan) {
-                        await window.Storage.logScan(patient.patientId, 'qr_scan', device, 'Emergency View');
-                    }
-                } catch(e) {
-                    // Ignore scan logging errors — this should never block emergency view
-                    console.warn('[Emergency] logScan failed (non-critical):', e);
-                }
-            }
-
-            // Error state
+            // 3. Error state if both failed
             if (!patient) {
                 document.getElementById('app-root').innerHTML = `
                     <div class="error-state">
                         <i data-lucide="shield-off"></i>
                         <h1>Profile Not Found</h1>
-                        <p>This QR code may be invalid or the profile data could not be fetched from the cloud.</p>
+                        <p>This QR code may be invalid or the profile could not be fetched.</p>
                         <a href="index.html" class="btn btn-primary">Go to Homepage</a>
                     </div>
                 `;
-                lucide.createIcons();
+                safeIcon();
                 return;
             }
 
@@ -376,6 +354,7 @@
                         <span class="pulse-dot"></span>
                         Medical Emergency Profile
                     </div>
+                    ${source === 'offline_qr' ? `<div style="font-size:0.6rem; margin-top:0.4rem; color:rgba(255,255,255,0.7); font-weight:800; text-transform:uppercase;">Decoded from QR (Verified Offline)</div>` : ''}
                     <div class="blood-giant">${patient.bloodGroup}</div>
                     <div class="em-name">${patient.fullName}</div>
                     <div class="em-meta">${patient.age}Y • ${patient.gender} • ID: ${patient.patientId}</div>
@@ -479,7 +458,7 @@
                 </div>
             `;
 
-            lucide.createIcons();
+            safeIcon();
 
             // ─── Scan Timer ───
             const startTime = Date.now();
@@ -505,7 +484,7 @@
                         navigator.clipboard.writeText(window.location.href);
                         shareBtn.innerHTML = '<i data-lucide="check"></i> Link Copied!';
                         shareBtn.style.color = '#10b981';
-                        lucide.createIcons();
+                        safeIcon();
                     }
                 });
             }
@@ -523,7 +502,7 @@
                             () => {
                                 locBtn.innerHTML = '<i data-lucide="x"></i> Location Blocked';
                                 locBtn.style.color = '#ef4444';
-                                lucide.createIcons();
+                                safeIcon();
                             }
                         );
                     }

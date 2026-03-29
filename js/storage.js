@@ -414,7 +414,9 @@ const Storage = {
     },
 
     decodeFromURL: function (encodedStr) {
+        if (!encodedStr) return null;
         try {
+            console.log('[Storage] Decoding QR data, length:', encodedStr.length);
             // Restore standard Base64 from URL-safe version
             let base64 = encodedStr.replace(/-/g, '+').replace(/_/g, '/');
             // Add padding if missing
@@ -422,6 +424,8 @@ const Storage = {
             
             const jsonStr = decodeURIComponent(escape(atob(base64)));
             const d = JSON.parse(jsonStr);
+            console.log('[Storage] QR decode success for:', d.n);
+
             return {
                 patientId:     d.id  || '',
                 id:            d.sid || '',
@@ -435,13 +439,12 @@ const Storage = {
                 allergies:     d.alg || '',
                 medications:   d.med || '',
                 organDonor:    d.org === '1',
-                // These won't be in embedding but are fine as empty
                 contact2_Name:  '',
                 contact2_Phone: '',
                 medicalNotes:  ''
             };
         } catch (e) {
-            console.error('[Storage] QR decode error:', e);
+            console.error('[Storage] QR decode error:', e.message);
             return null;
         }
     },
