@@ -11,10 +11,19 @@ window.CardGenerator = {
 
     generate: async function (p) {
         if (!p) return null;
+        console.log('[CardGen] Starting generation for:', p.fullName);
 
-        // Ensure fonts are loaded (best effort)
-        if (document.fonts && document.fonts.load) {
-            await document.fonts.load('bold 42px Inter');
+        // ─── 1. Font Handling (Robust Load) ───
+        try {
+            if (document.fonts && document.fonts.load) {
+                // We load multiple weights to ensure the card looks professional
+                await Promise.all([
+                    document.fonts.load('bold 42px Inter'),
+                    document.fonts.load('500 24px Inter')
+                ]);
+            }
+        } catch (e) {
+            console.warn('[CardGen] Font load failed, using system fallbacks', e);
         }
 
         const canvas = document.createElement('canvas');
@@ -116,39 +125,47 @@ window.CardGenerator = {
         ctx.fillStyle = '#0f172a';
         ctx.fillText(p.contact1_Phone, 40, 550);
 
-        // 9. QR CODE INSET
-        // Note: For simplicity, we'll draw a placeholder or the actual QR if passed
+        // ─── 9. QR Code (Self-Sufficient Internal Gen) ───
         ctx.fillStyle = '#ffffff';
-        ctx.roundRect(this.WIDTH - 240, 440, 200, 200, 15).fill();
+        const qrSize = 180;
+        const qrX = this.WIDTH - qrSize - 40;
+        const qrY = 430;
+        
+        ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 15).fill();
         ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 18px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('SCAN FOR FULL', this.WIDTH - 140, 605);
-        ctx.fillText('MEDICAL PROFILE', this.WIDTH - 140, 625);
-
-        // Draw actual QR if available
-        let qrSource = document.querySelector('#qrcode-canvas-container canvas');
-        
-        // Internal fallback if no canvas found or if we need a fresh copy
-        if (!qrSource && typeof QRCode !== 'undefined') {
-            const tempDiv = document.createElement('div');
+        try {
             const baseUrl = window.location.href.split('dashboard.html')[0];
             const profileUrl = `${baseUrl}emergency.html?id=${p.patientId || p.id}`;
             const vcard = window.Storage.generateHybridVCard(p, profileUrl);
             
             const tempCanvas = document.createElement('canvas');
-            await new Promise(resolve => {
-                QRCode.toCanvas(tempCanvas, vcard, { margin: 1 }, () => resolve());
+            // Use the global QRCode to generate a fresh copy
+            await new Promise((resolve, reject) => {
+                if (typeof QRCode === 'undefined') return reject('QRCode library missing');
+                QRCode.toCanvas(tempCanvas, vcard, { 
+                    margin: 1, 
+                    width: qrSize,
+                    errorCorrectionLevel: 'M' // Medium is best for print/scan balance
+                }, (err) => err ? reject(err) : resolve());
             });
-            qrSource = tempCanvas;
+            ctx.drawImage(tempCanvas, qrX, qrY, qrSize, qrSize);
+        } catch (qrErr) {
+            console.error('[CardGen] QR Fallback failed:', qrErr);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(qrX, qrY, qrSize, qrSize);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px Inter';
+            ctx.fillText('QR LOAD ERROR', qrX + 45, qrY + 90);
         }
 
-        if (qrSource) {
-            ctx.drawImage(qrSource, this.WIDTH - 225, 455, 170, 170);
-        }
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 18px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('SCAN FOR FULL PROFILE', qrX + (qrSize/2), 625);
+        ctx.textAlign = 'left';
 
         // 10. FOOTER ACCENT
         ctx.fillStyle = '#dc2626';

@@ -407,23 +407,35 @@
 
         // Management
         $('btn-edit-main').addEventListener('click', openEditModal);
-        $('btn-print').addEventListener('click', async () => {
-            showToast('Generating ID Card...', 'info');
-            try {
-                if (!window.CardGenerator) throw new Error('Card Generator not loaded');
-                const dataUrl = await window.CardGenerator.generate(currentPatient);
-                if (dataUrl) {
-                    const link = document.createElement('a');
-                    link.download = `EMS_CARD_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
-                    link.href = dataUrl;
-                    link.click();
-                    showToast('✅ Medical ID Card Ready', 'success');
+        const btnPrint = $('btn-print');
+        if (btnPrint) {
+            btnPrint.addEventListener('click', async () => {
+                const originalContent = btnPrint.innerHTML;
+                btnPrint.disabled = true;
+                btnPrint.innerHTML = '<i class="animate-spin-slow"></i> Generating...';
+                
+                try {
+                    if (!window.CardGenerator) throw new Error('Card Generator not loaded');
+                    const dataUrl = await window.CardGenerator.generate(currentPatient);
+                    
+                    if (dataUrl) {
+                        const link = document.createElement('a');
+                        link.download = `EMS_CARD_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
+                        link.href = dataUrl;
+                        link.click();
+                        showToast('✅ Medical ID Card Ready', 'success');
+                    } else {
+                        throw new Error('Canvas render failed');
+                    }
+                } catch (err) {
+                    console.error('[Dashboard] Print error:', err);
+                    showToast('❌ Printing Failed: Check console', 'error');
+                } finally {
+                    btnPrint.disabled = false;
+                    btnPrint.innerHTML = originalContent;
                 }
-            } catch (err) {
-                console.error('[Dashboard] Card Gen Error:', err);
-                showToast('❌ Card Generation Failed', 'error');
-            }
-        });
+            });
+        }
         $('btn-delete').addEventListener('click', deleteCurrent);
         $('btn-export').addEventListener('click', () => {
             // Simplified export for this version
