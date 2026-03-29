@@ -413,6 +413,27 @@ const Storage = {
         }
     },
 
+    // ────── VCARD ENCODING (For Native Offline Support) ──────
+    generateVCard: function (p, profileUrl) {
+        if (!p) return null;
+        
+        // vCard 3.0 format for maximum compatibility
+        const vcard = [
+            'BEGIN:VCARD',
+            'VERSION:3.0',
+            `FN:EMS ID: ${p.fullName}`,
+            `N:;${p.fullName};;;`,
+            `TEL;TYPE=CELL:${p.contact1_Phone}`,
+            `TITLE:${p.bloodGroup} BLOOD TYPE`, 
+            `NOTE:MEDICAL EMERGENCY DATA:\nBLOOD TYPE: ${p.bloodGroup}\nALLERGIES: ${p.allergies || 'NONE'}\nCONTACT: ${p.contact1_Name} (${p.contact1_Phone})\nID: ${p.patientId}`,
+            `URL:${profileUrl}`,
+            'END:VCARD'
+        ].join('\n');
+        
+        console.log('[Storage] vCard generated, length:', vcard.length);
+        return vcard;
+    },
+
     decodeFromURL: function (encodedStr) {
         if (!encodedStr) return null;
         try {

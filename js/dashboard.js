@@ -170,17 +170,20 @@
         if (!encodedData) return;
 
         const baseUrl = window.location.href.split('dashboard.html')[0];
-        // QR contains both the EMS-ID (for cloud lookup) and encoded data (for offline mode)
         const idToUse = currentPatient.id || currentPatient.patientId;
-        const url = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
+        const profileUrl = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
+        
+        // Generate vCard string containing the profileUrl AND medical text
+        const vcardString = window.Storage.generateVCard(currentPatient, profileUrl);
 
-        console.log('[Dashboard] QR URL length:', url.length, 'chars');
+        console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
+        console.log('[Dashboard] vCard length:', vcardString.length, 'chars');
 
-        QRCode.toCanvas(url, {
+        QRCode.toCanvas(vcardString, {
             width: 200,
             margin: 1,
             color: { dark: '#0b0e14', light: '#ffffff' },
-            errorCorrectionLevel: 'L'  // Low = ~40% more data capacity, ideal for long URLs
+            errorCorrectionLevel: 'L'
         }, (err, canvas) => {
             if (err) { console.error('[Dashboard] QR generation error:', err); return; }
             qrCanvas = canvas;
