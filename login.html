@@ -233,7 +233,9 @@
         await Auth.resendConfirmation(email);
         alert('Confirmation email sent! Please check your inbox.');
       } catch (err) {
-        alert('Failed to resend: ' + err.message);
+        console.error('Resend Error:', err);
+        const detail = err.message || JSON.stringify(err);
+        alert('Failed to resend: ' + detail + '\n\nTry again in a few minutes or check your Supabase Auth logs.');
       }
     }
   </script>

@@ -30,7 +30,8 @@ const Auth = {
             email,
             password,
             options: {
-                data: { full_name: fullName }
+                data: { full_name: fullName },
+                emailRedirectTo: window.location.origin + '/dashboard.html'
             }
         });
 
@@ -114,7 +115,10 @@ const Auth = {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
         const { error } = await window.supabaseClient.auth.resend({
             type: 'signup',
-            email: email
+            email: email,
+            options: {
+                emailRedirectTo: window.location.origin + '/dashboard.html'
+            }
         });
         if (error) throw error;
         return true;
