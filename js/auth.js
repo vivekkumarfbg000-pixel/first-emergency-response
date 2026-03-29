@@ -34,9 +34,13 @@ const Auth = {
             }
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('[Auth] SignUp error:', error);
+            throw error;
+        }
+        
         console.log('[Auth] SignUp success:', data);
-        return data;
+        return data; // returns { user, session }
     },
 
     // ────── SIGN IN ──────
@@ -48,7 +52,18 @@ const Auth = {
             password
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('[Auth] SignIn error:', error);
+            // Handle common Supabase errors more gracefully
+            if (error.message.includes('Email not confirmed')) {
+                throw new Error('Please confirm your email address before signing in.');
+            }
+            if (error.message.includes('Invalid login credentials')) {
+                throw new Error('Invalid email or password. Please try again.');
+            }
+            throw error;
+        }
+
         console.log('[Auth] SignIn success, user:', data?.user?.id);
         return data;
     },

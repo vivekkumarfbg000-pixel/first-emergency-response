@@ -205,10 +205,10 @@
       lucide.createIcons();
 
       try {
-        await Auth.signIn(email, password);
+        await Auth.signIn(email.trim(), password);
         window.location.href = 'dashboard.html';
       } catch (err) {
-        alert(err.message || 'Error signing in');
+        alert('SignIn Failed: ' + (err.message || 'Check your credentials and try again'));
         btn.disabled = false;
         btn.innerHTML = 'Sign In <i data-lucide="log-in"></i>';
         lucide.createIcons();

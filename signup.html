@@ -210,9 +210,15 @@
       lucide.createIcons();
 
       try {
-        await Auth.signUp(email, password, fullName);
-        alert('Welcome! Your account has been created successfully. Redirecting to dashboard...');
-        window.location.href = 'dashboard.html';
+        const data = await Auth.signUp(email.trim(), password, fullName);
+        
+        if (data.session) {
+          alert('Welcome! Your account has been created successfully. Redirecting to dashboard...');
+          window.location.href = 'dashboard.html';
+        } else {
+          alert('Account created! Please check your email and click the confirmation link before signing in.');
+          window.location.href = 'login.html';
+        }
       } catch (err) {
         alert(err.message || 'Error creating account');
         btn.disabled = false;
