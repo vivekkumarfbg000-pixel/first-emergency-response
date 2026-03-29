@@ -171,9 +171,9 @@
 
         const baseUrl = window.location.href.split('dashboard.html')[0];
         const idToUse = currentPatient.id || currentPatient.patientId;
-        const profileUrl = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
+        const profileUrl = `${baseUrl}emergency.html?id=${idToUse}`;
         
-        // Generate Hybrid vCard for immediate native camera visibility (Professional + Info)
+        // Generate Hybrid vCard with "Clean URL" to ensure it's instantly fast to scan
         const vcardPayload = window.Storage.generateHybridVCard(currentPatient, profileUrl);
 
         console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
