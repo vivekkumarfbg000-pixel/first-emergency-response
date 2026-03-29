@@ -136,6 +136,11 @@ window.CardGenerator = {
         ctx.fillStyle = '#0f172a';
         ctx.fillText(p.contact1_Phone || 'No Phone Registered', 40, 550);
 
+        // EXTRA: Support Line
+        ctx.font = 'bold 22px Inter, sans-serif';
+        ctx.fillStyle = '#dc2626'; // Red for support
+        ctx.fillText('F.E.R Support: 9876543210', 40, 595);
+
         // ─── 9. QR Code (Self-Sufficient Internal Gen) ───
         const qrSize = 180;
         const qrX = this.WIDTH - qrSize - 40;
@@ -155,7 +160,8 @@ window.CardGenerator = {
         try {
             const baseUrl = window.location.href.split('dashboard.html')[0];
             const profileUrl = `${baseUrl}emergency.html?id=${p.patientId || p.id}`;
-            const vcard = window.Storage.generateHybridVCard(p, profileUrl);
+            // Switched from vCard to simple Website QR as requested
+            const qrPayload = profileUrl; 
             
             const qrcLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
             
@@ -163,7 +169,7 @@ window.CardGenerator = {
 
             const tempCanvas = document.createElement('canvas');
             await new Promise((resolve, reject) => {
-                qrcLib.toCanvas(tempCanvas, vcard, { 
+                qrcLib.toCanvas(tempCanvas, qrPayload, { 
                     margin: 1, 
                     width: qrSize,
                     errorCorrectionLevel: 'M'
