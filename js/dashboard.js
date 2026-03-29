@@ -429,7 +429,8 @@
                     }
                 } catch (err) {
                     console.error('[Dashboard] Print error:', err);
-                    showToast('❌ Printing Failed: Check console', 'error');
+                    showToast('❌ Printing Failed', 'error');
+                    alert(`ID Card Generation Error: ${err.message}\n\nPlease ensure the QRCode library is loaded and your browser supports Canvas.`);
                 } finally {
                     btnPrint.disabled = false;
                     btnPrint.innerHTML = originalContent;

@@ -60,26 +60,25 @@ window.CardGenerator = {
         ctx.stroke();
 
         // 4. PHOTO PLACEHOLDER
-        ctx.fillStyle = '#e2e8f0';
-        ctx.roundRect = ctx.roundRect || function (x, y, w, h, r) {
-            if (w < 2 * r) r = w / 2;
-            if (h < 2 * r) r = h / 2;
-            this.beginPath();
-            this.moveTo(x + r, y);
-            this.arcTo(x + w, y, x + w, y + h, r);
-            this.arcTo(x + w, y + h, x, y + h, r);
-            this.arcTo(x, y + h, x, y, r);
-            this.arcTo(x, y, x + w, y, r);
-            this.closePath();
-            return this;
-        };
-        
-        ctx.beginPath();
         ctx.fillStyle = '#f1f5f9';
-        ctx.roundRect(40, 160, 220, 220, 20).fill();
         ctx.strokeStyle = '#cbd5e1';
         ctx.lineWidth = 1;
+        
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(40, 160, 220, 220, 20);
+        } else {
+            // Polyfill path logic
+            const [x, y, w, h, r] = [40, 160, 220, 220, 20];
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+        }
+        ctx.fill();
         ctx.stroke();
+        ctx.closePath();
 
         // Avatar Initial
         ctx.fillStyle = '#94a3b8';
@@ -102,7 +101,12 @@ window.CardGenerator = {
 
         // 6. BLOOD GROUP BADGE
         ctx.fillStyle = '#fee2e2';
-        ctx.roundRect(300, 280, 140, 60, 12).fill();
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(300, 280, 140, 60, 12);
+        else ctx.rect(300, 280, 140, 60);
+        ctx.fill();
+        ctx.closePath();
+
         ctx.fillStyle = '#991b1b';
         ctx.font = 'bold 32px Inter, sans-serif';
         ctx.fillText(p.bloodGroup || 'UNK', 325, 322);
@@ -133,15 +137,20 @@ window.CardGenerator = {
         ctx.fillText(p.contact1_Phone || 'No Phone Registered', 40, 550);
 
         // ─── 9. QR Code (Self-Sufficient Internal Gen) ───
-        ctx.fillStyle = '#ffffff';
         const qrSize = 180;
         const qrX = this.WIDTH - qrSize - 40;
         const qrY = 430;
         
-        ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 15).fill();
+        ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 1;
+        
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 15);
+        else ctx.rect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+        ctx.fill();
         ctx.stroke();
+        ctx.closePath();
 
         try {
             const baseUrl = window.location.href.split('dashboard.html')[0];
