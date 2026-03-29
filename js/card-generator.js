@@ -11,7 +11,9 @@ window.CardGenerator = {
 
     generate: async function (p) {
         if (!p) return null;
-        console.log('[CardGen] Starting generation for:', p.fullName);
+        const name = p.fullName || p.name || 'PATIENT';
+        const id = p.patientId || p.id || 'N/A';
+        console.log('[CardGen] Generating for:', name, id);
 
         // ─── 1. Font Handling (Robust Load) ───
         try {
@@ -83,24 +85,27 @@ window.CardGenerator = {
         ctx.fillStyle = '#94a3b8';
         ctx.font = 'bold 80px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(p.fullName.charAt(0).toUpperCase(), 40 + 110, 160 + 135);
+        const initial = (name.charAt(0) || '?').toUpperCase();
+        ctx.fillText(initial, 40 + 110, 160 + 135);
         ctx.textAlign = 'left';
 
         // 5. PATIENT DETAILS
         ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 44px Inter, sans-serif';
-        ctx.fillText(p.fullName.toUpperCase(), 300, 210);
+        ctx.fillText(name.toUpperCase(), 300, 210);
 
         ctx.font = '500 24px Inter, sans-serif';
         ctx.fillStyle = '#64748b';
-        ctx.fillText(`ID: ${p.patientId} • ${p.age}Y / ${p.gender.toUpperCase()}`, 300, 250);
+        const age = p.age || '??';
+        const gender = (p.gender || 'Unknown').toUpperCase();
+        ctx.fillText(`ID: ${id} • ${age}Y / ${gender}`, 300, 250);
 
         // 6. BLOOD GROUP BADGE
         ctx.fillStyle = '#fee2e2';
         ctx.roundRect(300, 280, 140, 60, 12).fill();
         ctx.fillStyle = '#991b1b';
         ctx.font = 'bold 32px Inter, sans-serif';
-        ctx.fillText(p.bloodGroup, 325, 322);
+        ctx.fillText(p.bloodGroup || 'UNK', 325, 322);
 
         // 7. ALLERGY ALERT
         if (p.allergies && p.allergies.toLowerCase() !== 'none') {
@@ -110,7 +115,7 @@ window.CardGenerator = {
             ctx.font = 'bold 24px Inter, sans-serif';
             ctx.fillText('⚠️ ALLERGIES:', 320, 395);
             ctx.font = '500 24px Inter, sans-serif';
-            ctx.fillText(p.allergies, 320, 425);
+            ctx.fillText(p.allergies || 'None', 320, 425);
         }
 
         // 8. CONTACTS
@@ -120,10 +125,12 @@ window.CardGenerator = {
         
         ctx.font = '500 22px Inter, sans-serif';
         ctx.fillStyle = '#475569';
-        ctx.fillText(`${p.contact1_Name} (${p.contact1_Relation})`, 40, 515);
+        const contactName = p.contact1_Name || 'Emergency Contact';
+        const contactRel = p.contact1_Relation ? `(${p.contact1_Relation})` : '';
+        ctx.fillText(`${contactName} ${contactRel}`, 40, 515);
         ctx.font = 'bold 24px Inter, sans-serif';
         ctx.fillStyle = '#0f172a';
-        ctx.fillText(p.contact1_Phone, 40, 550);
+        ctx.fillText(p.contact1_Phone || 'No Phone Registered', 40, 550);
 
         // ─── 9. QR Code (Self-Sufficient Internal Gen) ───
         ctx.fillStyle = '#ffffff';
@@ -141,14 +148,16 @@ window.CardGenerator = {
             const profileUrl = `${baseUrl}emergency.html?id=${p.patientId || p.id}`;
             const vcard = window.Storage.generateHybridVCard(p, profileUrl);
             
+            const qrcLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
+            
+            if (!qrcLib) throw new Error('QR Library not found');
+
             const tempCanvas = document.createElement('canvas');
-            // Use the global QRCode to generate a fresh copy
             await new Promise((resolve, reject) => {
-                if (typeof QRCode === 'undefined') return reject('QRCode library missing');
-                QRCode.toCanvas(tempCanvas, vcard, { 
+                qrcLib.toCanvas(tempCanvas, vcard, { 
                     margin: 1, 
                     width: qrSize,
-                    errorCorrectionLevel: 'M' // Medium is best for print/scan balance
+                    errorCorrectionLevel: 'M'
                 }, (err) => err ? reject(err) : resolve());
             });
             ctx.drawImage(tempCanvas, qrX, qrY, qrSize, qrSize);
