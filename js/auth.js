@@ -110,6 +110,12 @@ const Auth = {
         const user = await this.getUser();
         if (!user) return false;
 
+        // Hardcoded bypass for master admin
+        const adminEmail = 'firstemergencyresponse4@gmail.com';
+        if (user.email.trim().toLowerCase() === adminEmail.toLowerCase()) {
+            return true;
+        }
+
         try {
             const { data, error } = await window.supabaseClient
                 .from('user_roles')
