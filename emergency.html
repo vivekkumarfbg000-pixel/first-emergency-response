@@ -275,6 +275,22 @@
             .blood-giant { font-size: 4rem; }
             .em-name { font-size: 1.625rem; }
         }
+
+        /* ─── Rescue Sync Banner ─── */
+        .geo-banner {
+            background: #1e293b;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 1rem 1.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: slide-down 0.5s ease-out;
+        }
+
+        @keyframes slide-down {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -357,11 +373,10 @@
                 return;
             }
 
-            // ─── Log the scan (if not already logged by geo-success) ───
-            // We delay this briefly to see if geolocation succeeds first
+            // ─── Log the scan (Initial) ───
             setTimeout(() => {
                 if (!lat && !long) {
-                    window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'No Geo-Permission');
+                    window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Pending Consent');
                 }
             }, 2000);
 
@@ -372,6 +387,18 @@
             const hasContact2 = patient.contact2_Name && patient.contact2_Phone;
 
             document.getElementById('app-root').innerHTML = `
+                <!-- RESCUE SYNC BANNER -->
+                <div id="geo-banner" class="geo-banner">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <i data-lucide="map-pin" class="animate-pulse-green"></i>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:0.875rem;">Sync Rescue Location?</div>
+                            <div style="font-size:0.75rem; color:rgba(255,255,255,0.7);">Helps first responders find this patient faster.</div>
+                        </div>
+                        <button id="btnSyncLoc" class="btn btn-primary btn-sm" style="background:#10b981; border:none;">Sync Location</button>
+                    </div>
+                </div>
+
                 <!-- EMERGENCY HEADER -->
                 <div class="emergency-header">
                     <div class="em-label">
@@ -513,25 +540,30 @@
                 });
             }
 
-            // ─── Location Button ───
-            const locBtn = document.getElementById('btnLocation');
-            if (locBtn) {
-                locBtn.addEventListener('click', () => {
+            // ─── Location Sync Button ───
+            const syncBtn = document.getElementById('btnSyncLoc');
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => {
+                    syncBtn.innerHTML = '<i class="animate-spin-slow"></i> Syncing...';
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (pos) => {
-                                const { latitude, longitude } = pos.coords;
-                                window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
+                                lat = pos.coords.latitude;
+                                long = pos.coords.longitude;
+                                window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Explicit Consent', lat, long);
+                                document.getElementById('geo-banner').style.display = 'none';
+                                showToast('📍 Location Synced with Admin', 'success');
                             },
                             () => {
-                                locBtn.innerHTML = '<i data-lucide="x"></i> Location Blocked';
-                                locBtn.style.color = '#ef4444';
-                                safeIcon();
+                                document.getElementById('geo-banner').innerHTML = '<div style="font-size:0.75rem; color:#ef4444; text-align:center;">⚠️ Location permission blocked. Position unavailable.</div>';
+                                setTimeout(() => document.getElementById('geo-banner').style.display = 'none', 3000);
                             }
                         );
                     }
                 });
             }
+
+            // ─── Location Center Button (Footer) ───
         });
     </script>
 </body>

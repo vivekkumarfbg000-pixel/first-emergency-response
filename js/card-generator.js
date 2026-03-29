@@ -7,9 +7,15 @@ window.CardGenerator = {
     WIDTH: 1012, 
     HEIGHT: 638,
     PPI: 300,
+    FONT: 'bold 42px Inter, "Segoe UI", Roboto, sans-serif',
 
     generate: async function (p) {
         if (!p) return null;
+
+        // Ensure fonts are loaded (best effort)
+        if (document.fonts && document.fonts.load) {
+            await document.fonts.load('bold 42px Inter');
+        }
 
         const canvas = document.createElement('canvas');
         canvas.width = this.WIDTH;
@@ -124,9 +130,24 @@ window.CardGenerator = {
         ctx.fillText('MEDICAL PROFILE', this.WIDTH - 140, 625);
 
         // Draw actual QR if available
-        const qrCanvas = document.querySelector('#qrcode-canvas-container canvas');
-        if (qrCanvas) {
-            ctx.drawImage(qrCanvas, this.WIDTH - 225, 455, 170, 170);
+        let qrSource = document.querySelector('#qrcode-canvas-container canvas');
+        
+        // Internal fallback if no canvas found or if we need a fresh copy
+        if (!qrSource && typeof QRCode !== 'undefined') {
+            const tempDiv = document.createElement('div');
+            const baseUrl = window.location.href.split('dashboard.html')[0];
+            const profileUrl = `${baseUrl}emergency.html?id=${p.patientId || p.id}`;
+            const vcard = window.Storage.generateHybridVCard(p, profileUrl);
+            
+            const tempCanvas = document.createElement('canvas');
+            await new Promise(resolve => {
+                QRCode.toCanvas(tempCanvas, vcard, { margin: 1 }, () => resolve());
+            });
+            qrSource = tempCanvas;
+        }
+
+        if (qrSource) {
+            ctx.drawImage(qrSource, this.WIDTH - 225, 455, 170, 170);
         }
 
         // 10. FOOTER ACCENT

@@ -962,6 +962,27 @@
             <div id="connection-details" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem; font-family:monospace; display:none;"></div>
           </div>
 
+          <!-- Real-time Diagnostics -->
+          <div class="settings-group" style="padding:1.5rem; border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-bottom:1.5rem;">
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+              <i data-lucide="radio" style="width:18px; color:#10b981;"></i>
+              PostgreSQL Real-time Status
+            </h3>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.25rem;">Live emergency alerts require "Replication" to be enabled for the <b>scans</b> table in your Supabase Dashboard.</p>
+            <div id="realtime-status-pill" style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.75rem; font-weight:600; padding:0.4rem 0.8rem; border-radius:20px; background:rgba(255,255,255,0.05); color:var(--text-secondary);">
+                <span class="pulse-dot" style="width:8px; height:8px; background:currentColor;"></span>
+                Initializing...
+            </div>
+            <div id="realtime-instructions" style="display:none; margin-top:1rem; padding:1rem; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:8px;">
+                <div style="font-size:0.75rem; font-weight:700; color:#f59e0b; margin-bottom:0.25rem;">⚠️ ACTION REQUIRED</div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); line-height:1.4;">
+                    1. Go to <b>Supabase Dashboard</b> -> <b>Database</b> -> <b>Replication</b>.<br>
+                    2. Click "1 table" (or "Source") next to <b>supabase_realtime</b>.<br>
+                    3. Toggle the <b>scans</b> switch to <b>ON</b>.
+                </div>
+            </div>
+          </div>
+
           <div class="settings-group">
             <div class="settings-group-title">Data Management</div>
             <div class="setting-row">

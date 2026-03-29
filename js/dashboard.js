@@ -312,17 +312,34 @@
             }
         });
 
-        // Real-time Scan Alerts
+        // Real-time Scan Alerts (Optimized with Status Tracking)
         if (window.supabaseClient) {
-            window.supabaseClient
-                .channel('schema-db-changes')
+            const statusPill = $('realtime-status-pill');
+            const instructions = $('realtime-instructions');
+
+            const channel = window.supabaseClient
+                .channel('emergency-alerts')
                 .on('postgres_changes', { event: 'INSERT', table: 'scans' }, (payload) => {
                     console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
                     showToast('🚨 NEW EMERGENCY SCAN DETECTED!', 'error');
-                    // Play a subtle medical alert sound if possible, or just the toast
-                    renderAll(); // Refresh dashboard data
+                    renderAll(); 
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('[Dashboard] Real-time Channel Status:', status);
+                    if (statusPill) {
+                        if (status === 'SUBSCRIBED') {
+                            statusPill.style.color = '#10b981';
+                            statusPill.style.background = 'rgba(16,185,129,0.1)';
+                            statusPill.innerHTML = '<span class="pulse-dot animate-pulse-green" style="width:8px; height:8px; background:currentColor; margin-right:4px;"></span> Live Sync Active';
+                            if (instructions) instructions.style.display = 'none';
+                        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                            statusPill.style.color = '#f59e0b';
+                            statusPill.style.background = 'rgba(245,158,11,0.1)';
+                            statusPill.innerHTML = '⚠️ Replication Pending';
+                            if (instructions) instructions.style.display = 'block';
+                        }
+                    }
+                });
         }
 
         // Sidebar Navigation
