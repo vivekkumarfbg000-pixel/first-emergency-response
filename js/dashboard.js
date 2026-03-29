@@ -172,10 +172,14 @@
         const baseUrl = window.location.href.split('dashboard.html')[0];
         const idToUse = currentPatient.id || currentPatient.patientId;
         const profileUrl = `${baseUrl}emergency.html?id=${idToUse}&data=${encodeURIComponent(encodedData)}`;
+        
+        // Generate Hybrid vCard for immediate native camera visibility (Professional + Info)
+        const vcardPayload = window.Storage.generateHybridVCard(currentPatient, profileUrl);
 
         console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
+        console.log('[Dashboard] QR vCard length:', vcardPayload.length, 'chars');
 
-        QRCode.toCanvas(profileUrl, {
+        QRCode.toCanvas(vcardPayload, {
             width: 200,
             margin: 1,
             color: { dark: '#0b0e14', light: '#ffffff' },
