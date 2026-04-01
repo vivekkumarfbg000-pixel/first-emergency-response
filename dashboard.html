@@ -53,7 +53,7 @@
       box-shadow: 0 0 30px rgba(225, 29, 72, 0.1), inset 0 0 0 1px rgba(225, 29, 72, 0.2);
     }
 
-    /* ─── Glowing Stat Cards ─── */
+    /* ─── Glowing Stat Cards & Categorical Tints ─── */
     .stat-card {
       background: rgba(255, 255, 255, 0.04) !important;
       backdrop-filter: blur(12px);
@@ -70,6 +70,24 @@
       position: absolute;
       bottom: 0; left: 0; right: 0; height: 3px;
       opacity: 0.6;
+    }
+
+    /* Elite Categorical Themes */
+    .card-theme-red { background: rgba(244, 63, 94, 0.05) !important; border-color: rgba(244, 63, 94, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(244, 63, 94, 0.2); }
+    .card-theme-red::after { background: #f43f5e; }
+    
+    .card-theme-amber { background: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(245, 158, 11, 0.2); }
+    .card-theme-amber::after { background: #f59e0b; }
+    
+    .card-theme-green { background: rgba(34, 197, 94, 0.05) !important; border-color: rgba(34, 197, 94, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(34, 197, 94, 0.2); }
+    .card-theme-green::after { background: #22c55e; }
+
+    .card-theme-blue { background: rgba(59, 130, 246, 0.05) !important; border-color: rgba(59, 130, 246, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(59, 130, 246, 0.2); }
+    .card-theme-blue::after { background: #3b82f6; }
+
+    .summary-value {
+      font-family: 'JetBrains Mono', monospace !important;
+      letter-spacing: -0.02em;
     }
 
     .stat-card-red::after { background: var(--primary); }

@@ -168,46 +168,37 @@
 
         .clinical-box {
             background: rgba(15, 23, 42, 0.03);
-            border-left: 4px solid var(--clinical-slate);
-            padding: 1.5rem;
-            border-radius: 0 8px 8px 0;
-            font-size: 0.9375rem;
+            border-left: 5px solid var(--clinical-slate);
+            padding: 1.75rem;
+            border-radius: 0 12px 12px 0;
+            font-size: 1rem;
             line-height: 1.6;
             font-weight: 600;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
         }
 
-        .alert-box {
-            background: rgba(244, 63, 94, 0.04);
-            border-left-color: var(--clinical-red);
-            color: var(--clinical-red);
-            font-weight: 800;
-        }
-
-        /* ─── Action Row ─── */
-        .action-row {
-            position: relative;
-            z-index: 10;
-            margin-top: 4rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
+        /* Elite Categorical Themes (Responder Sync) */
+        .theme-conditions { background: rgba(244, 63, 94, 0.04) !important; border-left-color: #f43f5e !important; color: #991b1b; }
+        .theme-allergies { background: rgba(245, 158, 11, 0.04) !important; border-left-color: #f59e0b !important; color: #92400e; }
+        .theme-medications { background: rgba(34, 197, 94, 0.04) !important; border-left-color: #22c55e !important; color: #065f46; }
 
         .btn-medical {
             padding: 1.25rem;
             text-align: center;
             text-decoration: none;
             font-weight: 900;
-            font-size: 0.8125rem;
+            font-size: 0.875rem;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border-radius: 8px;
+            letter-spacing: 0.08em;
+            border-radius: 12px;
             color: white;
-            transition: 0.2s;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .btn-call { background: #059669; }
@@ -387,9 +378,31 @@
             document.getElementById('p-gender').textContent = patient.gender || "N/A";
             document.getElementById('p-donor').textContent = patient.organDonor ? "YES" : "NO";
             
-            document.getElementById('p-conditions').textContent = patient.conditions || "None Reported";
-            document.getElementById('p-allergies').textContent = patient.allergies || "None Reported";
-            document.getElementById('p-medications').textContent = patient.medications || "None Reported";
+            // Categorical Rendering
+            const condEl = document.getElementById('p-conditions');
+            const algEl = document.getElementById('p-allergies');
+            const medEl = document.getElementById('p-medications');
+
+            if (patient.conditions && patient.conditions.toLowerCase() !== 'none') {
+                condEl.textContent = patient.conditions;
+                condEl.classList.add('theme-conditions');
+            } else {
+                condEl.textContent = "Stable clinical history";
+            }
+
+            if (patient.allergies && patient.allergies.toLowerCase() !== 'none') {
+                algEl.textContent = patient.allergies;
+                algEl.classList.add('theme-allergies');
+            } else {
+                algEl.textContent = "No known hazards (Allergies)";
+            }
+
+            if (patient.medications && patient.medications.toLowerCase() !== 'none') {
+                medEl.textContent = patient.medications;
+                medEl.classList.add('theme-medications');
+            } else {
+                medEl.textContent = "No active medication cycle";
+            }
             
             // diagnostic summary content
             const summary = `

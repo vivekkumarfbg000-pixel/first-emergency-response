@@ -122,40 +122,55 @@
             donorWrap.style.display = p.organDonor ? 'block' : 'none';
         }
 
-        // Medical Summaries
-        txt('sum-conditions', p.conditions || 'None reported');
-        txt('sum-medications', p.medications || 'No ongoing medications');
-
-        // Health Report Summary
-        const healthReport = `Patient ${p.fullName} has ${p.bloodGroup} blood group. ` + 
-                           (p.conditions ? `Reported conditions: ${p.conditions}. ` : 'No chronic conditions reported. ') +
-                           (p.allergies ? `CRITICAL: Known allergies to ${p.allergies}.` : 'No known allergies.');
-        txt('sum-health-report', healthReport);
-
-        // Allergies
-        const allergyText = p.allergies || 'No reported allergies';
-        txt('sum-allergies', allergyText);
+        // Medical Summaries (Categorical Tints)
+        const condCard = $('sum-conditions').closest('.stat-card');
+        const medCard = $('sum-medications').closest('.stat-card');
         const allergyCard = $('allergy-card');
-        const allergyVal = $('sum-allergies');
 
-        if (p.allergies && p.allergies.toLowerCase() !== 'none' && p.allergies.trim() !== '') {
-            if (allergyVal) {
-                allergyVal.classList.add('bold-red');
-                allergyVal.style.color = '#f43f5e';
+        // Apply Conditions Theme (Red)
+        if (condCard) {
+            condCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
+            if (p.conditions && p.conditions.toLowerCase() !== 'none') {
+                condCard.classList.add('card-theme-red');
+                txt('sum-conditions', p.conditions);
+            } else {
+                txt('sum-conditions', 'No chronic conditions reported');
             }
-            if (allergyCard) {
-                allergyCard.style.borderColor = '#ef4444';
-                allergyCard.style.animation = 'borderPulse 2s ease infinite';
+        }
+
+        // Apply Medications Theme (Green)
+        if (medCard) {
+            medCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
+            if (p.medications && p.medications.toLowerCase() !== 'none') {
+                medCard.classList.add('card-theme-green');
+                txt('sum-medications', p.medications);
+            } else {
+                txt('sum-medications', 'No active medication cycle');
             }
-        } else {
-            if (allergyVal) {
-                allergyVal.classList.remove('bold-red');
-                allergyVal.style.color = '#e2e8f0';
+        }
+
+        // Apply Allergies Theme (Amber)
+        if (allergyCard) {
+            allergyCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
+            const allergyVal = $('sum-allergies');
+            if (p.allergies && p.allergies.toLowerCase() !== 'none' && p.allergies.trim() !== '') {
+                allergyCard.classList.add('card-theme-amber');
+                txt('sum-allergies', p.allergies);
+                if (allergyVal) allergyVal.style.color = '#f59e0b';
+            } else {
+                txt('sum-allergies', 'No known allergies reported');
+                if (allergyVal) allergyVal.style.color = 'rgba(255,255,255,0.6)';
             }
-            if (allergyCard) {
-                allergyCard.style.borderColor = 'rgba(255,255,255,0.08)';
-                allergyCard.style.animation = 'none';
-            }
+        }
+
+        // Health Report Summary (Blue Anchor)
+        const healthSummaryCard = $('sum-health-report').closest('.stat-card');
+        if (healthSummaryCard) {
+            healthSummaryCard.classList.add('card-theme-blue');
+            const healthReport = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
+                               (p.conditions ? `Conditions: ${p.conditions}. ` : 'Stable clinical history. ') +
+                               (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
+            txt('sum-health-report', healthReport);
         }
 
         // Medical Notes
