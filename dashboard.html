@@ -341,45 +341,52 @@
       font-weight: 700;
     }
 
-    /* ─── Modern Medical Cards (Dashboard - White Theme) ─── */
+    /* ─── Modern Medical Cards (Dashboard - Dark Theme) ─── */
     .summary-card {
-      background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 16px !important;
-      padding: 1.25rem !important;
-      margin-bottom: 0.75rem !important;
+      padding: 1.5rem !important;
+      margin-bottom: 0.875rem !important;
       transition: var(--transition);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+      backdrop-filter: blur(10px);
     }
 
     .summary-card:hover {
-      border-color: #cbd5e1 !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
       transform: translateY(-2px);
     }
 
-    .card-head-pink { color: #f43f5e; }
-    .card-head-blue { color: #3b82f6; }
-    .card-head-orange { color: #f59e0b; }
-    .card-head-teal { color: #14b8a6; }
+    .card-head-pink { color: #fb7185; }   /* Vibrant Pink */
+    .card-head-blue { color: #60a5fa; }   /* Vibrant Blue */
+    .card-head-orange { color: #fbbf24; } /* Bright Amber */
+    .card-head-teal { color: #2dd4bf; }   /* Electric Teal */
 
     .summary-card-header h3 {
       font-size: 0.75rem !important;
       font-weight: 800 !important;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
+      color: #94a3b8 !important;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .summary-value {
-      font-size: 0.875rem !important;
-      color: #1e293b !important;
+      font-size: 0.9375rem !important;
+      color: #f8fafc !important;
       font-weight: 600;
+      line-height: 1.6;
+      margin-top: 0.5rem;
     }
 
     .summary-value.bold-red {
-      color: #ef4444 !important;
+      color: #f43f5e !important;
       font-weight: 900 !important;
-      font-size: 1rem !important;
+      font-size: 1.125rem !important;
+      text-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
     }
 
     /* ─── QR Section ─── */

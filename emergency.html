@@ -101,32 +101,55 @@
         }
 
         .vital-box {
-            background: #fdfdfd;
-            border: 1px solid #f1f5f9;
+            background: rgba(51, 65, 85, 0.04);
+            border: 1px solid rgba(51, 65, 85, 0.1);
             border-left: 4px solid var(--cl-neutral);
-            padding: 1rem 0.75rem;
-            border-radius: 0 8px 8px 0;
+            padding: 1.125rem 0.875rem;
+            border-radius: 0 10px 10px 0;
+            transition: 0.2s;
         }
-        .vital-box b { font-size: 0.625rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
-        .vital-box span { font-size: 1.125rem; font-weight: 800; color: var(--text-main); }
-        .vital-box.blood { border-left-color: var(--cl-critical); }
+        .vital-box b { font-size: 0.625rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; font-weight: 800; }
+        .vital-box span { font-size: 1.25rem; font-weight: 900; color: var(--text-main); }
+        .vital-box.blood { 
+            background: rgba(153, 27, 27, 0.04); 
+            border-color: rgba(153, 27, 27, 0.1);
+            border-left-color: var(--cl-critical); 
+        }
 
         /* ─── Clinical Boxy Cards ─── */
         .clinical-card {
-            background: #ffffff;
-            border: 1px solid #f1f5f9;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 10px 10px 0;
             padding: 1.5rem;
             margin-bottom: 1.25rem;
             transition: 0.2s;
         }
 
-        /* Meaningful Colors */
-        .card-red { border-left: 5px solid var(--cl-critical); }
-        .card-amber { border-left: 5px solid var(--cl-warning); }
-        .card-blue { border-left: 5px solid var(--cl-info); }
-        .card-green { border-left: 5px solid var(--cl-success); }
-        .card-slate { border-left: 5px solid var(--cl-neutral); }
+        /* Meaningful Colors with categorical tints */
+        .card-red { 
+            background: rgba(153, 27, 27, 0.04); 
+            border: 1px solid rgba(153, 27, 27, 0.1);
+            border-left: 5px solid var(--cl-critical); 
+        }
+        .card-amber { 
+            background: rgba(146, 64, 14, 0.04); 
+            border: 1px solid rgba(146, 64, 14, 0.1);
+            border-left: 5px solid var(--cl-warning); 
+        }
+        .card-blue { 
+            background: rgba(30, 64, 175, 0.04); 
+            border: 1px solid rgba(30, 64, 175, 0.1);
+            border-left: 5px solid var(--cl-info); 
+        }
+        .card-green { 
+            background: rgba(6, 95, 70, 0.04); 
+            border: 1px solid rgba(6, 95, 70, 0.1);
+            border-left: 5px solid var(--cl-success); 
+        }
+        .card-slate { 
+            background: rgba(51, 65, 85, 0.04); 
+            border: 1px solid rgba(51, 65, 85, 0.1);
+            border-left: 5px solid var(--cl-neutral); 
+        }
 
         .card-header {
             display: flex;

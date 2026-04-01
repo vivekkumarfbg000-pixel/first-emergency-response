@@ -535,10 +535,14 @@
         try {
             // Re-saving a patient without current ID will attempt cloud insert
             const result = await window.Storage.savePatient(p);
-            if (result.cloudSaved) {
+            if (result.cloudSynced) {
                 showToast('✅ Cloud Sync Successful', 'success');
+                // Persist the status by re-fetching all
+                await window.Storage.getAllPatients(); 
                 await renderAll();
-                if ($('tab-patients').style.display !== 'none') await renderPatientsList();
+                if (document.getElementById('tab-patients').style.display !== 'none') {
+                    await renderPatientsList();
+                }
             } else {
                 showToast('❌ Sync Failed. Check login/connection.', 'error');
             }

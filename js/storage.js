@@ -187,22 +187,28 @@ const Storage = {
             await this.logScan(id, 'profile_created', 'Dashboard');
         } catch (e) { /* ignore */ }
 
-        return { id, cloudSaved };
+        return { id, cloudSynced };
     },
 
     // ────── GET ALL PATIENTS ──────
     getAllPatients: async function () {
         let cloudPatients = [];
+        let dbAvailable = false;
 
         if (this.db()) {
             try {
                 const userId = await this._getUserId();
                 let query = this.db().from('patients').select('*');
+                // Admin sees all (or filtered by user_id if they want, but typically all)
+                // For now, if logged in, show user-specific
                 if (userId) {
                     query = query.eq('user_id', userId);
                 }
+                
                 const { data, error } = await query.order('created_at', { ascending: false });
                 if (error) throw error;
+                
+                dbAvailable = true;
                 if (data && data.length > 0) {
                     cloudPatients = data.map(r => this.mapFromDB(r));
                     this._cache = cloudPatients;
@@ -214,20 +220,32 @@ const Storage = {
         }
 
         const localPatients = this.getAllPatientsLocal();
+        const merged = [];
 
-        // Merge: cloud is source of truth
-        const merged = cloudPatients.map(p => ({ ...p, cloudSynced: true }));
-        
+        // 1. Add all cloud patients to merged list
+        cloudPatients.forEach(cp => {
+            merged.push({ ...cp, cloudSynced: true });
+        });
+
+        // 2. Add local patients that aren't in cloud yet
         localPatients.forEach(lp => {
-            const index = merged.findIndex(cp => cp.patientId === lp.patientId);
-            if (index === -1) {
-                // This patient exists only locally
-                merged.push({ ...lp, cloudSynced: false });
+            const existsInCloud = merged.find(cp => cp.patientId === lp.patientId);
+            if (!existsInCloud) {
+                // If we attempted a cloud fetch and didn't find this, mark as not synced
+                // BUT if db was unavailable, we keep the previous local sync status if it was true
+                let status = false;
+                if (!dbAvailable && lp.cloudSynced) status = true; 
+                merged.push({ ...lp, cloudSynced: status });
             } else {
-                // Exists in both - ensure cloudSynced is set to true for the combined record
-                merged[index].cloudSynced = true;
+                // Already in merged (from cloud), but we might want to update local storage
+                // with latest cloud data if they match
             }
         });
+
+        // ─── CRITICAL: Persist merged state back to local storage ───
+        // This ensures the "cloudSynced" status is remembered between tab refreshes
+        localStorage.setItem(this.SAVE_KEY, JSON.stringify(merged));
+        console.log('[Storage] Merged state persisted to localStorage. Total:', merged.length);
 
         return merged;
     },
