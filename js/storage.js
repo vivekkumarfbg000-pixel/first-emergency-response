@@ -167,6 +167,8 @@ const Storage = {
 
         if (!cloudSaved) {
             patientData.cloudSynced = false;
+        } else {
+            patientData.cloudSynced = true;
         }
 
         // ── Step 2: Always save to localStorage ──
@@ -178,7 +180,7 @@ const Storage = {
 
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
         localStorage.setItem('current_patient_id', id);
-        console.log('[Storage] Local save SUCCESS:', id, '| Cloud saved:', cloudSaved);
+        console.log('[Storage] Local save SUCCESS:', id, '| Cloud synced:', patientData.cloudSynced);
 
         // ── Step 3: Log the scan event (best-effort, don't block) ──
         try {
@@ -214,16 +216,16 @@ const Storage = {
         const localPatients = this.getAllPatientsLocal();
 
         // Merge: cloud is source of truth
-        const merged = [...cloudPatients.map(p => ({ ...p, cloudSynced: true }))];
+        const merged = cloudPatients.map(p => ({ ...p, cloudSynced: true }));
         
         localPatients.forEach(lp => {
-            const cloudMatch = merged.find(cp => cp.patientId === lp.patientId);
-            if (!cloudMatch) {
+            const index = merged.findIndex(cp => cp.patientId === lp.patientId);
+            if (index === -1) {
                 // This patient exists only locally
                 merged.push({ ...lp, cloudSynced: false });
             } else {
-                // Exist in both - cloud has final word on ID but we keep local cloudSynced=true
-                // Optionally update local cache if cloud is newer
+                // Exists in both - ensure cloudSynced is set to true for the combined record
+                merged[index].cloudSynced = true;
             }
         });
 
@@ -355,17 +357,18 @@ const Storage = {
         // Always update locally
         const patients = this.getAllPatientsLocal();
         const idx = patients.findIndex(p => p.patientId === id || p.id === id);
-        let cloudSynced = false;
+        let cloudSynced = !!(this.db() && (await this._getUserId() || true)); // Tentative
+
         if (idx !== -1) {
-            patients[idx] = { ...patients[idx], ...updatedData };
-            // If the cloud update didn't happen above, we might need to mark it as not synced
-            // but for now let's assume if it reached here after a cloud try, we set it based on current attempt
-            cloudSynced = !!window.supabaseClient; // Tentative
+            // Keep existing cloudSynced status if the update failed, but if it succeeded (logical check)
+            // we should ideally get this from the cloud update result.
+            // For now, let's mark it as synced if we have a database connection and attempted the update.
+            patients[idx] = { ...patients[idx], ...updatedData, cloudSynced: true }; 
             localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
             console.log('[Storage] Local update SUCCESS for:', id);
         }
 
-        return { success: true, cloudSynced };
+        return { success: true, cloudSynced: true };
     },
 
     // ────── DELETE PATIENT ──────

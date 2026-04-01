@@ -325,30 +325,45 @@
       font-weight: 700;
     }
 
-    /* ─── Summary Cards ─── */
+    /* ─── Modern Medical Cards (Dashboard - White Theme) ─── */
     .summary-card {
-      padding: 1.25rem;
-      margin-bottom: 1rem;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 16px !important;
+      padding: 1.25rem !important;
+      margin-bottom: 0.75rem !important;
+      transition: var(--transition);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
     }
 
-    .summary-card-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.875rem;
+    .summary-card:hover {
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04) !important;
+      transform: translateY(-2px);
     }
 
-    .summary-card-header i { width: 15px; }
+    .card-head-pink { color: #f43f5e; }
+    .card-head-blue { color: #3b82f6; }
+    .card-head-orange { color: #f59e0b; }
+    .card-head-teal { color: #14b8a6; }
 
     .summary-card-header h3 {
-      font-size: 0.8125rem;
-      font-weight: 700;
+      font-size: 0.75rem !important;
+      font-weight: 800 !important;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .summary-value {
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: var(--text-secondary);
+      font-size: 0.875rem !important;
+      color: #1e293b !important;
+      font-weight: 600;
+    }
+
+    .summary-value.bold-red {
+      color: #ef4444 !important;
+      font-weight: 900 !important;
+      font-size: 1rem !important;
     }
 
     /* ─── QR Section ─── */
@@ -827,18 +842,27 @@
               </div>
             </div>
 
+            <!-- Health Summary Section -->
+            <div class="glass-card summary-card" style="background: #f8fafc !important; border-top: 4px solid #3b82f6 !important; border-radius: 16px !important;">
+                <div class="summary-card-header" style="color:#475569;">
+                    <i data-lucide="shield-plus"></i>
+                    <h3>Health Report Summary</h3>
+                </div>
+                <div class="summary-value" id="sum-health-report" style="font-style: italic; color: #1e293b !important; font-weight: 500 !important;">--</div>
+            </div>
+
             <!-- Medical Summaries -->
             <div class="grid-2">
               <div class="glass-card summary-card">
-                <div class="summary-card-header">
-                  <i data-lucide="activity" style="color:var(--primary);"></i>
+                <div class="summary-card-header card-head-pink">
+                  <i data-lucide="activity"></i>
                   <h3>Medical Conditions</h3>
                 </div>
                 <div class="summary-value" id="sum-conditions">--</div>
               </div>
               <div class="glass-card summary-card">
-                <div class="summary-card-header">
-                  <i data-lucide="pill" style="color:var(--secondary);"></i>
+                <div class="summary-card-header card-head-blue">
+                  <i data-lucide="pill""></i>
                   <h3>Medications</h3>
                 </div>
                 <div class="summary-value" id="sum-medications">--</div>
@@ -846,19 +870,19 @@
             </div>
 
             <!-- Allergies Alert -->
-            <div class="glass-card summary-card" id="allergy-card" style="border-left:3px solid #f59e0b;">
-              <div class="summary-card-header">
-                <i data-lucide="alert-triangle" style="color:#f59e0b;"></i>
+            <div class="glass-card summary-card" id="allergy-card" style="border-color: #ef4444 !important; border-width: 2px !important;">
+              <div class="summary-card-header card-head-orange">
+                <i data-lucide="alert-triangle"></i>
                 <h3>Critical Allergies</h3>
               </div>
-              <div class="summary-value" id="sum-allergies" style="font-weight:700; font-size:1rem;">No reported allergies</div>
-              <div style="font-size:0.6875rem; color:var(--text-muted); margin-top:0.375rem;">Highlighted in RED on the Rescuer View</div>
+              <div class="summary-value bold-red" id="sum-allergies">No reported allergies</div>
+              <div style="font-size:0.625rem; color:#94a3b8; margin-top:0.5rem; font-weight:600;">Highlighted in RED on the Rescuer View</div>
             </div>
 
             <!-- Notes -->
             <div class="glass-card summary-card" id="notes-card" style="display:none;">
-              <div class="summary-card-header">
-                <i data-lucide="file-text" style="color:var(--cyan);"></i>
+              <div class="summary-card-header card-head-teal">
+                <i data-lucide="clipboard-list"></i>
                 <h3>Responder Notes</h3>
               </div>
               <div class="summary-value" id="sum-notes">--</div>

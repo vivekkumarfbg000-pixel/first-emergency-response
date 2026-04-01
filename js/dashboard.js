@@ -126,27 +126,47 @@
         txt('sum-conditions', p.conditions || 'None reported');
         txt('sum-medications', p.medications || 'No ongoing medications');
 
+        // Health Report Summary
+        const healthReport = `Patient ${p.fullName} has ${p.bloodGroup} blood group. ` + 
+                           (p.conditions ? `Reported conditions: ${p.conditions}. ` : 'No chronic conditions reported. ') +
+                           (p.allergies ? `CRITICAL: Known allergies to ${p.allergies}.` : 'No known allergies.');
+        txt('sum-health-report', healthReport);
+
         // Allergies
         const allergyText = p.allergies || 'No reported allergies';
         txt('sum-allergies', allergyText);
         const allergyCard = $('allergy-card');
+        const allergyVal = $('sum-allergies');
+
         if (p.allergies && p.allergies.toLowerCase() !== 'none' && p.allergies.trim() !== '') {
-            $('sum-allergies').style.color = '#ef4444';
-            allergyCard.style.borderLeftColor = '#ef4444';
-            allergyCard.style.animation = 'borderPulse 2s ease infinite';
+            if (allergyVal) {
+                allergyVal.classList.add('bold-red');
+                allergyVal.style.color = '#f43f5e';
+            }
+            if (allergyCard) {
+                allergyCard.style.borderColor = '#ef4444';
+                allergyCard.style.animation = 'borderPulse 2s ease infinite';
+            }
         } else {
-            $('sum-allergies').style.color = '#f59e0b';
-            allergyCard.style.borderLeftColor = '#f59e0b';
-            allergyCard.style.animation = 'none';
+            if (allergyVal) {
+                allergyVal.classList.remove('bold-red');
+                allergyVal.style.color = '#e2e8f0';
+            }
+            if (allergyCard) {
+                allergyCard.style.borderColor = 'rgba(255,255,255,0.08)';
+                allergyCard.style.animation = 'none';
+            }
         }
 
         // Medical Notes
         const notesCard = $('notes-card');
         if (p.medicalNotes && p.medicalNotes.trim()) {
-            notesCard.style.display = 'block';
-            txt('sum-notes', p.medicalNotes);
+            if (notesCard) {
+                notesCard.style.display = 'block';
+                txt('sum-notes', p.medicalNotes);
+            }
         } else {
-            notesCard.style.display = 'none';
+            if (notesCard) notesCard.style.display = 'none';
         }
 
         // Sidebar badge & Switcher & QR
