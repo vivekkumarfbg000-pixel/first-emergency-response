@@ -3,298 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚕ EMERGENCY PROFILE | EMS Response</title>
+    <title>⚕ EMERGENCY PROFILE | Sehat Point</title>
     <meta name="description" content="Emergency medical profile — critical health data for first responders.">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
+        :root {
+            --card-bg: #ffffff;
+            --header-red: #e11d48;
+            --blood-bg: #fff1f2;
+            --blood-text: #991b1b;
+            --allergy-bg: #fff7ed;
+            --allergy-text: #9a3412;
+            --condition-bg: #fefce8;
+            --condition-text: #854d0e;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
         body {
-            background: #000;
-            color: white;
-            padding-bottom: 100px;
-        }
-
-        /* ─── Pulsing Emergency Header ─── */
-        .emergency-header {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            padding: 2.5rem 1.5rem 2rem;
-            text-align: center;
-            border-bottom-left-radius: 32px;
-            border-bottom-right-radius: 32px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 20px 50px rgba(220, 38, 38, 0.35);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .emergency-header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 110%, rgba(255,255,255,0.1) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .em-label {
-            text-transform: uppercase;
-            font-weight: 800;
-            letter-spacing: 0.15em;
-            font-size: 0.6875rem;
-            opacity: 0.9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .em-label .pulse-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: white;
-            animation: pulse 1.5s ease infinite;
-        }
-
-        .blood-giant {
-            font-size: 5rem;
-            font-weight: 900;
-            line-height: 1;
-            margin: 0.75rem 0 0.5rem;
-            letter-spacing: -0.05em;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .em-name {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        .em-meta {
-            font-size: 0.8125rem;
-            opacity: 0.8;
-            margin-top: 0.375rem;
-        }
-
-        /* ─── Timer ─── */
-        .scan-timer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 99px;
-            display: inline-flex;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-        }
-
-        .scan-timer i { width: 14px; }
-
-        /* ─── Critical Alert ─── */
-        .allergy-alert {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            color: #92400e;
-            padding: 1.25rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1.25rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            animation: borderPulse 2s ease infinite;
-        }
-
-        .allergy-alert i { flex-shrink: 0; color: #d97706; width: 22px; height: 22px; margin-top: 2px; }
-
-        .allergy-alert .alert-title {
-            font-weight: 800;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 0.25rem;
-        }
-
-        .allergy-alert .alert-value {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #b45309;
-        }
-
-        /* ─── Call Buttons ─── */
-        .call-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .call-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 1.25rem;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: white;
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .call-btn i { width: 24px; height: 24px; }
-
-        .call-btn-family {
-            background: linear-gradient(135deg, #10b981, #059669);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-        }
-
-        .call-btn-family:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
-        }
-
-        .call-btn-emergency {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
-        }
-
-        .call-btn-emergency:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
-        }
-
-        .call-btn-secondary {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            font-size: 1rem;
-        }
-
-        /* ─── Info Cards ─── */
-        .info-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            margin-bottom: 0.875rem;
-        }
-
-        .info-label {
-            color: #64748b;
-            font-size: 0.6875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 0.375rem;
-        }
-
-        .info-value {
-            font-size: 1.125rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        /* ─── Responder Notes ─── */
-        .notes-card {
-            background: rgba(6, 182, 212, 0.06);
-            border: 1px solid rgba(6, 182, 212, 0.15);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            margin-bottom: 0.875rem;
-        }
-
-        .notes-card .info-label { color: #06b6d4; }
-
-        /* ─── Donor Badge ─── */
-        .donor-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.875rem;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            font-size: 0.9375rem;
-            color: #10b981;
-            margin-bottom: 0.875rem;
-        }
-
-        /* ─── Footer Actions ─── */
-        .footer-actions {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(6, 9, 16, 0.95);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .footer-actions .btn { flex: 1; justify-content: center; }
-
-        /* ─── Error State ─── */
-        .error-state {
+            background: url('assets/emergency_bg.png') no-repeat center center fixed;
+            background-size: cover;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            padding: 2rem;
+            padding: 1.5rem;
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: var(--text-dark);
         }
 
-        .error-state i { width: 64px; height: 64px; color: var(--primary); margin-bottom: 1.5rem; opacity: 0.5; }
-        .error-state h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-        .error-state p { color: var(--text-muted); margin-bottom: 2rem; }
-
-        @media print {
-            .footer-actions { display: none; }
-            .call-buttons { display: none; }
-            body { background: white; color: black; }
-            .emergency-header {
-                background: #dc2626 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .info-card { border: 1px solid #ddd; }
+        .profile-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-bg);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @media (max-width: 480px) {
-            .blood-giant { font-size: 4rem; }
-            .em-name { font-size: 1.625rem; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ─── Rescue Sync Banner ─── */
-        .geo-banner {
-            background: #1e293b;
-            border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+        /* ─── Header ─── */
+        .emergency-banner {
+            background: var(--header-red);
+            color: white;
             padding: 1rem 1.25rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            animation: slide-down 0.5s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        @keyframes slide-down {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
+        .banner-left {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 800;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .lang-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.35rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .lang-toggle span.active { color: white; }
+        .lang-toggle span { opacity: 0.7; cursor: pointer; }
+
+        /* ─── Content ─── */
+        .profile-content {
+            padding: 1.5rem;
+        }
+
+        .patient-header {
+            margin-bottom: 1.25rem;
+        }
+
+        .patient-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.35rem;
+        }
+
+        .last-updated {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: #f1f5f9;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* ─── Vital Rows ─── */
+        .vital-box {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .vital-box i { width: 20px; height: 20px; opacity: 0.9; }
+
+        .vital-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: block;
+            margin-bottom: 0.1rem;
+        }
+
+        .vital-value {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .box-blood { background: var(--blood-bg); color: var(--blood-text); }
+        .box-allergy { background: var(--allergy-bg); color: var(--allergy-text); }
+        .box-condition { background: var(--condition-bg); color: var(--condition-text); }
+
+        .high-risk-tag {
+            background: #f97316;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        /* ─── Contact ─── */
+        .contact-box {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .contact-icon {
+            width: 36px; height: 36px;
+            background: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #10b981;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .contact-info b { font-size: 0.85rem; display: block; }
+        .contact-info span { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+
+        /* ─── Buttons ─── */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-btn {
+            padding: 0.85rem;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-family { background: #22c55e; }
+        .btn-ambulance { background: var(--header-red); }
+        .btn-clinic { 
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            grid-column: span 2;
+            margin-top: 0.25rem;
+        }
+
+        /* ─── QR Section ─── */
+        .qr-footer {
+            background: #f1f5f9;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .qr-card-wrap {
+            background: white;
+            padding: 1rem;
+            border-radius: 16px;
+            display: inline-block;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .qr-instruction {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .lock-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 1rem;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        /* ─── SEO/Header ─── */
+        .sehat-point-logo {
+            text-align: center;
+            padding: 1rem 0 0.5rem;
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+        .sehat-point-logo span { color: var(--header-red); }
+
+        @media screen and (max-height: 800px) {
+            body { padding: 1rem; }
+            .profile-container { border-radius: 20px; }
+            .profile-content { padding: 1.25rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Content populated by JavaScript -->
     <div id="app-root"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -303,267 +274,129 @@
     <script src="js/storage.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            // Helper for Lucide icons (safe for offline)
-            const safeIcon = () => { if (typeof lucide !== 'undefined') lucide.createIcons(); };
-            safeIcon();
-
             const params = new URLSearchParams(window.location.search);
             let patient = null;
-            let source = 'unknown';
 
-            // 1. Decode from 'data' param FIRST (Works OFFLINE)
+            // Decode data (Offline First)
             const encodedData = params.get('data');
             if (encodedData) {
                 try {
                     patient = window.Storage.decodeFromURL(encodedData);
-                    if (patient) source = 'offline_qr';
-                } catch (e) { console.error('[Emergency] Offline decode failed:', e); }
-            }
-            
-            // ─── GEOLOCATION CAPTURE ───
-            let lat = null, long = null;
-            if (navigator.geolocation && (params.get('id') || encodedData)) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        lat = pos.coords.latitude;
-                        long = pos.coords.longitude;
-                        if (patient) {
-                            window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Shared Location', lat, long);
-                        }
-                    },
-                    (err) => console.warn('[Emergency] Geolocation denied:', err.message),
-                    { timeout: 5000 }
-                );
+                } catch (e) { console.error('Decode failed', e); }
             }
 
-            // 2. Fallback to cloud lookup ONLY if no patient decoded
+            // Cloud Fetch if needed
             const id = params.get('id');
             if (!patient && id) {
-                document.getElementById('app-root').innerHTML = `
-                    <div class="error-state">
-                        <h1>Fetching Medical Profile...</h1>
-                        <p>Accessing secure cloud records</p>
-                    </div>
-                `;
-
                 try {
-                    if (window.supabaseClient) {
-                        const queryField = id.length > 20 ? 'id' : 'patient_id';
-                        const { data: row, error } = await window.supabaseClient
-                            .from('patients').select('*').eq(queryField, id).single();
-                        if (!error && row) {
-                            patient = window.Storage.mapFromDB(row);
-                            source = 'cloud';
-                        }
-                    }
-                } catch (err) { console.warn('Cloud lookup failed:', err); }
+                    const { data: row } = await window.supabaseClient.from('patients').select('*').eq('patient_id', id).single();
+                    if (row) patient = window.Storage.mapFromDB(row);
+                } catch (e) {}
             }
 
-            // 3. Error state if both failed
             if (!patient) {
-                document.getElementById('app-root').innerHTML = `
-                    <div class="error-state">
-                        <i data-lucide="shield-off"></i>
-                        <h1>Profile Not Found</h1>
-                        <p>This QR code may be invalid or the profile could not be fetched.</p>
-                        <a href="index.html" class="btn btn-primary">Go to Homepage</a>
-                    </div>
-                `;
-                safeIcon();
+                document.getElementById('app-root').innerHTML = "<h1>Profile Not Found</h1>";
                 return;
             }
 
-            // ─── Log the scan (Initial) ───
-            setTimeout(() => {
-                if (!lat && !long) {
-                    window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Pending Consent');
-                }
-            }, 2000);
-
-            // ─── Render the emergency view ───
-            const hasAllergies = patient.allergies && patient.allergies.toLowerCase() !== 'none' && patient.allergies.trim();
-            const hasNotes = patient.medicalNotes && patient.medicalNotes.trim();
-            const hasDonor = patient.organDonor;
-            const hasContact2 = patient.contact2_Name && patient.contact2_Phone;
+            const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
             document.getElementById('app-root').innerHTML = `
-                <!-- RESCUE SYNC BANNER -->
-                <div id="geo-banner" class="geo-banner">
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
-                        <i data-lucide="map-pin" class="animate-pulse-green"></i>
-                        <div style="flex:1;">
-                            <div style="font-weight:700; font-size:0.875rem;">Sync Rescue Location?</div>
-                            <div style="font-size:0.75rem; color:rgba(255,255,255,0.7);">Helps first responders find this patient faster.</div>
+                <div class="profile-container">
+                    <div class="sehat-point-logo">SEHAT <span>POINT</span></div>
+                    
+                    <div class="emergency-banner">
+                        <div class="banner-left">
+                            <i data-lucide="truck"></i>
+                            EMERGENCY – PLEASE HELP
                         </div>
-                        <button id="btnSyncLoc" class="btn btn-primary btn-sm" style="background:#10b981; border:none;">Sync Location</button>
-                    </div>
-                </div>
-
-                <!-- EMERGENCY HEADER -->
-                <div class="emergency-header">
-                    <div class="em-label">
-                        <span class="pulse-dot animate-pulse-red"></span>
-                        Medical Emergency Profile
-                    </div>
-                    ${source === 'offline_qr' ? `<div style="font-size:0.6rem; margin-top:0.4rem; color:rgba(255,255,255,0.7); font-weight:800; text-transform:uppercase;">Decoded from QR (Verified Offline)</div>` : ''}
-                    <div class="blood-giant">${patient.bloodGroup}</div>
-                    <div class="em-name">${patient.fullName}</div>
-                    <div class="em-meta">${patient.age}Y • ${patient.gender} • ID: ${patient.patientId}</div>
-                    <div class="scan-timer">
-                        <i data-lucide="clock"></i>
-                        <span>Opened: <span id="scanTimer">0:00</span></span>
-                    </div>
-                </div>
-
-                <div class="container animate-slide">
-                    <!-- ALLERGY ALERT -->
-                    ${hasAllergies ? `
-                    <div class="allergy-alert">
-                        <i data-lucide="alert-triangle"></i>
-                        <div>
-                            <div class="alert-title">⚠️ Critical Allergy Warning</div>
-                            <div class="alert-value">${patient.allergies}</div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <!-- CALL BUTTONS -->
-                    <div class="call-buttons">
-                        <a href="tel:${patient.contact1_Phone}" class="call-btn call-btn-family">
-                            <i data-lucide="phone-call"></i>
-                            CALL ${patient.contact1_Name.toUpperCase()}
-                            ${patient.contact1_Relation ? `(${patient.contact1_Relation})` : ''}
-                        </a>
-
-                        ${hasContact2 ? `
-                        <a href="tel:${patient.contact2_Phone}" class="call-btn call-btn-secondary">
-                            <i data-lucide="phone"></i>
-                            Call ${patient.contact2_Name} ${patient.contact2_Relation ? `(${patient.contact2_Relation})` : ''}
-                        </a>
-                        ` : ''}
-
-                        <a href="tel:112" class="call-btn call-btn-emergency">
-                            <i data-lucide="siren"></i>
-                            CALL 112 — EMERGENCY
-                        </a>
-                    </div>
-
-                    <!-- CONTACT INFO -->
-                    <div class="info-card">
-                        <div class="info-label">Primary Emergency Contact</div>
-                        <div class="info-value">${patient.contact1_Name} ${patient.contact1_Relation ? `(${patient.contact1_Relation})` : ''}</div>
-                        <div style="font-size:0.875rem; color:var(--text-secondary); margin-top:0.25rem;">${patient.contact1_Phone}</div>
-                    </div>
-
-                    <!-- VITAL INFO GRID -->
-                    <div class="grid-2">
-                        <div class="info-card">
-                            <div class="info-label">Age</div>
-                            <div class="info-value">${patient.age} years</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-label">Gender</div>
-                            <div class="info-value">${patient.gender}</div>
+                        <div class="lang-toggle">
+                            <span class="active">EN</span> | <span>हिंदी</span>
                         </div>
                     </div>
 
-                    <!-- CONDITIONS -->
-                    <div class="info-card">
-                        <div class="info-label">Chronic Conditions</div>
-                        <div class="info-value">${patient.conditions || 'None reported'}</div>
+                    <div class="profile-content">
+                        <div class="patient-header">
+                            <div class="patient-name">${patient.fullName}</div>
+                            <div class="last-updated">
+                                <i data-lucide="clock"></i>
+                                LAST UPDATED: ${today}
+                            </div>
+                        </div>
+
+                        <div class="vital-box box-blood">
+                            <i data-lucide="droplet"></i>
+                            <div>
+                                <span class="vital-label">BLOOD GROUP:</span>
+                                <span class="vital-value">${patient.bloodGroup}</span>
+                            </div>
+                        </div>
+
+                        <div class="vital-box box-allergy">
+                            <i data-lucide="alert-triangle"></i>
+                            <div>
+                                <span class="vital-label">ALLERGY:</span>
+                                <span class="vital-value">${patient.allergies || 'NONE'}</span>
+                            </div>
+                        </div>
+
+                        <div class="vital-box box-condition">
+                            <i data-lucide="heart"></i>
+                            <div>
+                                <span class="vital-label">CONDITION:</span>
+                                <span class="vital-value">${patient.conditions || 'STABLE'}</span>
+                            </div>
+                            ${patient.conditions?.toLowerCase().includes('high bp') || patient.conditions?.toLowerCase().includes('diabetes') ? 
+                                `<div class="high-risk-tag"><i data-lucide="alert-circle"></i> HIGH RISK PATIENT</div>` : ''}
+                        </div>
+
+                        <div class="contact-box">
+                            <div class="contact-icon"><i data-lucide="phone"></i></div>
+                            <div class="contact-info">
+                                <b>EMERGENCY CONTACT: ${patient.contact1_Name}</b>
+                                <span>${patient.contact1_Phone}</span>
+                            </div>
+                        </div>
+
+                        <div class="action-grid">
+                            <a href="tel:${patient.contact1_Phone}" class="action-btn btn-family">
+                                <i data-lucide="phone"></i> CALL FAMILY
+                            </a>
+                            <a href="tel:112" class="action-btn btn-ambulance">
+                                <i data-lucide="truck"></i> CALL AMBULANCE
+                            </a>
+                            <a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" class="action-btn btn-clinic">
+                                <i data-lucide="hospital"></i> VISIT NEAREST CLINIC
+                            </a>
+                        </div>
+
+                        <div class="lock-link">
+                            <i data-lucide="lock"></i>
+                            View Full Medical Record (OTP Required)
+                        </div>
                     </div>
 
-                    <!-- MEDICATIONS -->
-                    <div class="info-card">
-                        <div class="info-label">Current Medications</div>
-                        <div class="info-value">${patient.medications || 'No regular medications'}</div>
+                    <div class="qr-footer">
+                        <div class="qr-card-wrap">
+                            <canvas id="qr-canvas"></canvas>
+                        </div>
+                        <div class="qr-instruction">Scan QR to access full medical record</div>
                     </div>
-
-                    <!-- RESPONDER NOTES -->
-                    ${hasNotes ? `
-                    <div class="notes-card">
-                        <div class="info-label">📋 Responder Notes</div>
-                        <div class="info-value">${patient.medicalNotes}</div>
-                    </div>
-                    ` : ''}
-
-                    <!-- ORGAN DONOR -->
-                    ${hasDonor ? `
-                    <div class="donor-badge">
-                        🫀 Registered Organ Donor
-                    </div>
-                    ` : ''}
-                </div>
-
-                <!-- FOOTER -->
-                <div class="footer-actions">
-                    <button id="btnShare" class="btn btn-outline">
-                        <i data-lucide="share-2"></i> Share
-                    </button>
-                    <button id="btnLocation" class="btn btn-outline">
-                        <i data-lucide="map-pin"></i> Location
-                    </button>
-                    <button onclick="window.print()" class="btn btn-ghost">
-                        <i data-lucide="printer"></i>
-                    </button>
                 </div>
             `;
 
-            safeIcon();
+            lucide.createIcons();
 
-            // ─── Scan Timer ───
-            const startTime = Date.now();
-            setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const mins = Math.floor(elapsed / 60);
-                const secs = elapsed % 60;
-                const timerEl = document.getElementById('scanTimer');
-                if (timerEl) timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-            }, 1000);
-
-            // ─── Share Button ───
-            const shareBtn = document.getElementById('btnShare');
-            if (shareBtn) {
-                shareBtn.addEventListener('click', () => {
-                    if (navigator.share) {
-                        navigator.share({
-                            title: `Emergency Profile: ${patient.fullName}`,
-                            text: `Blood: ${patient.bloodGroup} | Allergies: ${patient.allergies || 'None'} | Contact: ${patient.contact1_Phone}`,
-                            url: window.location.href
-                        });
-                    } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        shareBtn.innerHTML = '<i data-lucide="check"></i> Link Copied!';
-                        shareBtn.style.color = '#10b981';
-                        safeIcon();
-                    }
-                });
-            }
-
-            // ─── Location Sync Button ───
-            const syncBtn = document.getElementById('btnSyncLoc');
-            if (syncBtn) {
-                syncBtn.addEventListener('click', () => {
-                    syncBtn.innerHTML = '<i class="animate-spin-slow"></i> Syncing...';
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            (pos) => {
-                                lat = pos.coords.latitude;
-                                long = pos.coords.longitude;
-                                window.Storage.logScan(patient.patientId, 'qr_scan', 'Mobile Browser', 'Explicit Consent', lat, long);
-                                document.getElementById('geo-banner').style.display = 'none';
-                                showToast('📍 Location Synced with Admin', 'success');
-                            },
-                            () => {
-                                document.getElementById('geo-banner').innerHTML = '<div style="font-size:0.75rem; color:#ef4444; text-align:center;">⚠️ Location permission blocked. Position unavailable.</div>';
-                                setTimeout(() => document.getElementById('geo-banner').style.display = 'none', 3000);
-                            }
-                        );
-                    }
-                });
-            }
-
-            // ─── Location Center Button (Footer) ───
+            // Generate QR
+            const canvas = document.getElementById('qr-canvas');
+            QRCode.toCanvas(canvas, window.location.href, {
+                width: 140,
+                margin: 0,
+                color: {
+                    dark: '#0f172a',
+                    light: '#ffffff'
+                }
+            });
         });
     </script>
 </body>

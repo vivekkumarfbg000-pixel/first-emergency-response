@@ -105,6 +105,16 @@
         txt('id-blood', p.bloodGroup);
         txt('id-phone', p.contact1_Phone);
         txt('id-avatar', p.fullName.charAt(0).toUpperCase());
+        
+        // Sync Status Indicator
+        const syncBadge = $('id-sync-badge');
+        if (syncBadge) {
+            if (p.cloudSynced) {
+                syncBadge.innerHTML = '<i data-lucide="cloud-check" style="width:14px; color:#22c55e;"></i> <span style="color:#22c55e;">Cloud Synced</span>';
+            } else {
+                syncBadge.innerHTML = '<i data-lucide="cloud-off" style="width:14px; color:#ef4444;"></i> <span style="color:#ef4444;">Local Only (Not Synced)</span>';
+            }
+        }
 
         // Organ Donor
         const donorWrap = $('id-donor-wrap');
@@ -497,6 +507,27 @@
         }
     }
 
+    async function syncPatient(id) {
+        const p = await window.Storage.getPatientById(id);
+        if (!p) return;
+        
+        showToast(`Attempting to sync ${p.fullName}...`, 'info');
+        try {
+            // Re-saving a patient without current ID will attempt cloud insert
+            const result = await window.Storage.savePatient(p);
+            if (result.cloudSaved) {
+                showToast('✅ Cloud Sync Successful', 'success');
+                await renderAll();
+                if ($('tab-patients').style.display !== 'none') await renderPatientsList();
+            } else {
+                showToast('❌ Sync Failed. Check login/connection.', 'error');
+            }
+        } catch (err) {
+            showToast('Sync Error: ' + err.message, 'error');
+        }
+    }
+    window.syncPatient = syncPatient;
+
     // ─── Edit Modal ───
     function openEditModal() {
         const p = currentPatient;
@@ -656,11 +687,18 @@
                             <td>${p.age}Y / ${p.gender}</td>
                             <td>${hasAllergies ? `<span class="badge badge-yellow">⚠ Yes</span>` : '<span style="color:var(--text-muted);">None</span>'}</td>
                             <td><span class="badge badge-green">${completion}% Complete</span></td>
-                            <td>
-                                <button class="btn btn-ghost btn-sm" onclick="switchTo('${p.patientId}')">
-                                    <i data-lucide="eye" style="width:14px;"></i>
-                                    View
-                                </button>
+                             <td>
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <button class="btn btn-ghost btn-sm" onclick="switchTo('${p.patientId}')">
+                                        <i data-lucide="eye" style="width:14px;"></i>
+                                        View
+                                    </button>
+                                    ${!p.cloudSynced ? `
+                                    <button class="btn btn-ghost btn-sm" onclick="syncPatient('${p.patientId}')" title="Sync to Cloud">
+                                        <i data-lucide="refresh-cw" style="width:14px; color:#ef4444;"></i>
+                                    </button>
+                                    ` : ''}
+                                </div>
                             </td>
                         </tr>`;
                     }).join('')}

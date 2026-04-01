@@ -182,17 +182,23 @@
             lucide.createIcons();
 
             try {
-                const newId = await window.Storage.savePatient(patientData);
-                if (newId) {
+                const result = await window.Storage.savePatient(patientData);
+                if (result && result.id) {
+                    if (result.cloudSaved) {
+                        showMiniToast('✅ Profile Secured & Synced with Global Dashboard!');
+                    } else {
+                        showMiniToast('⚠️ Saved Locally (Sync Pending)');
+                    }
+                    
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
-                    }, 1000);
+                    }, 1500);
                 }
             } catch (err) {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 btn.innerHTML = '<i data-lucide="shield-check"></i> Try Again';
-                showMiniToast('Failed to save to cloud. Please try again.');
+                showMiniToast('❌ Critical Error: ' + err.message);
                 lucide.createIcons();
             }
         }

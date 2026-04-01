@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Dashboard | EMS Response</title>
+  <title>Dashboard | Sehat Point</title>
   <meta name="description" content="Manage emergency medical profiles, generate QR codes, and monitor scan activity.">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
@@ -219,13 +219,15 @@
 
     /* ─── Medical ID Card ─── */
     .id-card {
-      background: linear-gradient(135deg, #131a2e 0%, #0a0e18 100%);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.05);
       border-radius: var(--radius-xl);
       padding: 1.75rem;
       position: relative;
       overflow: hidden;
       margin-bottom: 1.25rem;
+      color: #0f172a;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
     }
 
     .id-card::before {
@@ -233,9 +235,15 @@
       position: absolute;
       top: -40px; right: -40px;
       width: 180px; height: 180px;
-      background: radial-gradient(circle, rgba(255,59,59,0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(225,29,72,0.08) 0%, transparent 70%);
       pointer-events: none;
     }
+    
+    .id-card label { color: #64748b !important; }
+    .id-name { color: #0f172a !important; }
+    .id-meta { color: #64748b !important; }
+    .id-detail-value { color: #0f172a !important; }
+    .id-card-badge { color: #e11d48 !important; }
 
     .id-card-top {
       display: flex;
@@ -665,7 +673,7 @@
         <div class="logo-icon">
           <i data-lucide="shield-plus" style="width: 16px; color: white;"></i>
         </div>
-        <span>EMS RESPONSE</span>
+        <span>SEHAT POINT</span>
       </a>
 
       <nav class="nav-links">
@@ -798,6 +806,7 @@
                   <div class="id-name" id="id-name">Patient Name</div>
                   <div class="id-meta" id="id-meta">ID • Age/Gender</div>
                 </div>
+                <div id="id-sync-badge" style="margin-left:auto; font-size:0.65rem; display:flex; align-items:center; gap:0.25rem;"></div>
               </div>
               <div class="id-details">
                 <div class="id-detail">

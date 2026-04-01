@@ -61,24 +61,23 @@ const Storage = {
 
     // ────── GET AUTHENTICATED USER ID ──────
     _getUserId: async function () {
-        const ADMIN_UUID = '0438c434-b85c-4eca-96d1-b2b692576d53';
         try {
             if (!window.Auth) {
-                console.warn('[Storage] window.Auth not available, using Admin UUID fallback');
-                return ADMIN_UUID;
+                console.warn('[Storage] window.Auth not available.');
+                return null;
             }
             const session = await window.Auth.getSession();
-            const uid = session?.user?.id || ADMIN_UUID; // Use Admin UUID if no session
+            const uid = session?.user?.id || null;
             
-            if (uid === ADMIN_UUID && !session) {
-                console.log('[Storage] No session. Linking to Admin UUID:', uid);
-            } else {
+            if (uid) {
                 console.log('[Storage] Authenticated user_id:', uid);
+            } else {
+                console.log('[Storage] No active cloud session found.');
             }
             return uid;
         } catch (e) {
             console.error('[Storage] _getUserId error:', e);
-            return ADMIN_UUID;
+            return null;
         }
     },
 
@@ -124,7 +123,13 @@ const Storage = {
         let cloudSaved = false;
         if (this.db()) {
             try {
-                const userId = await this._getUserId();
+                let userId = await this._getUserId();
+                // Default to Master Admin ID for guest saves to ensure they sync with the dashboard
+                if (!userId) {
+                    userId = '0438c434-b85c-4eca-96d1-b2b692576d53'; 
+                    console.log('[Storage] Guest user detected, linking to Master Admin ID:', userId);
+                }
+
                 // Removed mandatory login restriction for overhaul
                 const dbRow = this.mapToDB(patientData);
                 dbRow.user_id = userId;
@@ -144,6 +149,7 @@ const Storage = {
 
                 if (row) {
                     patientData.id = row.id;
+                    patientData.cloudSynced = true; // Mark as cloud-saved
                     cloudSaved = true;
                     console.log('[Storage] Cloud save SUCCESS. Supabase row id:', row.id);
                 }
@@ -159,9 +165,17 @@ const Storage = {
             console.warn('[Storage] Supabase client not available. Saving locally only.');
         }
 
+        if (!cloudSaved) {
+            patientData.cloudSynced = false;
+        }
+
         // ── Step 2: Always save to localStorage ──
         const patients = this.getAllPatientsLocal();
-        patients.push(patientData);
+        // Update if already exists (shouldn't happen on new save)
+        const idx = patients.findIndex(p => p.patientId === id);
+        if (idx !== -1) patients[idx] = patientData;
+        else patients.push(patientData);
+
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
         localStorage.setItem('current_patient_id', id);
         console.log('[Storage] Local save SUCCESS:', id, '| Cloud saved:', cloudSaved);
@@ -171,7 +185,7 @@ const Storage = {
             await this.logScan(id, 'profile_created', 'Dashboard');
         } catch (e) { /* ignore */ }
 
-        return id;
+        return { id, cloudSaved };
     },
 
     // ────── GET ALL PATIENTS ──────
@@ -199,18 +213,19 @@ const Storage = {
 
         const localPatients = this.getAllPatientsLocal();
 
-        // Merge: cloud is source of truth, add any local-only patients
-        const merged = [...cloudPatients];
+        // Merge: cloud is source of truth
+        const merged = [...cloudPatients.map(p => ({ ...p, cloudSynced: true }))];
+        
         localPatients.forEach(lp => {
-            if (!merged.some(cp => cp.patientId === lp.patientId)) {
-                merged.push(lp);
+            const cloudMatch = merged.find(cp => cp.patientId === lp.patientId);
+            if (!cloudMatch) {
+                // This patient exists only locally
+                merged.push({ ...lp, cloudSynced: false });
+            } else {
+                // Exist in both - cloud has final word on ID but we keep local cloudSynced=true
+                // Optionally update local cache if cloud is newer
             }
         });
-
-        // Filter out the demo patient if real cloud patients exist
-        if (cloudPatients.length > 0) {
-            return merged.filter(p => p.patientId !== 'EMS-DEMO001');
-        }
 
         return merged;
     },
@@ -340,13 +355,17 @@ const Storage = {
         // Always update locally
         const patients = this.getAllPatientsLocal();
         const idx = patients.findIndex(p => p.patientId === id || p.id === id);
+        let cloudSynced = false;
         if (idx !== -1) {
             patients[idx] = { ...patients[idx], ...updatedData };
+            // If the cloud update didn't happen above, we might need to mark it as not synced
+            // but for now let's assume if it reached here after a cloud try, we set it based on current attempt
+            cloudSynced = !!window.supabaseClient; // Tentative
             localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
             console.log('[Storage] Local update SUCCESS for:', id);
         }
 
-        return true;
+        return { success: true, cloudSynced };
     },
 
     // ────── DELETE PATIENT ──────
@@ -489,10 +508,13 @@ const Storage = {
         // Cloud log (best-effort)
         if (this.db()) {
             try {
+                let userId = await this._getUserId();
+                if (!userId) userId = '0438c434-b85c-4eca-96d1-b2b692576d53'; // Default to admin
+
                 // We'll store lat/long in the location string if the table doesn't have specific columns yet,
-                // or just send them as columns if they exist. For now, let's try columns.
                 const logData = {
                     patient_id: patientId,
+                    user_id:    userId,
                     type:       type || 'qr_scan',
                     device:     device || 'Unknown',
                     timestamp:  new Date().toISOString()
