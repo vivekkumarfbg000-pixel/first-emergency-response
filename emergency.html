@@ -10,216 +10,247 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
         :root {
-            --profile-bg: #fffcf8; /* Light medical/beige tint */
-            --text-dark: #1e293b;
-            --text-muted: #64748b;
+            --medical-bg: #f8fafc;
+            --card-white: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
             
-            /* Card Colors from Image */
-            --bg-blood: #fff1f2;
-            --text-blood: #be123c;
-            
-            --bg-allergy: #fff7ed;
-            --text-allergy: #c2410c;
-            
-            --bg-condition: #fefce8;
-            --text-condition: #1e293b;
-            
-            --bg-contact: #f1f5f9;
-            --text-contact: #0f172a;
-            
-            --bg-summary: #f8fafc;
+            /* Professional Clinical Palette */
+            --cl-critical: #991b1b; /* Crimson Red */
+            --cl-warning: #92400e;  /* Amber */
+            --cl-info: #1e40af;     /* Royal Blue */
+            --cl-success: #065f46;  /* Emerald */
+            --cl-neutral: #334155;  /* Slate */
         }
 
         body {
-            background: #fdfdfd;
-            background-image: radial-gradient(circle at 50% 0%, #fff6e9 0%, transparent 50%);
+            background: var(--medical-bg);
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 1rem;
+            padding: 2rem 1.5rem;
             font-family: 'Inter', -apple-system, sans-serif;
-            color: var(--text-dark);
+            color: var(--text-main);
         }
 
-        .profile-container {
+        .report-container {
             width: 100%;
-            max-width: 440px;
-            background: #ffffff;
-            border-radius: 40px;
-            padding: 3rem 1.75rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 520px;
+            background: var(--card-white);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 3rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+            animation: fadeIn 0.4s ease;
+            position: relative;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ─── Header Section ─── */
+        /* ─── Paper Header ─── */
+        .report-header {
+            border-bottom: 2.5px solid #f1f5f9;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .report-no {
+            text-transform: uppercase;
+            font-size: 0.6875rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
         .patient-name {
             font-size: 2rem;
             font-weight: 800;
-            letter-spacing: -0.04em;
-            margin-bottom: 0.75rem;
-            color: #0f172a;
+            color: var(--text-main);
+            letter-spacing: -0.025em;
         }
 
-        .updated-badge {
-            display: inline-flex;
+        .updated-tag {
+            font-size: 0.625rem;
+            font-weight: 700;
+            padding: 0.4rem 0.75rem;
+            background: #f1f5f9;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* ─── Vitals Grid ─── */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .vital-box {
+            background: #fdfdfd;
+            border: 1px solid #f1f5f9;
+            border-left: 4px solid var(--cl-neutral);
+            padding: 1rem 0.75rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .vital-box b { font-size: 0.625rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
+        .vital-box span { font-size: 1.125rem; font-weight: 800; color: var(--text-main); }
+        .vital-box.blood { border-left-color: var(--cl-critical); }
+
+        /* ─── Clinical Boxy Cards ─── */
+        .clinical-card {
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            border-radius: 0 8px 8px 0;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            transition: 0.2s;
+        }
+
+        /* Meaningful Colors */
+        .card-red { border-left: 5px solid var(--cl-critical); }
+        .card-amber { border-left: 5px solid var(--cl-warning); }
+        .card-blue { border-left: 5px solid var(--cl-info); }
+        .card-green { border-left: 5px solid var(--cl-success); }
+        .card-slate { border-left: 5px solid var(--cl-neutral); }
+
+        .card-header {
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
-            background: #fefce8;
-            color: #854d0e;
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
             font-size: 0.75rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 2rem;
         }
 
-        /* ─── Horizontal Color Bars ─── */
-        .info-bar {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.25rem 1.75rem;
-            border-radius: 24px;
+        .card-header i { width: 16px; min-width: 16px; }
+
+        .card-data {
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* ─── Detailed Report Text ─── */
+        .detailed-report-section {
+            margin-top: 2rem;
+            border-top: 2px solid #f1f5f9;
+            padding-top: 1.5rem;
+        }
+
+        .report-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-muted);
             margin-bottom: 1rem;
-            font-weight: 700;
-            font-size: 1.0625rem;
-            border: 1px solid rgba(0,0,0,0.01);
-            transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: block;
         }
 
-        .info-bar:hover { transform: scale(1.01); }
-
-        .info-bar i {
-            width: 20px; height: 20px;
-            flex-shrink: 0;
-        }
-
-        .info-bar .label {
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 800;
-            font-size: 0.85rem;
-        }
-
-        .info-bar .value {
-            margin-left: 0.25rem;
-            font-weight: 800;
-        }
-
-        /* Specific Bar Styles */
-        .bar-blood { background: var(--bg-blood); color: var(--text-blood); }
-        .bar-allergy { background: var(--bg-allergy); color: var(--text-allergy); }
-        .bar-condition { 
-            background: var(--bg-condition); 
-            color: var(--text-condition);
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-        .bar-condition .main-row { display: flex; align-items: center; gap: 1rem; }
-
-        .high-risk-badge {
-            background: #f97316;
-            color: white;
-            font-size: 0.65rem;
-            font-weight: 900;
-            padding: 0.4rem 0.8rem;
+        .report-summary-text {
+            border: 1px dashed #e2e8f0;
+            padding: 1.5rem;
+            background: #fafafa;
             border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
+            font-size: 0.875rem;
+            line-height: 1.8;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .report-summary-text p { margin-bottom: 1rem; }
+        .report-summary-text p:last-child { margin-bottom: 0; }
+        .report-summary-text b { color: var(--text-main); font-weight: 700; }
+        .report-summary-text .diagnostic-label { 
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            background: #f1f5f9;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            margin-right: 0.5rem;
+        }
+
+        /* ─── High Risk Banner ─── */
+        .high-risk-alert {
+            background: var(--cl-critical);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-align: center;
             text-transform: uppercase;
-            margin-top: 0.25rem;
-            box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(153, 27, 27, 0.2);
         }
 
-        .bar-contact { 
-            background: var(--bg-contact); 
-            color: var(--text-contact);
-            padding: 1.25rem 1.5rem;
-        }
-        .bar-contact .contact-details {
-            display: flex;
-            flex-direction: column;
-            gap: 0.1rem;
-        }
-        .bar-contact .contact-details b { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-        .bar-contact .contact-details span { font-size: 1.125rem; font-weight: 800; }
-        .bar-contact i { color: #10b981; }
-
-        .bar-summary { 
-            background: var(--bg-summary); 
-            color: var(--text-dark);
-            align-items: flex-start;
-        }
-        .bar-summary .summary-content {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-        .bar-summary .summary-content b { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
-        .bar-summary i { color: #64748b; }
-
-        /* ─── Action Buttons Row ─── */
-        .btn-row {
+        /* ─── Clinical Action Grid ─── */
+        .action-container {
+            margin-top: 2.5rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+            gap: 1rem;
         }
 
-        .btn-medical {
+        .btn-report {
             padding: 1.125rem;
-            border-radius: 16px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
             font-weight: 800;
-            font-size: 0.875rem;
-            text-decoration: none;
-            color: white;
+            font-size: 0.8125rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            transition: 0.2s;
-        }
-
-        .btn-medical:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-
-        .btn-family { background: #22c55e; }
-        .btn-ambulance { background: #ef4444; }
-        .btn-clinic { 
-            grid-column: span 2; 
-            background: #3b82f6; 
-            margin-top: 0.5rem;
-        }
-
-        .footer-link {
-            display: block;
-            text-align: center;
-            margin-top: 2rem;
-            color: #64748b;
-            font-size: 0.85rem;
-            font-weight: 700;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .footer-link i { width: 14px; }
-        
-        @media (max-width: 400px) {
-            .btn-row { grid-template-columns: 1fr; }
-            .btn-clinic { grid-column: span 1; }
+
+        .btn-report:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+
+        .btn-call { background: var(--cl-success); }
+        .btn-ambulance { background: var(--cl-critical); }
+        .btn-maps { grid-column: span 2; background: var(--cl-info); margin-top: 0.25rem; }
+
+        .footer-clinical {
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .footer-clinical a { color: var(--cl-info); text-decoration: none; font-weight: 800; }
+
+        @media (max-width: 540px) {
+            body { padding: 1rem 0.75rem; }
+            .report-container { padding: 1.5rem; border-radius: 0; border: none; }
+            .vitals-grid { grid-template-columns: 1fr 1fr; }
+            .vitals-grid div:last-child { grid-column: span 2; }
+            .action-container { grid-template-columns: 1fr; }
+            .btn-maps { grid-column: span 1; }
         }
     </style>
 </head>
@@ -259,85 +290,105 @@
             }
 
             const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            // Age Calculation
+            const age = patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'N/A';
 
-            // Generate Health Summary
-            const healthSummary = `Patient ${patient.fullName} has ${patient.bloodGroup} blood group. ` + 
-                                (patient.conditions ? `Reported conditions: ${patient.conditions}. ` : 'No chronic conditions reported. ') +
-                                (patient.allergies ? `CRITICAL: Known allergies to ${patient.allergies}.` : 'No known allergies.');
+            // Detailed Diagnostic Summary Generation
+            const healthSummary = `
+                <p><b>Diagnostic Overview:</b> Patient <b>${patient.fullName}</b> presents with <b>${patient.bloodGroup}</b> blood group. ${patient.conditions ? `Clinical history indicates <b>${patient.conditions}</b>.` : 'No chronic clinical conditions reported.'}</p>
+                
+                <p><span class="diagnostic-label">CRITICAL ALERTS</span> 
+                ${patient.allergies ? `Known hypersensitivity (Allergy) to <b>${patient.allergies}</b>. Immediate precaution recommended.` : 'No known environmental or medicinal allergies reported.'}</p>
+                
+                <p><span class="diagnostic-label">RESPONDER NOTES</span> 
+                ${patient.medicalNotes || 'Patient profile is stable. No additional responder instructions provided.'}</p>
+            `;
 
             document.getElementById('app-root').innerHTML = `
-                <div class="profile-container">
-                    <div class="patient-header">
-                        <div class="patient-name">${patient.fullName}</div>
-                        <div class="updated-badge">
-                            <i data-lucide="calendar"></i>
-                            LAST UPDATED: ${today}
+                <div class="report-container">
+                    <div class="report-header">
+                        <div>
+                            <div class="report-no"><i data-lucide="clipboard-list"></i> MEDICAL ID: ${id?.slice(0,8).toUpperCase() || 'OFFLINE'}</div>
+                            <div class="patient-name">${patient.fullName}</div>
+                        </div>
+                        <div class="updated-tag">UPDATED: ${today}</div>
+                    </div>
+
+                    ${patient.conditions ? `
+                        <div class="high-risk-alert">
+                            <i data-lucide="alert-octagon"></i>
+                            CRITICAL: HIGH RISK PATIENT
+                        </div>
+                    ` : ''}
+
+                    <!-- Essential Vitals Grid -->
+                    <div class="vitals-grid">
+                        <div class="vital-box blood">
+                            <b>Blood Type</b>
+                            <span>${patient.bloodGroup}</span>
+                        </div>
+                        <div class="vital-box">
+                            <b>Age</b>
+                            <span>${age} yrs</span>
+                        </div>
+                        <div class="vital-box">
+                            <b>Gender</b>
+                            <span>${patient.gender || 'N/A'}</span>
                         </div>
                     </div>
 
-                    <!-- Blood Group Card -->
-                    <div class="info-bar bar-blood">
-                        <i data-lucide="droplet"></i>
-                        <span class="label">BLOOD GROUP:</span>
-                        <span class="value">${patient.bloodGroup}</span>
+                    <!-- Medical Condition Card -->
+                    <div class="clinical-card card-amber">
+                        <div class="card-header" style="color:var(--cl-warning)">
+                            <i data-lucide="activity"></i> Clinical Condition
+                        </div>
+                        <div class="card-data">${patient.conditions || 'STABLE / NO CHRONIC CONDITIONS'}</div>
                     </div>
 
                     <!-- Allergy Card -->
-                    <div class="info-bar bar-allergy">
-                        <i data-lucide="alert-triangle"></i>
-                        <span class="label">ALLERGY:</span>
-                        <span class="value">${patient.allergies || 'NONE REPORTED'}</span>
-                    </div>
-
-                    <!-- Condition Card -->
-                    <div class="info-bar bar-condition">
-                        <div class="main-row">
-                            <i data-lucide="heart" style="color:#ef4444;"></i>
-                            <span class="label">CONDITION:</span>
-                            <span class="value">${patient.conditions || 'None Reported'}</span>
+                    <div class="clinical-card card-red">
+                        <div class="card-header" style="color:var(--cl-critical)">
+                            <i data-lucide="alert-triangle"></i> Critical Allergies
                         </div>
-                        ${patient.conditions ? `<div class="high-risk-badge"><i data-lucide="alert-circle"></i> HIGH RISK PATIENT</div>` : ''}
+                        <div class="card-data">${patient.allergies || 'NONE REPORTED'}</div>
                     </div>
 
                     <!-- Emergency Contact Card -->
-                    <div class="info-bar bar-contact">
-                        <i data-lucide="phone"></i>
-                        <div class="contact-details">
-                            <b>EMERGENCY CONTACT: ${patient.contact1_Relation || 'Primary'}</b>
-                            <span>${patient.contact1_Name} ${patient.contact1_Phone}</span>
+                    <div class="clinical-card card-green">
+                        <div class="card-header" style="color:var(--cl-success)">
+                            <i data-lucide="phone"></i> Emergency Contact
+                        </div>
+                        <div class="card-data">
+                            ${patient.contact1_Name} (${patient.contact1_Relation})<br>
+                            <span style="font-size:1.25rem; font-weight:800;">${patient.contact1_Phone}</span>
                         </div>
                     </div>
 
-                    <!-- Summary Card -->
-                    <div class="info-bar bar-summary">
-                        <i data-lucide="clipboard"></i>
-                        <div class="summary-content">
-                            <b>SUMMARY:</b>
-                            <div style="font-size:0.875rem; color:#475569; font-weight:500;">${healthSummary}</div>
+                    <!-- Detailed Diagnostic Report -->
+                    <div class="detailed-report-section">
+                        <span class="report-label">Comprehensive Health Summary</span>
+                        <div class="report-summary-text">
+                            ${healthSummary}
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="btn-row">
-                        <a href="tel:${patient.contact1_Phone}" class="btn-medical btn-family">
-                            <i data-lucide="phone"></i>
-                            CALL FAMILY
+                    <!-- Clinical Action Row -->
+                    <div class="action-container">
+                        <a href="tel:${patient.contact1_Phone}" class="btn-report btn-call">
+                            <i data-lucide="phone"></i> Call Primary Kin
                         </a>
-                        <a href="tel:112" class="btn-medical btn-ambulance">
-                            <i data-lucide="truck"></i>
-                            CALL AMBULANCE
+                        <a href="tel:112" class="btn-report btn-ambulance">
+                            <i data-lucide="truck"></i> Ambulance
                         </a>
-                        <a href="https://www.google.com/maps/search/nearest+clinic+hospital" target="_blank" class="btn-medical btn-clinic">
-                            <i data-lucide="map-pin"></i>
-                            VISIT NEAREST CLINIC
+                        <a href="https://www.google.com/maps/search/nearest+clinic+hospital" target="_blank" class="btn-report btn-maps">
+                            <i data-lucide="map-pin"></i> Locate Nearest Medical Center
                         </a>
                     </div>
 
-                    <!-- Footer Link -->
-                    <a href="#" class="footer-link">
-                        <i data-lucide="lock"></i>
-                        View Full Medical Record (OTP Required)
-                    </a>
+                    <div class="footer-clinical">
+                        <a href="#"><i data-lucide="shield-check"></i> OFFICIAL SEHAT POINT RECORD</a>
+                    </div>
                 </div>
             `;
 
