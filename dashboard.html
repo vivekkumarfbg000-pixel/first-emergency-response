@@ -109,6 +109,15 @@
       padding: 2rem 2.5rem;
       background: var(--bg-main);
       min-height: 100vh;
+      position: relative;
+    }
+
+    .main-content::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+      opacity: 0.5;
     }
 
     /* ─── Dashboard Header ─── */
@@ -144,9 +153,15 @@
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      background: var(--bg-card);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       border-radius: 99px;
+      transition: var(--transition);
+    }
+
+    .patient-switcher:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border-bright);
     }
 
     .patient-switcher i { width: 14px; color: var(--text-muted); }
@@ -202,6 +217,7 @@
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1.2;
+      color: #ffffff;
     }
 
     .stat-subtext {
