@@ -3,419 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚕ EMERGENCY PROFILE | Sehat Point</title>
-    <meta name="description" content="Emergency medical profile — critical health data for first responders.">
+    <title>⚕ CLINICAL PATIENT REPORT | Sehat Point</title>
+    <meta name="description" content="Official Electronic Emergency Medical Record.">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --medical-bg: #f8fafc;
-            --card-white: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            
-            /* Professional Clinical Palette */
-            --cl-critical: #991b1b; /* Crimson Red */
-            --cl-warning: #92400e;  /* Amber */
-            --cl-info: #1e40af;     /* Royal Blue */
-            --cl-success: #065f46;  /* Emerald */
-            --cl-neutral: #334155;  /* Slate */
+            --bg-paper: #f8fafc;
+            --clinical-red: #f43f5e;
+            --clinical-blue: #2563eb;
+            --clinical-slate: #0f172a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
         }
 
         body {
-            background: var(--medical-bg);
-            background-image: 
-                linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
-            background-size: 40px 40px;
-            min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 2rem 1.5rem;
-            font-family: 'Inter', -apple-system, sans-serif;
+            background: #e2e8f0;
+            margin: 0;
+            padding: 2rem 1rem;
+            font-family: 'Inter', sans-serif;
             color: var(--text-main);
-        }
-
-        .report-container {
-            width: 100%;
-            max-width: 520px;
-            background: var(--card-white);
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 3rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
-            animation: fadeIn 0.4s ease;
-            position: relative;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ─── Paper Header ─── */
-        .report-header {
-            border-bottom: 2.5px solid #f1f5f9;
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            justify-content: center;
         }
 
-        .report-no {
+        /* ─── Case File Aesthetics (Elite) ─── */
+        .emergency-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 700px;
+            min-height: 90vh;
+            padding: 3.5rem;
+            border: 1px solid #cbd5e1;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15);
+        }
+
+        /* Paper Texture Effect */
+        .emergency-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Auth Grid Overlay */
+        .emergency-card::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* "Verified" Digital Stamp */
+        .clinical-stamp {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            width: 110px;
+            height: 110px;
+            border: 3px solid var(--clinical-red);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(15deg);
+            opacity: 0.15;
+            z-index: 20;
+            pointer-events: none;
+            font-weight: 900;
+            color: var(--clinical-red);
             text-transform: uppercase;
-            font-size: 0.6875rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            display: flex; align-items: center; gap: 0.5rem;
+            text-align: center;
+            line-height: 1.1;
+        }
+        .clinical-stamp span { font-size: 0.625rem; }
+        .clinical-stamp b { font-size: 0.875rem; margin: 2px 0; }
+
+        /* ─── Header ─── */
+        .report-header {
+            position: relative;
+            z-index: 10;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+
+        .header-bar {
+            width: 5px;
+            background: var(--clinical-red);
+            height: 60px;
+            border-radius: 99px;
         }
 
         .patient-name {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.025em;
+            font-size: 2.25rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: var(--clinical-slate);
+            margin: 0;
         }
 
-        .updated-tag {
-            font-size: 0.625rem;
+        .patient-id-sub {
+            font-size: 0.75rem;
             font-weight: 700;
-            padding: 0.4rem 0.75rem;
-            background: #f1f5f9;
-            border-radius: 4px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        /* ─── Vitals Grid ─── */
-        .vitals-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        .vital-box {
-            background: rgba(51, 65, 85, 0.04);
-            border: 1px solid rgba(51, 65, 85, 0.1);
-            border-left: 4px solid var(--cl-neutral);
-            padding: 1.125rem 0.875rem;
-            border-radius: 0 10px 10px 0;
-            transition: 0.2s;
-        }
-        .vital-box b { font-size: 0.625rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; font-weight: 800; }
-        .vital-box span { font-size: 1.25rem; font-weight: 900; color: var(--text-main); }
-        .vital-box.blood { 
-            background: rgba(153, 27, 27, 0.04); 
-            border-color: rgba(153, 27, 27, 0.1);
-            border-left-color: var(--cl-critical); 
-        }
-
-        /* ─── Clinical Boxy Cards ─── */
-        .clinical-card {
-            border-radius: 0 10px 10px 0;
-            padding: 1.5rem;
-            margin-bottom: 1.25rem;
-            transition: 0.2s;
-        }
-
-        /* Meaningful Colors with categorical tints */
-        .card-red { 
-            background: rgba(153, 27, 27, 0.04); 
-            border: 1px solid rgba(153, 27, 27, 0.1);
-            border-left: 5px solid var(--cl-critical); 
-        }
-        .card-amber { 
-            background: rgba(146, 64, 14, 0.04); 
-            border: 1px solid rgba(146, 64, 14, 0.1);
-            border-left: 5px solid var(--cl-warning); 
-        }
-        .card-blue { 
-            background: rgba(30, 64, 175, 0.04); 
-            border: 1px solid rgba(30, 64, 175, 0.1);
-            border-left: 5px solid var(--cl-info); 
-        }
-        .card-green { 
-            background: rgba(6, 95, 70, 0.04); 
-            border: 1px solid rgba(6, 95, 70, 0.1);
-            border-left: 5px solid var(--cl-success); 
-        }
-        .card-slate { 
-            background: rgba(51, 65, 85, 0.04); 
-            border: 1px solid rgba(51, 65, 85, 0.1);
-            border-left: 5px solid var(--cl-neutral); 
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .card-header i { width: 16px; min-width: 16px; }
-
-        .card-data {
-            font-size: 1rem;
-            line-height: 1.6;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        /* ─── Detailed Report Text ─── */
-        .detailed-report-section {
-            margin-top: 2rem;
-            border-top: 2px solid #f1f5f9;
-            padding-top: 1.5rem;
-        }
-
-        .report-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .report-summary-text {
-            border: 1px dashed #e2e8f0;
-            padding: 1.5rem;
-            background: #fafafa;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            line-height: 1.8;
-            color: #334155;
-            font-weight: 500;
-        }
-
-        .report-summary-text p { margin-bottom: 1rem; }
-        .report-summary-text p:last-child { margin-bottom: 0; }
-        .report-summary-text b { color: var(--text-main); font-weight: 700; }
-        .report-summary-text .diagnostic-label { 
-            display: inline-block;
-            padding: 0.1rem 0.4rem;
-            background: #f1f5f9;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            margin-right: 0.5rem;
-        }
-
-        /* ─── High Risk Banner ─── */
-        .high-risk-alert {
-            background: var(--cl-critical);
-            color: white;
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-align: center;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            margin-bottom: 1.5rem;
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(153, 27, 27, 0.2);
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* ─── Clinical Action Grid ─── */
-        .action-container {
-            margin-top: 2.5rem;
+        .p-mono { font-family: 'JetBrains Mono', monospace; color: var(--clinical-slate); }
+
+        /* ─── Vitals Banner ─── */
+        .vitals-banner {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f1f5f9;
+            border: 2px solid var(--clinical-slate);
+            margin-bottom: 3rem;
+        }
+
+        .vital-item { display: flex; flex-direction: column; }
+        .vital-label { font-size: 0.625rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem; }
+        .vital-value { font-size: 1.125rem; font-weight: 900; color: var(--clinical-slate); font-family: 'JetBrains Mono', monospace; }
+
+        /* ─── Clinical Data Section ─── */
+        .data-section {
+            position: relative;
+            z-index: 10;
+            margin-bottom: 2.5rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .clinical-box {
+            background: rgba(15, 23, 42, 0.03);
+            border-left: 4px solid var(--clinical-slate);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        .alert-box {
+            background: rgba(244, 63, 94, 0.04);
+            border-left-color: var(--clinical-red);
+            color: var(--clinical-red);
+            font-weight: 800;
+        }
+
+        /* ─── Action Row ─── */
+        .action-row {
+            position: relative;
+            z-index: 10;
+            margin-top: 4rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
 
-        .btn-report {
-            padding: 1.125rem;
-            border-radius: 10px;
+        .btn-medical {
+            padding: 1.25rem;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-radius: 8px;
+            color: white;
+            transition: 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            font-weight: 800;
-            font-size: 0.8125rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            text-decoration: none;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .btn-report:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .btn-call { background: #059669; }
+        .btn-ems { background: var(--clinical-red); }
 
-        .btn-call { background: var(--cl-success); }
-        .btn-ambulance { background: var(--cl-critical); }
-        .btn-maps { grid-column: span 2; background: var(--cl-info); margin-top: 0.25rem; }
+        .btn-medical:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
-        .footer-clinical {
-            margin-top: 3rem;
+        .footer-watermark {
+            position: relative;
+            z-index: 10;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px dashed #cbd5e1;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.625rem;
+            font-weight: 800;
             color: var(--text-muted);
-            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
-        .footer-clinical a { color: var(--cl-info); text-decoration: none; font-weight: 800; }
 
-        @media (max-width: 540px) {
-            body { padding: 1rem 0.75rem; }
-            .report-container { padding: 1.5rem; border-radius: 0; border: none; }
-            .vitals-grid { grid-template-columns: 1fr 1fr; }
-            .vitals-grid div:last-child { grid-column: span 2; }
-            .action-container { grid-template-columns: 1fr; }
-            .btn-maps { grid-column: span 1; }
+        /* Loading State */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .emergency-card { padding: 2rem; border: none; }
+            .vitals-banner { grid-template-columns: 1fr 1fr; }
+            .action-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div id="app-root"></div>
 
+    <!-- Elite Loading Screen -->
+    <div id="loader">
+        <div class="loader-icon" style="color: var(--clinical-red);">
+            <i data-lucide="shield-plus" style="width: 48px; height: 48px;"></i>
+        </div>
+        <p style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--clinical-slate);">
+            Synchronizing Clinical Database...
+        </p>
+    </div>
+
+    <!-- Main Report Container -->
+    <div class="emergency-card" id="main-card" style="display: none;">
+        <!-- Clinical Stamp -->
+        <div class="clinical-stamp">
+            <span>Official</span>
+            <b>VERIFIED</b>
+            <span>Clinical Record</span>
+        </div>
+
+        <header class="report-header">
+            <div class="header-bar"></div>
+            <div>
+                <h1 class="patient-name" id="p-name">--</h1>
+                <div class="patient-id-sub">
+                    STATUS: <span style="color: #059669;">ACTIVE</span> 
+                    <span style="opacity: 0.3;">|</span> 
+                    ID: <span id="p-id" class="p-mono">--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Vitals -->
+        <div class="vitals-banner">
+            <div class="vital-item">
+                <div class="vital-label">Blood Group</div>
+                <div class="vital-value" id="p-blood" style="color: var(--clinical-red);">--</div>
+            </div>
+            <div class="vital-item">
+                <div class="vital-label">Age</div>
+                <div class="vital-value" id="p-age">--</div>
+            </div>
+            <div class="vital-item">
+                <div class="vital-label">Gender</div>
+                <div class="vital-value" id="p-gender">--</div>
+            </div>
+            <div class="vital-item">
+                <div class="vital-label">Organ Donor</div>
+                <div class="vital-value" id="p-donor">--</div>
+            </div>
+        </div>
+
+        <!-- Comprehensive Diagnostic Health Summary -->
+        <div class="data-section">
+            <div class="section-label"><i data-lucide="clipboard-list" style="width: 14px;"></i> Diagnostic Health Summary</div>
+            <div class="clinical-box" id="p-summary">--</div>
+        </div>
+
+        <div class="data-section">
+            <div class="section-label"><i data-lucide="activity" style="width: 14px;"></i> Clinical Conditions</div>
+            <div class="clinical-box" id="p-conditions">--</div>
+        </div>
+
+        <div class="data-section">
+            <div class="section-label"><i data-lucide="alert-octagon" style="width: 14px;"></i> Critical Allergies</div>
+            <div class="clinical-box alert-box" id="p-allergies">--</div>
+        </div>
+
+        <div class="data-section">
+            <div class="section-label"><i data-lucide="pill" style="width: 14px;"></i> Active Medications</div>
+            <div class="clinical-box" id="p-medications">--</div>
+        </div>
+
+        <!-- Emergency Actions -->
+        <div class="action-row">
+            <a href="#" id="p-call-kin" class="btn-medical btn-call">
+                <i data-lucide="phone"></i> Call Primary Kin
+            </a>
+            <a href="tel:112" class="btn-medical btn-ems">
+                <i data-lucide="truck"></i> Ambulance (112)
+            </a>
+        </div>
+
+        <div class="footer-watermark">
+            E-MEDICAL REPORT ID: <span id="p-id-footer" class="p-mono">--</span> <br>
+            GENERATED BY SEHAT POINT EMERGENCY NETWORK • DO NOT TAMPER
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/storage.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
             const params = new URLSearchParams(window.location.search);
             let patient = null;
 
-            // Decode data (Offline First)
-            const encodedData = params.get('data');
-            if (encodedData) {
+            // 1. Try Offline Fast Decode
+            const data = params.get('data');
+            if (data) {
                 try {
-                    patient = window.Storage.decodeFromURL(encodedData);
-                } catch (e) { console.error('Decode failed', e); }
+                    patient = window.Storage.decodeFromURL(data);
+                    console.log('[Profile] Offline data decoded');
+                } catch (e) { console.error('Offline decode failed'); }
             }
 
-            // Cloud/Local Fetch if needed
+            // 2. Try Online Fetch
             const id = params.get('id');
             if (!patient && id) {
                 try {
                     patient = await window.Storage.getPatientById(id);
+                    console.log('[Profile] Cloud data fetched');
                 } catch (e) {
-                    console.error('Cloud fetch failed', e);
+                    console.error('Cloud fetch failed');
                 }
             }
 
             if (!patient) {
-                document.getElementById('app-root').innerHTML = "<div style='text-align:center; padding:3rem;'><h1 style='color:white;'>Profile Not Found</h1><p style='color:#94a3b8;'>Scan a valid Sehat Point QR Code.</p></div>";
+                document.getElementById('loader').innerHTML = `
+                    <p style="color: var(--clinical-red); font-weight:900;">RECORD NOT FOUND</p>
+                    <a href="index.html" style="font-size:0.75rem; color: var(--text-muted);">Return Home</a>
+                `;
                 return;
             }
 
-            const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            // 3. Populate Fields
+            document.getElementById('p-name').textContent = patient.fullName.toUpperCase();
+            document.getElementById('p-id').textContent = patient.patientId || 'EMS-OFFLINE';
+            document.getElementById('p-id-footer').textContent = patient.id || patient.patientId;
+            document.getElementById('p-blood').textContent = patient.bloodGroup;
+            document.getElementById('p-age').textContent = (patient.age ? patient.age + "Y" : "N/A");
+            document.getElementById('p-gender').textContent = patient.gender || "N/A";
+            document.getElementById('p-donor').textContent = patient.organDonor ? "YES" : "NO";
             
-            // Age Calculation
-            const age = patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'N/A';
-
-            // Detailed Diagnostic Summary Generation
-            const healthSummary = `
-                <p><b>Diagnostic Overview:</b> Patient <b>${patient.fullName}</b> presents with <b>${patient.bloodGroup}</b> blood group. ${patient.conditions ? `Clinical history indicates <b>${patient.conditions}</b>.` : 'No chronic clinical conditions reported.'}</p>
-                
-                <p><span class="diagnostic-label">CRITICAL ALERTS</span> 
-                ${patient.allergies ? `Known hypersensitivity (Allergy) to <b>${patient.allergies}</b>. Immediate precaution recommended.` : 'No known environmental or medicinal allergies reported.'}</p>
-                
-                <p><span class="diagnostic-label">RESPONDER NOTES</span> 
-                ${patient.medicalNotes || 'Patient profile is stable. No additional responder instructions provided.'}</p>
+            document.getElementById('p-conditions').textContent = patient.conditions || "None Reported";
+            document.getElementById('p-allergies').textContent = patient.allergies || "None Reported";
+            document.getElementById('p-medications').textContent = patient.medications || "None Reported";
+            
+            // diagnostic summary content
+            const summary = `
+                Patient <b>${patient.fullName}</b> is a ${patient.age ? patient.age + " year old" : ""} ${patient.gender || "patient"}. 
+                Clinical history indicates <b>${patient.conditions || "no chronic illness"}</b>. 
+                ${patient.allergies ? `CRITICAL ALERT: Patient has known allergies to <b>${patient.allergies}</b>. ` : "No drug or food allergies reported."}
+                ${patient.medications ? `Current medication cycle: <b>${patient.medications}</b>.` : "No active medication cycle detected."}
             `;
+            document.getElementById('p-summary').innerHTML = summary;
 
-            document.getElementById('app-root').innerHTML = `
-                <div class="report-container">
-                    <div class="report-header">
-                        <div>
-                            <div class="report-no"><i data-lucide="clipboard-list"></i> MEDICAL ID: ${id?.slice(0,8).toUpperCase() || 'OFFLINE'}</div>
-                            <div class="patient-name">${patient.fullName}</div>
-                        </div>
-                        <div class="updated-tag">UPDATED: ${today}</div>
-                    </div>
+            // kin call
+            if (patient.contact1_Phone) {
+                document.getElementById('p-call-kin').href = `tel:${patient.contact1_Phone}`;
+                document.getElementById('p-call-kin').innerHTML = `<i data-lucide="phone"></i> Call ${patient.contact1_Name || 'Kin'}`;
+            }
 
-                    ${patient.conditions ? `
-                        <div class="high-risk-alert">
-                            <i data-lucide="alert-octagon"></i>
-                            CRITICAL: HIGH RISK PATIENT
-                        </div>
-                    ` : ''}
-
-                    <!-- Essential Vitals Grid -->
-                    <div class="vitals-grid">
-                        <div class="vital-box blood">
-                            <b>Blood Type</b>
-                            <span>${patient.bloodGroup}</span>
-                        </div>
-                        <div class="vital-box">
-                            <b>Age</b>
-                            <span>${age} yrs</span>
-                        </div>
-                        <div class="vital-box">
-                            <b>Gender</b>
-                            <span>${patient.gender || 'N/A'}</span>
-                        </div>
-                    </div>
-
-                    <!-- Medical Condition Card -->
-                    <div class="clinical-card card-amber">
-                        <div class="card-header" style="color:var(--cl-warning)">
-                            <i data-lucide="activity"></i> Clinical Condition
-                        </div>
-                        <div class="card-data">${patient.conditions || 'STABLE / NO CHRONIC CONDITIONS'}</div>
-                    </div>
-
-                    <!-- Allergy Card -->
-                    <div class="clinical-card card-red">
-                        <div class="card-header" style="color:var(--cl-critical)">
-                            <i data-lucide="alert-triangle"></i> Critical Allergies
-                        </div>
-                        <div class="card-data">${patient.allergies || 'NONE REPORTED'}</div>
-                    </div>
-
-                    <!-- Emergency Contact Card -->
-                    <div class="clinical-card card-green">
-                        <div class="card-header" style="color:var(--cl-success)">
-                            <i data-lucide="phone"></i> Emergency Contact
-                        </div>
-                        <div class="card-data">
-                            ${patient.contact1_Name} (${patient.contact1_Relation})<br>
-                            <span style="font-size:1.25rem; font-weight:800;">${patient.contact1_Phone}</span>
-                        </div>
-                    </div>
-
-                    <!-- Detailed Diagnostic Report -->
-                    <div class="detailed-report-section">
-                        <span class="report-label">Comprehensive Health Summary</span>
-                        <div class="report-summary-text">
-                            ${healthSummary}
-                        </div>
-                    </div>
-
-                    <!-- Clinical Action Row -->
-                    <div class="action-container">
-                        <a href="tel:${patient.contact1_Phone}" class="btn-report btn-call">
-                            <i data-lucide="phone"></i> Call Primary Kin
-                        </a>
-                        <a href="tel:112" class="btn-report btn-ambulance">
-                            <i data-lucide="truck"></i> Ambulance
-                        </a>
-                        <a href="https://www.google.com/maps/search/nearest+clinic+hospital" target="_blank" class="btn-report btn-maps">
-                            <i data-lucide="map-pin"></i> Locate Nearest Medical Center
-                        </a>
-                    </div>
-
-                    <div class="footer-clinical">
-                        <a href="#"><i data-lucide="shield-check"></i> OFFICIAL SEHAT POINT RECORD</a>
-                    </div>
-                </div>
-            `;
-
-            lucide.createIcons();
+            // Show card
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-card').style.display = 'block';
+                lucide.createIcons();
+            }, 1200); // Artificial delay for "Wow" factor and sync perception
         });
     </script>
 </body>
