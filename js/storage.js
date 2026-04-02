@@ -250,6 +250,35 @@ const Storage = {
         return merged;
     },
 
+    // ────── FORCE CLOUD SYNC ALL (Pro-Grade SaaS) ──────
+    forceSyncAll: async function() {
+        console.log('[Storage] Starting Force Sync of all local data...');
+        const all = await this.getAllPatients();
+        const unsynced = all.filter(p => !p.cloudSynced);
+        
+        if (unsynced.length === 0) {
+            console.log('[Storage] Zero unsynced records found.');
+            return { total: 0, synced: 0 };
+        }
+
+        console.log(`[Storage] Found ${unsynced.length} unsynced records. Pushing to cloud...`);
+        let syncedCount = 0;
+
+        for (const p of unsynced) {
+            try {
+                // savePatient handles the cloud insert logic automatically
+                const result = await this.savePatient(p);
+                if (result.cloudSynced) syncedCount++;
+            } catch (err) {
+                console.error(`[Storage] Failed to sync patient ${p.patientId}:`, err.message);
+            }
+        }
+
+        // Re-fetch to update local cache with cloud IDs
+        await this.getAllPatients();
+        return { total: unsynced.length, synced: syncedCount };
+    },
+
     getAllPatientsLocal: function () {
         try {
             const data = localStorage.getItem(this.SAVE_KEY);

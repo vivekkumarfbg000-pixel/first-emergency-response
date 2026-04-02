@@ -357,17 +357,31 @@
             }
         });
 
-        // Real-time Scan Alerts (Optimized with Status Tracking)
+        // Real-time Scan Alerts & Patient Insertion (Pro-Grade SaaS Sync)
         if (window.supabaseClient) {
             const statusPill = $('realtime-status-pill');
             const instructions = $('realtime-instructions');
 
             const channel = window.supabaseClient
                 .channel('emergency-alerts')
+                // 1. Listen for Scans
                 .on('postgres_changes', { event: 'INSERT', table: 'scans' }, (payload) => {
                     console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
                     showToast('🚨 NEW EMERGENCY SCAN DETECTED!', 'error');
                     renderAll(); 
+                })
+                // 2. Listen for New Patients (Instant Sync)
+                .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
+                    console.log('[Dashboard] REALTIME PATIENT INSERTED:', payload);
+                    showToast(`✨ NEW PROFILE CREATED: ${payload.new.full_name}`, 'success');
+                    
+                    // Re-fetch all and refresh UI
+                    await window.Storage.getAllPatients(); 
+                    await renderAll();
+                    
+                    if ($('tab-patients').style.display !== 'none') {
+                        await renderPatientsList();
+                    }
                 })
                 .subscribe((status) => {
                     console.log('[Dashboard] Real-time Channel Status:', status);
@@ -582,11 +596,38 @@
         $('edit_allergies').value = p.allergies || '';
         $('edit_medications').value = p.medications || '';
         $('edit_medicalNotes').value = p.medicalNotes || '';
-        $('editModal').style.display = 'flex';
-        lucide.createIcons();
-    }
+        // Force Sync Button (Settings Tab)
+        const btnForceSync = $('btn-force-sync');
+        if (btnForceSync) {
+            btnForceSync.addEventListener('click', async () => {
+                const count = (await window.Storage.getAllPatients()).filter(p => !p.cloudSynced).length;
+                if (count === 0) {
+                    showToast('Everything is already in the cloud! ☁️', 'success');
+                    return;
+                }
 
-    window.closeModal = () => { $('editModal').style.display = 'none'; };
+                if (!confirm(`Found ${count} unsynced records. Force push to the cloud?`)) return;
+
+                const progress = $('sync-progress');
+                const bar = $('sync-bar');
+                const text = $('sync-count');
+                
+                btnForceSync.disabled = true;
+                if (progress) progress.style.display = 'block';
+
+                try {
+                    const result = await window.Storage.forceSyncAll();
+                    showToast(`✅ Successfully synced ${result.synced}/${result.total} records!`, 'success');
+                    await renderAll();
+                } catch (e) {
+                    showToast('Sync process failed: ' + e.message, 'error');
+                } finally {
+                    btnForceSync.disabled = false;
+                    setTimeout(() => { if (progress) progress.style.display = 'none'; }, 2000);
+                }
+            });
+        }
+    }
 
     async function saveChanges() {
         const btn = document.querySelector('#editForm button[type="submit"]');
