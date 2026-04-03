@@ -70,17 +70,18 @@
                 const tabId = btn.getAttribute('data-tab');
                 if (!tabId) return;
 
-                // UI updates (Fast)
+                // Sync UI State
                 navItems.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                const targetTab = $(tabId);
+                const targetTab = document.getElementById(tabId);
                 if (targetTab) targetTab.classList.add('active');
 
                 // Close sidebar on mobile
                 if (sidebar) sidebar.classList.remove('open');
 
-                // Lazy load data if needed
+                // Lazy load tab-specific data
                 if (tabId === 'tab-patients') await renderPatientsList();
                 if (tabId === 'tab-activity') await renderFullActivity();
                 if (tabId === 'tab-admin') await renderAdminTab();
@@ -159,36 +160,35 @@
         const allPatients = await window.Storage.getAllPatients();
         txt('stat-profiles', allPatients.length.toString());
 
-        // Premium Medical ID Card Population
-        txt('p-premium-name', p.fullName);
-        txt('p-premium-updated', new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
-        txt('p-premium-blood', p.bloodGroup);
-        txt('p-premium-condition', p.conditions || 'Stable / No chronic conditions');
-        txt('p-premium-allergy', p.allergies || 'No known clinical allergies');
-        txt('p-premium-medication', p.medications || 'No active medication cycle');
-        txt('p-premium-notes', p.medicalNotes || 'No additional responder notes provided.');
-        txt('p-premium-contact', `${p.contact1_Name} (${p.contact1_Phone})`);
+        // Premium Medical ID Card Population (Matched to Image)
+        txt('p-premium-name', p.fullName || 'Anonymous Patient');
+        
+        // Format Date: 4 APRIL 2026
+        const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+        const formattedDate = new Date(p.updatedAt || p.createdAt || Date.now())
+            .toLocaleDateString('en-GB', dateOptions).toUpperCase();
+        txt('p-premium-updated', formattedDate);
+        
+        txt('p-premium-blood', p.bloodGroup || '--');
+        txt('p-premium-condition', p.conditions || 'None Reported');
+        txt('p-premium-allergy', p.allergies || 'No Known Allergies');
+        txt('p-premium-medication', p.medications || 'No Active Meds');
+        txt('p-premium-notes', p.medicalNotes || 'No notes provided.');
 
-        // Risk Severity Badge (Smart Triage)
-        const riskLevel = window.Storage.calculateRiskLevel(p);
+        // ─── Automated Risk Assessment ───
         const riskTag = $('p-premium-risk');
+        const conditionLower = (p.conditions || '').toLowerCase();
+        const isCritical = conditionLower.includes('heart') || 
+                           conditionLower.includes('diabetes') || 
+                           conditionLower.includes('hypertension') ||
+                           conditionLower.includes('critical');
+
         if (riskTag) {
-            riskTag.textContent = `${riskLevel} RISK`;
-            riskTag.style.display = 'inline-block';
-            
-            // Adjust colors based on risk
-            const colors = {
-                'CRITICAL': '#e11d48',
-                'HIGH': '#f59e0b',
-                'MODERATE': '#2563eb',
-                'LOW': '#059669'
-            };
-            riskTag.style.background = colors[riskLevel] || '#64748b';
-            
-            // Color the header based on risk for high visibility
-            const premiumHeader = document.querySelector('.premium-header');
-            if (premiumHeader) {
-                premiumHeader.style.background = colors[riskLevel] || '#e11d48';
+            if (isCritical) {
+                riskTag.style.display = 'inline-flex';
+                riskTag.textContent = 'CRITICAL RISK';
+            } else {
+                riskTag.style.display = 'none';
             }
         }
 
@@ -196,57 +196,35 @@
         const familyBtn = $('p-premium-btn-family');
         if (familyBtn && p.contact1_Phone) {
             familyBtn.href = `tel:${p.contact1_Phone}`;
+            familyBtn.style.display = 'inline-flex';
+        } else if (familyBtn) {
+            familyBtn.style.display = 'none';
         }
 
-        // Organ Donor
-        const donorWrap = $('id-donor-wrap');
-        if (donorWrap) {
-            donorWrap.style.display = p.organDonor ? 'block' : 'none';
+        // ─── Render Contextual Tabs (Summary Stats) ───
+        const condBadge = $('sum-conditions')?.closest('.info-badge');
+        const medBadge = $('sum-medications')?.closest('.info-badge');
+        const allergyBadge = $('sum-allergies')?.closest('.info-badge');
+
+        if (condBadge) {
+            condBadge.className = 'info-badge ' + (isCritical ? 'theme-red' : 'theme-amber');
+            txt('sum-conditions', p.conditions || 'Stable');
+        }
+        if (medBadge) {
+            medBadge.className = 'info-badge theme-green';
+            txt('sum-medications', p.medications || 'None');
+        }
+        if (allergyBadge) {
+            const hasAllergies = p.allergies && p.allergies.toLowerCase() !== 'none';
+            allergyBadge.className = 'info-badge ' + (hasAllergies ? 'theme-red' : 'theme-blue');
+            txt('sum-allergies', p.allergies || 'No known allergies');
         }
 
-        // Medical Summaries (Categorical Tints)
-        const condCard = $('sum-conditions').closest('.stat-card');
-        const medCard = $('sum-medications').closest('.stat-card');
-        const allergyCard = $('allergy-card');
-
-        // Apply Conditions Theme (Red)
-        if (condCard) {
-            condCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
-            if (p.conditions && p.conditions.toLowerCase() !== 'none') {
-                condCard.classList.add('card-theme-red');
-                txt('sum-conditions', p.conditions);
-            } else {
-                txt('sum-conditions', 'No chronic conditions reported');
-            }
-        }
-
-        // Apply Medications Theme (Green)
-        if (medCard) {
-            medCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
-            if (p.medications && p.medications.toLowerCase() !== 'none') {
-                medCard.classList.add('card-theme-green');
-                txt('sum-medications', p.medications);
-            } else {
-                txt('sum-medications', 'No active medication cycle');
-            }
-        }
-
-        // Apply Allergies Theme (Amber)
-        if (allergyCard) {
-            allergyCard.classList.remove('card-theme-red', 'card-theme-amber', 'card-theme-green', 'card-theme-blue');
-            const allergyVal = $('sum-allergies');
-            if (p.allergies && p.allergies.toLowerCase() !== 'none' && p.allergies.trim() !== '') {
-                allergyCard.classList.add('card-theme-amber');
-                txt('sum-allergies', p.allergies);
-                if (allergyVal) allergyVal.style.color = '#f59e0b';
-            } else {
-                txt('sum-allergies', 'No known allergies reported');
-                if (allergyVal) allergyVal.style.color = 'rgba(255,255,255,0.6)';
-            }
-        }
-
-        // Health Report Summary (Blue Anchor)
-        const healthSummaryCard = $('sum-health-report').closest('.stat-card');
+        // Clinical Health Summary
+        const healthSummary = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
+                             (p.conditions ? `Conditions: ${p.conditions}. ` : 'Stable clinical history. ') +
+                             (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
+        txt('sum-health-report', healthSummary);
         if (healthSummaryCard) {
             healthSummaryCard.classList.add('card-theme-blue');
             const healthReport = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
@@ -297,22 +275,19 @@
         if (!encodedData) return;
 
         const baseUrl = window.location.href.split('dashboard.html')[0];
-        const idToUse = currentPatient.id || currentPatient.patientId;
-        const profileUrl = `${baseUrl}emergency.html?id=${idToUse}`;
+        const sidToUse = currentPatient.id || currentPatient.patientId;
+        const profileUrl = `${baseUrl}emergency.html?sid=${sidToUse}`;
         
-        // Generate Hybrid vCard with "Clean URL" to ensure it's instantly fast to scan
-        const vcardPayload = window.Storage.generateHybridVCard(currentPatient, profileUrl);
+        // Use DIRECT URL for 100% redirection reliability on all scanners
+        console.log('[Dashboard] Generating Redirect QR for:', profileUrl);
 
-        console.log('[Dashboard] QR URL length:', profileUrl.length, 'chars');
-        console.log('[Dashboard] QR vCard length:', vcardPayload.length, 'chars');
-
-        QRCode.toCanvas(vcardPayload, {
-            width: 200,
-            margin: 1,
-            color: { dark: '#0b0e14', light: '#ffffff' },
-            errorCorrectionLevel: 'L'
+        QRCode.toCanvas(profileUrl, {
+            width: 210,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' },
+            errorCorrectionLevel: 'H' // High recovery for physical damage
         }, (err, canvas) => {
-            if (err) { console.error('[Dashboard] QR generation error:', err); return; }
+            if (err) { console.error('[Dashboard] QR Error:', err); return; }
             qrCanvas = canvas;
             container.appendChild(canvas);
         });
@@ -802,14 +777,14 @@
             localStorage.setItem('current_patient_id', id);
             await renderAll();
 
-            // Switch to overview tab
+            // Switch to overview tab using the unified system
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            const overviewTab = document.querySelector('[data-tab="overview"]');
+            const overviewTab = document.querySelector('[data-tab="tab-overview"]');
             if (overviewTab) overviewTab.classList.add('active');
             
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             const overviewContent = $('tab-overview');
-            if (overviewContent) overviewContent.style.display = 'block';
+            if (overviewContent) overviewContent.classList.add('active');
 
             showToast(`Viewing ${p.fullName}'s profile`, 'info');
         }

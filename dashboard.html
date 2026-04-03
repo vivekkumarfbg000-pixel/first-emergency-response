@@ -51,7 +51,7 @@
           <i data-lucide="activity"></i>
           <span>Activity Log</span>
         </div>
-        <div class="nav-item" data-tab="tab-admin" id="nav-admin" style="display: none;">
+        <div class="nav-item" data-tab="tab-admin" id="nav-admin">
           <i data-lucide="crown"></i>
           <span>Admin Master</span>
         </div>
@@ -165,53 +165,44 @@
                   LAST UPDATED: <span id="p-premium-updated">--</span>
                 </div>
 
-                <!-- Vitals Badges -->
-                <div class="info-badge badge-red">
+                <!-- Vitals Badges (Matched to Image) -->
+                <div class="info-badge theme-red">
                   <i data-lucide="droplet"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Blood Group</span>
-                    <div class="badge-value" id="p-premium-blood">--</div>
+                  <div class="info-badge-content">
+                    <span class="info-badge-label">Blood Group</span>
+                    <div class="info-badge-value" id="p-premium-blood">--</div>
                   </div>
                 </div>
 
-                <div class="info-badge badge-amber">
-                  <i data-lucide="activity"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Clinical Condition</span>
-                    <div class="badge-value" id="p-premium-condition">--</div>
-                    <div class="risk-tag" id="p-premium-risk" style="display:none;">High Risk Patient</div>
+                <div class="info-badge theme-amber">
+                  <div class="info-badge-content">
+                    <span class="info-badge-label">Clinical Condition</span>
+                    <div class="info-badge-value" id="p-premium-condition">--</div>
+                    <div class="risk-tag" id="p-premium-risk">Critical Risk</div>
                   </div>
                 </div>
 
-                <div class="info-badge badge-orange">
+                <div class="info-badge theme-amber">
                   <i data-lucide="alert-octagon"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Critical Allergies</span>
-                    <div class="badge-value" id="p-premium-allergy">--</div>
+                  <div class="info-badge-content">
+                    <span class="info-badge-label">Critical Allergies</span>
+                    <div class="info-badge-value" id="p-premium-allergy">--</div>
                   </div>
                 </div>
 
-                <div class="info-badge badge-green">
+                <div class="info-badge theme-green">
                   <i data-lucide="pill"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Active Medication</span>
-                    <div class="badge-value" id="p-premium-medication">--</div>
+                  <div class="info-badge-content">
+                    <span class="info-badge-label">Active Medication</span>
+                    <div class="info-badge-value" id="p-premium-medication">--</div>
                   </div>
                 </div>
 
-                <div class="info-badge badge-blue">
+                <div class="info-badge theme-blue">
                   <i data-lucide="clipboard-list"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Responder Notes</span>
-                    <p class="badge-text" id="p-premium-notes">--</p>
-                  </div>
-                </div>
-
-                <div class="info-badge badge-grey">
-                  <i data-lucide="user-plus"></i>
-                  <div class="badge-content">
-                    <span class="badge-label">Emergency Contact</span>
-                    <div class="badge-value" id="p-premium-contact">--</div>
+                  <div class="info-badge-content">
+                    <span class="info-badge-label">Responder Notes</span>
+                    <div class="info-badge-value" id="p-premium-notes">--</div>
                   </div>
                 </div>
 
@@ -370,7 +361,7 @@
       </div>
 
       <!-- TAB: SETTINGS -->
-      <div id="tab-settings" class="tab-content" style="display:none;">
+      <div id="tab-settings" class="tab-content">
         <div class="glass-card" style="padding:2rem;">
           <header style="margin-bottom:2rem;">
             <h2 style="font-size:1.375rem; font-weight:800;">Settings</h2>
@@ -457,7 +448,7 @@
       </div>
 
       <!-- TAB: ADMIN MASTER -->
-      <div id="tab-admin" class="tab-content" style="display:none;">
+      <div id="tab-admin" class="tab-content">
         <div class="glass-card" style="padding:2rem;">
           <header style="margin-bottom:2rem;">
             <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">

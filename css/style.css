@@ -695,7 +695,24 @@ textarea {
 
 /* ─── Print Styles ─── */
 @media print {
-  body {/* ────── CLINICAL CONSOLE COMPONENTS ────── */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .sidebar, .glass-nav, .footer-actions, .btn, .toast-container {
+    display: none !important;
+  }
+  .glass-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+
+/* ────── CLINICAL CONSOLE COMPONENTS ────── */
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
 
@@ -808,27 +825,51 @@ textarea {
 }
 
 .info-badge {
-  padding: 1.25rem;
-  border-radius: var(--radius-md);
-  display: flex;
-  gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+    transition: var(--transition);
 }
 
-.info-badge-icon { color: #64748b; opacity: 0.8; }
-.info-badge-content h4 { font-size: 0.625rem; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; font-weight: 800; }
-.info-badge-content p { font-size: 1rem; font-weight: 700; line-height: 1.3; color: #1e293b; }
+.info-badge i { font-size: 1.5rem; }
+.info-badge-content { flex: 1; }
+.info-badge-label { 
+    font-size: 0.625rem; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+    opacity: 0.7;
+}
+.info-badge-value { 
+    font-size: 1.25rem; 
+    font-weight: 900; 
+    letter-spacing: -0.01em;
+}
 
-.theme-red { background: #fee2e2; border: 1px solid #fecaca; }
-.theme-red h4, .theme-red p { color: #991b1b !important; }
+.theme-red { background: #fee2e2; color: #991b1b; border: 1px solid rgba(153, 27, 27, 0.1); }
+.theme-amber { background: #fffbeb; color: #92400e; border: 1px solid rgba(146, 64, 14, 0.1); }
+.theme-green { background: #f0fdf4; color: #166534; border: 1px solid rgba(22, 101, 52, 0.1); }
+.theme-blue { background: #f0f9ff; color: #075985; border: 1px solid rgba(7, 89, 133, 0.1); }
 
-.theme-amber { background: #fff7ed; border: 1px solid #ffedd5; }
-.theme-amber h4, .theme-amber p { color: #9a3412 !important; }
-
-.theme-green { background: #f0fdf4; border: 1px solid #dcfce7; }
-.theme-green h4, .theme-green p { color: #166534 !important; }
-
-.theme-blue { background: #f0f9ff; border: 1px solid #e0f2fe; }
-.theme-blue h4, .theme-blue p { color: #075985 !important; }
+.risk-tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 900;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    margin-top: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    animation: heartbeat 1.5s ease-in-out infinite;
+}
 
 .risk-level-badge {
   padding: 0.25rem 0.75rem;
@@ -845,21 +886,7 @@ textarea {
   .id-name { font-size: 1.75rem; }
   .premium-body { padding: 1.5rem; }
 }
-    background: white !important;
-    color: black !important;
-  }
-  .sidebar, .glass-nav, .footer-actions, .btn, .toast-container {
-    display: none !important;
-  }
-  .glass-card {
-    background: white !important;
-    border: 1px solid #ddd !important;
-    box-shadow: none !important;
-  }
-  .main-content {
-    margin-left: 0 !important;
-  }
-}
+
 
 /* ─── Responsive ─── */
 @media (max-width: 1200px) {
