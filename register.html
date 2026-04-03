@@ -3,45 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Emergency Profile | EMS Response</title>
+    <title>Create Emergency Profile | Sehat Point</title>
     <meta name="description" content="Register your medical details to generate your life-saving emergency QR code.">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
+        :root {
+            --primary: #e11d48;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --bg: #030712;
+            --border: rgba(255,255,255,0.08);
+            --text-muted: #64748b;
+            --text-secondary: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
         .reg-layout {
             display: flex;
             justify-content: center;
-            padding: 5rem 1rem 4rem;
+            padding: 3rem 1rem 5rem;
             min-height: 100vh;
         }
 
         .reg-wrapper {
             width: 100%;
-            max-width: 780px;
+            max-width: 640px;
         }
 
+        /* ─── Header ─── */
         .reg-header {
             text-align: center;
-            margin-bottom: 2.5rem;
+            margin-bottom: 2rem;
         }
 
-        .reg-header .overline {
+        .brand-mark {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.6875rem;
+            gap: 0.5rem;
+            background: rgba(225, 29, 72, 0.1);
+            border: 1px solid rgba(225, 29, 72, 0.2);
+            padding: 0.4rem 1rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
             color: var(--primary);
-            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1.25rem;
         }
 
         .reg-header h1 {
-            font-size: 2rem;
+            font-size: 1.875rem;
             font-weight: 800;
             letter-spacing: -0.03em;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
         }
 
         .reg-header p {
@@ -49,204 +74,426 @@
             font-size: 0.9375rem;
         }
 
-        .reg-card {
-            padding: 2.5rem;
-        }
-
-        .form-section-title {
+        /* ─── Progress Steps ─── */
+        .wizard-steps {
             display: flex;
             align-items: center;
-            gap: 0.625rem;
+            gap: 0;
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+        }
+
+        .wizard-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .wizard-step:not(:last-child)::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: var(--border);
+            border-radius: 2px;
+            transition: background 0.3s;
+        }
+
+        .wizard-step.completed:not(:last-child)::after {
+            background: var(--accent);
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .wizard-step.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .wizard-step.completed .step-circle {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .wizard-step.active .step-label { color: white; }
+        .wizard-step.completed .step-label { color: var(--accent); }
+
+        /* ─── Card ─── */
+        .reg-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        /* ─── Form Elements ─── */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             font-size: 0.75rem;
             font-weight: 700;
             color: var(--primary);
             text-transform: uppercase;
             letter-spacing: 0.06em;
             margin-bottom: 1.5rem;
-            padding-bottom: 0.625rem;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
 
-        .form-section-title i { width: 15px; height: 15px; }
-
-        /* Preview Card */
-        .preview-card {
-            background: linear-gradient(135deg, #111827 0%, #060910 100%);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .preview-card::before {
-            content: '';
-            position: absolute;
-            top: 0; right: 0;
-            width: 120px; height: 120px;
-            background: radial-gradient(circle, rgba(255,59,59,0.08) 0%, transparent 70%);
-        }
-
-        .preview-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.625rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-        }
-
-        .preview-body {
-            display: flex;
-            align-items: center;
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
 
-        .preview-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary), #e11d48);
+        @media (max-width: 540px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .input-group {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.25rem;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .input-group label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
             color: white;
-            flex-shrink: 0;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            transition: all 0.2s;
+            outline: none;
+            width: 100%;
         }
 
-        .preview-name {
-            font-size: 1.125rem;
-            font-weight: 700;
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            border-color: var(--primary);
+            background: rgba(225, 29, 72, 0.05);
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
         }
 
-        .preview-meta {
-            font-size: 0.75rem;
+        .input-group input.invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .input-group select option { background: #1e293b; }
+
+        .input-hint {
+            font-size: 0.7rem;
             color: var(--text-muted);
             margin-top: 0.125rem;
         }
 
-        .preview-tags {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 0.75rem;
+        /* ─── Panels ─── */
+        .wizard-panel { display: none; }
+        .wizard-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Wizard Navigation */
-        .wizard-nav {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+        /* ─── Contact Block ─── */
+        .contact-block {
+            padding: 1.25rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
         }
 
-        .wizard-nav .btn { flex: 1; }
+        .contact-block-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--primary);
+            letter-spacing: 0.06em;
+            margin-bottom: 1rem;
+        }
 
-        /* Toggle Switch */
-        .toggle-label {
+        /* ─── Toggle ─── */
+        .toggle-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0.875rem 1rem;
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            border-radius: 10px;
             cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .toggle-label:hover {
-            border-color: var(--border-bright);
-        }
-
-        .toggle-label span {
-            font-size: 0.875rem;
-            font-weight: 500;
+            margin-top: 0.5rem;
         }
 
         .toggle-switch {
-            width: 44px;
-            height: 24px;
+            width: 42px;
+            height: 22px;
             background: rgba(255,255,255,0.1);
             border-radius: 99px;
             position: relative;
-            transition: var(--transition);
+            transition: all 0.3s;
             flex-shrink: 0;
         }
 
         .toggle-switch::after {
             content: '';
-            width: 18px;
-            height: 18px;
+            width: 16px; height: 16px;
             border-radius: 50%;
             background: white;
             position: absolute;
-            top: 3px;
-            left: 3px;
-            transition: var(--transition);
+            top: 3px; left: 3px;
+            transition: all 0.3s;
         }
 
-        .toggle-input {
-            display: none;
+        #organDonor:checked ~ .toggle-row .toggle-switch { background: var(--accent); }
+        #organDonor:checked ~ .toggle-row .toggle-switch::after { transform: translateX(20px); }
+        #organDonor { display: none; }
+
+        /* ─── Nav Buttons ─── */
+        .wizard-nav {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.75rem;
         }
 
-        .toggle-input:checked + .toggle-label .toggle-switch {
-            background: var(--accent);
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
         }
 
-        .toggle-input:checked + .toggle-label .toggle-switch::after {
-            transform: translateX(20px);
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
 
-        /* Back link */
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover { border-color: rgba(255,255,255,0.2); color: white; }
+        .btn-block { width: 100%; }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+        }
+
+        /* ─── Success / QR Screen ─── */
+        .success-screen {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .success-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            font-size: 2rem;
+        }
+
+        .success-screen h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-screen p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .qr-box {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: inline-block;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .qr-box canvas { display: block; }
+
+        .patient-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-box {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            font-size: 0.8125rem;
+            color: #6ee7b7;
+            line-height: 1.6;
+        }
+
+        .alert-box strong { color: var(--accent); display: block; margin-bottom: 0.25rem; }
+
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* ─── Back Link ─── */
         .back-link {
             position: fixed;
-            top: 1.5rem;
-            left: 1.5rem;
+            top: 1.25rem;
+            left: 1.25rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-weight: 700;
-            font-size: 0.8125rem;
+            font-size: 0.8rem;
+            font-weight: 600;
             color: var(--text-secondary);
             z-index: 100;
-            transition: var(--transition);
+            text-decoration: none;
         }
 
-        .back-link:hover { color: var(--text-primary); }
-        .back-link i { width: 16px; height: 16px; }
+        .back-link:hover { color: white; }
 
-        @media (max-width: 768px) {
-            .reg-layout { padding: 4rem 0.75rem 3rem; }
-            .reg-card { padding: 1.75rem; }
-            .reg-header h1 { font-size: 1.625rem; }
+        /* ─── Live Preview Card ─── */
+        .preview-card {
+            background: rgba(225, 29, 72, 0.04);
+            border: 1px solid rgba(225, 29, 72, 0.15);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .preview-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), #be123c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.125rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .preview-name { font-weight: 700; font-size: 1rem; }
+        .preview-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.125rem; }
+
+        /* ─── Toast ─── */
+        .mini-toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            background: rgba(15,20,35,0.97);
+            border-radius: 99px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            z-index: 9999;
+            white-space: nowrap;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
     </style>
 </head>
 <body>
     <a href="index.html" class="back-link">
-        <i data-lucide="arrow-left"></i>
-        <span>Back to Home</span>
+        <i data-lucide="arrow-left" style="width:16px;"></i>
+        Back to Home
     </a>
 
     <div class="reg-layout">
-        <div class="reg-wrapper animate-slide">
+        <div class="reg-wrapper">
+
+            <!-- Header -->
             <header class="reg-header">
-                <div class="overline">
-                    <i data-lucide="shield-plus" style="width:14px;"></i>
-                    Emergency Profile Setup
+                <div class="brand-mark">
+                    <i data-lucide="shield-plus" style="width:13px;"></i>
+                    Sehat Point Emergency Profile
                 </div>
                 <h1>Create Your Life-Saving Profile</h1>
-                <p>Your data is stored locally on your device and encoded directly into the QR code.</p>
+                <p>Your data is stored securely in the cloud and encoded into your QR code.</p>
             </header>
 
-            <!-- Wizard Steps Indicator -->
-            <div class="wizard-steps">
+            <!-- Wizard Steps -->
+            <div class="wizard-steps" id="wizardSteps">
                 <div class="wizard-step active" data-step="1">
                     <div class="step-circle">1</div>
                     <span class="step-label">Personal</span>
@@ -259,176 +506,225 @@
                     <div class="step-circle">3</div>
                     <span class="step-label">Medical</span>
                 </div>
+                <div class="wizard-step" data-step="4">
+                    <div class="step-circle"><i data-lucide="check" style="width:14px;"></i></div>
+                    <span class="step-label">Your QR</span>
+                </div>
             </div>
 
-            <!-- Live Preview Card -->
-            <div class="preview-card">
-                <div class="preview-header">
-                    <i data-lucide="eye" style="width:12px;"></i>
-                    Live Preview
+            <!-- Live Preview (hidden on step 4) -->
+            <div class="preview-card" id="previewCard">
+                <div class="preview-avatar" id="prevAvatar">?</div>
+                <div>
+                    <div class="preview-name" id="prevName">Your Name</div>
+                    <div class="preview-meta" id="prevMeta">Age • Gender • Blood Group</div>
                 </div>
-                <div class="preview-body">
-                    <div class="preview-avatar" id="prevAvatar">?</div>
-                    <div>
-                        <div class="preview-name" id="prevName">Your Name</div>
-                        <div class="preview-meta" id="prevMeta">Age • Gender • Blood Group</div>
-                    </div>
-                </div>
-                <div class="preview-tags" id="prevTags"></div>
             </div>
 
-            <!-- Registration Form -->
-            <div class="glass-card reg-card">
+            <!-- Form Card -->
+            <div class="reg-card">
                 <form id="registerForm" novalidate>
-                    <!-- Step 1: Personal -->
+
+                    <!-- ─── Step 1: Personal Info ─── -->
                     <div class="wizard-panel active" id="step1">
-                        <div class="form-section-title">
-                            <i data-lucide="user"></i>
+                        <div class="section-title">
+                            <i data-lucide="user" style="width:14px;"></i>
                             Personal Information
                         </div>
-                        <div class="grid-2">
+
+                        <div class="grid-2" style="margin-bottom:1rem;">
                             <div class="input-group">
                                 <label for="fullName">Full Name *</label>
-                                <input type="text" id="fullName" name="fullName" placeholder="e.g. Rahul Sharma" required>
+                                <input type="text" id="fullName" placeholder="e.g. Rahul Sharma" required>
                             </div>
                             <div class="input-group">
                                 <label for="bloodGroup">Blood Group *</label>
-                                <select id="bloodGroup" name="bloodGroup" required>
+                                <select id="bloodGroup" required>
                                     <option value="">Select Blood Group</option>
-                                    <option value="A+">A+</option><option value="A-">A-</option>
-                                    <option value="B+">B+</option><option value="B-">B-</option>
-                                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                                    <option value="O+">O+</option><option value="O-">O-</option>
+                                    <option>A+</option><option>A-</option>
+                                    <option>B+</option><option>B-</option>
+                                    <option>AB+</option><option>AB-</option>
+                                    <option>O+</option><option>O-</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="grid-2">
+
+                        <div class="grid-2" style="margin-bottom:1rem;">
                             <div class="input-group">
                                 <label for="age">Age *</label>
-                                <input type="number" id="age" name="age" placeholder="Age" min="0" max="120" required>
+                                <input type="number" id="age" placeholder="Age" min="0" max="120" required>
                             </div>
                             <div class="input-group">
                                 <label for="gender">Gender *</label>
-                                <select id="gender" name="gender" required>
+                                <select id="gender" required>
                                     <option value="">Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom:1rem;">
+                            <label for="userEmail">Your Email Address *</label>
+                            <input type="email" id="userEmail" placeholder="your@email.com" required>
+                            <span class="input-hint">Used to identify your profile. Not shown to rescuers.</span>
                         </div>
 
                         <div class="wizard-nav">
                             <a href="index.html" class="btn btn-outline">Cancel</a>
-                            <button type="button" class="btn btn-primary" onclick="wizardNext(1)">
-                                Continue
-                                <i data-lucide="arrow-right" style="width:16px;"></i>
+                            <button type="button" class="btn btn-primary" onclick="wizardNext(1)" style="flex:1;">
+                                Continue <i data-lucide="arrow-right" style="width:16px;"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Step 2: Emergency Contacts -->
+                    <!-- ─── Step 2: Emergency Contacts ─── -->
                     <div class="wizard-panel" id="step2">
-                        <div class="form-section-title">
-                            <i data-lucide="phone"></i>
+                        <div class="section-title">
+                            <i data-lucide="phone" style="width:14px;"></i>
                             Emergency Contacts
                         </div>
 
-                        <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.5rem;">
-                            These contacts will be shown to rescuers with a one-tap call button.
+                        <p style="font-size:0.8125rem; color:var(--text-secondary); margin-bottom:1.25rem;">
+                            These contacts are shown to rescuers. The <strong style="color:white;">family email</strong> receives an instant SOS alert when your QR is scanned.
                         </p>
 
-                        <div style="margin-bottom:1.5rem; padding:1.25rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm);">
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.06em; margin-bottom:1rem;">Primary Contact</div>
-                            <div class="grid-2">
+                        <div class="contact-block">
+                            <div class="contact-block-label">🔴 Primary Emergency Contact</div>
+                            <div class="grid-2" style="margin-bottom:1rem;">
                                 <div class="input-group">
                                     <label for="contact1_Name">Name *</label>
-                                    <input type="text" id="contact1_Name" name="contact1_Name" placeholder="Parent / Spouse / Guardian" required>
+                                    <input type="text" id="contact1_Name" placeholder="Parent / Spouse" required>
                                 </div>
                                 <div class="input-group">
                                     <label for="contact1_Relation">Relation</label>
-                                    <input type="text" id="contact1_Relation" name="contact1_Relation" placeholder="e.g. Father, Wife">
+                                    <input type="text" id="contact1_Relation" placeholder="e.g. Father, Wife">
                                 </div>
                             </div>
-                            <div class="input-group">
-                                <label for="contact1_Phone">Phone *</label>
-                                <input type="tel" id="contact1_Phone" name="contact1_Phone" placeholder="+91 XXXXX XXXXX" required>
+                            <div class="grid-2">
+                                <div class="input-group">
+                                    <label for="contact1_Phone">Phone *</label>
+                                    <input type="tel" id="contact1_Phone" placeholder="+91 XXXXX XXXXX" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="contact1_Email">📧 Family Email *</label>
+                                    <input type="email" id="contact1_Email" placeholder="family@email.com" required>
+                                    <span class="input-hint">⚡ SOS alert sent here on QR scan</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="padding:1.25rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm);">
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:1rem;">Secondary Contact (Optional)</div>
-                            <div class="grid-2">
+                        <div class="contact-block">
+                            <div class="contact-block-label" style="color:var(--text-muted);">Secondary Contact (Optional)</div>
+                            <div class="grid-2" style="margin-bottom:1rem;">
                                 <div class="input-group">
                                     <label for="contact2_Name">Name</label>
-                                    <input type="text" id="contact2_Name" name="contact2_Name" placeholder="Another relative">
+                                    <input type="text" id="contact2_Name" placeholder="Another relative">
                                 </div>
                                 <div class="input-group">
                                     <label for="contact2_Relation">Relation</label>
-                                    <input type="text" id="contact2_Relation" name="contact2_Relation" placeholder="e.g. Brother, Mother">
+                                    <input type="text" id="contact2_Relation" placeholder="e.g. Brother">
                                 </div>
                             </div>
                             <div class="input-group">
                                 <label for="contact2_Phone">Phone</label>
-                                <input type="tel" id="contact2_Phone" name="contact2_Phone" placeholder="+91 XXXXX XXXXX">
+                                <input type="tel" id="contact2_Phone" placeholder="+91 XXXXX XXXXX">
                             </div>
                         </div>
 
                         <div class="wizard-nav">
                             <button type="button" class="btn btn-outline" onclick="wizardBack(2)">
-                                <i data-lucide="arrow-left" style="width:16px;"></i>
-                                Back
+                                <i data-lucide="arrow-left" style="width:16px;"></i> Back
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="wizardNext(2)">
-                                Continue
-                                <i data-lucide="arrow-right" style="width:16px;"></i>
+                            <button type="button" class="btn btn-primary" onclick="wizardNext(2)" style="flex:1;">
+                                Continue <i data-lucide="arrow-right" style="width:16px;"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Step 3: Medical -->
+                    <!-- ─── Step 3: Medical Data ─── -->
                     <div class="wizard-panel" id="step3">
-                        <div class="form-section-title">
-                            <i data-lucide="activity"></i>
+                        <div class="section-title">
+                            <i data-lucide="activity" style="width:14px;"></i>
                             Medical Background
                         </div>
 
-                        <div class="input-group">
-                            <label for="conditions">Chronic Conditions</label>
-                            <textarea id="conditions" name="conditions" rows="2" placeholder="e.g. Diabetes, Hypertension, Epilepsy..."></textarea>
+                        <div class="input-group" style="margin-bottom:1rem;">
+                            <label for="conditions">Chronic Conditions / Clinical Diagnosis</label>
+                            <textarea id="conditions" rows="2" placeholder="e.g. Diabetes Type 2, Hypertension, Epilepsy..."></textarea>
                         </div>
-                        <div class="input-group">
-                            <label for="allergies">Critical Allergies</label>
-                            <textarea id="allergies" name="allergies" rows="2" placeholder="e.g. Penicillin, Peanuts, Latex..."></textarea>
+                        <div class="input-group" style="margin-bottom:1rem;">
+                            <label for="allergies">⚠️ Critical Allergies</label>
+                            <textarea id="allergies" rows="2" placeholder="e.g. Penicillin, Peanuts, Latex, Aspirin..."></textarea>
                         </div>
-                        <div class="input-group">
-                            <label for="medications">Ongoing Medications</label>
-                            <textarea id="medications" name="medications" rows="2" placeholder="e.g. Metformin 500mg (Daily)..."></textarea>
+                        <div class="input-group" style="margin-bottom:1rem;">
+                            <label for="medications">Active Medications</label>
+                            <textarea id="medications" rows="2" placeholder="e.g. Metformin 500mg (Daily), Aspirin 75mg..."></textarea>
                         </div>
-                        <div class="input-group">
-                            <label for="medicalNotes">Additional Notes for Responders</label>
-                            <textarea id="medicalNotes" name="medicalNotes" rows="2" placeholder="e.g. Pacemaker fitted, carries EpiPen..."></textarea>
-                        </div>
-
-                        <div class="input-group" style="margin-top:0.5rem;">
-                            <input type="checkbox" id="organDonor" name="organDonor" class="toggle-input">
-                            <label for="organDonor" class="toggle-label" style="text-transform:none; font-size:inherit; color:var(--text-primary); letter-spacing:0;">
-                                <span>🫀 I am an Organ Donor</span>
-                                <div class="toggle-switch"></div>
-                            </label>
+                        <div class="input-group" style="margin-bottom:1rem;">
+                            <label for="medicalNotes">Notes for Responders</label>
+                            <textarea id="medicalNotes" rows="2" placeholder="e.g. Pacemaker fitted, carries EpiPen, wears contact lenses..."></textarea>
                         </div>
 
-                        <div class="wizard-nav" style="margin-top:2rem;">
+                        <input type="checkbox" id="organDonor" style="display:none;">
+                        <label for="organDonor" class="toggle-row" style="cursor:pointer;">
+                            <span style="font-size:0.875rem; font-weight:600;">🫀 I am an Organ Donor</span>
+                            <div class="toggle-switch"></div>
+                        </label>
+
+                        <div class="wizard-nav" style="margin-top:1.75rem;">
                             <button type="button" class="btn btn-outline" onclick="wizardBack(3)">
-                                <i data-lucide="arrow-left" style="width:16px;"></i>
-                                Back
+                                <i data-lucide="arrow-left" style="width:16px;"></i> Back
                             </button>
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <button type="submit" class="btn btn-primary btn-block" id="submitBtn" style="flex:1;">
                                 <i data-lucide="shield-check" style="width:16px;"></i>
                                 Create Emergency Profile
                             </button>
                         </div>
                     </div>
+
+                    <!-- ─── Step 4: Success + QR Code ─── -->
+                    <div class="wizard-panel" id="step4">
+                        <div class="success-screen">
+                            <div class="success-icon">✅</div>
+                            <h2>Profile Created!</h2>
+                            <p>Your medical profile is saved to the cloud.<br>Here is your life-saving QR code.</p>
+
+                            <!-- QR Code Display -->
+                            <div class="qr-box" id="qrCodeBox">
+                                <canvas id="qrCanvas"></canvas>
+                            </div>
+
+                            <!-- Patient ID Badge -->
+                            <div class="patient-id-badge">
+                                <i data-lucide="fingerprint" style="width:14px; color:var(--primary);"></i>
+                                <span id="successPatientId">EMS-XXXXXX</span>
+                            </div>
+
+                            <!-- Cloud sync status -->
+                            <div class="alert-box" id="syncStatusBox">
+                                <strong>✅ Synced to Sehat Point Cloud</strong>
+                                Your profile is visible to the admin dashboard instantly. When anyone scans your QR code, your family will receive an emergency email at the address you provided.
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="success-actions">
+                                <button type="button" class="btn btn-success" onclick="downloadQR()">
+                                    <i data-lucide="download" style="width:16px;"></i>
+                                    Download QR Code
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="shareQR()">
+                                    <i data-lucide="share-2" style="width:16px;"></i>
+                                    Share / Set as Wallpaper
+                                </button>
+                                <a href="index.html" class="btn btn-outline" style="margin-top:0.25rem; font-size:0.8125rem; color:var(--text-muted);">
+                                    Go to Home Page
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                 </form>
             </div>
         </div>
@@ -438,7 +734,222 @@
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/storage.js"></script>
-    <script src="js/register.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+
+        let currentStep = 1;
+        const totalSteps = 3; // step 4 is the success screen
+        let generatedPatientData = null;
+
+        // ─── Wizard Navigation ───
+        window.wizardNext = function(step) {
+            if (!validateStep(step)) return;
+            if (step < totalSteps) setStep(step + 1);
+        };
+
+        window.wizardBack = function(step) {
+            if (step > 1) setStep(step - 1);
+        };
+
+        function setStep(n) {
+            currentStep = n;
+            document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`step${n}`).classList.add('active');
+
+            document.querySelectorAll('.wizard-step').forEach(s => {
+                const sn = parseInt(s.dataset.step);
+                s.classList.remove('active', 'completed');
+                if (sn === n) s.classList.add('active');
+                if (sn < n) s.classList.add('completed');
+            });
+
+            // Hide preview on success screen
+            const previewCard = document.getElementById('previewCard');
+            if (previewCard) previewCard.style.display = n === 4 ? 'none' : 'flex';
+
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ─── Validation ───
+        function validateStep(step) {
+            let valid = true;
+            const panel = document.getElementById(`step${step}`);
+            panel.querySelectorAll('[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    input.classList.add('invalid');
+                    valid = false;
+                } else {
+                    input.classList.remove('invalid');
+                }
+            });
+            if (!valid) showToast('❌ Please fill all required fields', 'error');
+            return valid;
+        }
+
+        // ─── Live Preview ───
+        function updatePreview() {
+            const name = document.getElementById('fullName').value || 'Your Name';
+            const age  = document.getElementById('age').value;
+            const gen  = document.getElementById('gender').value;
+            const bg   = document.getElementById('bloodGroup').value;
+
+            document.getElementById('prevName').textContent = name;
+            document.getElementById('prevAvatar').textContent = name.charAt(0).toUpperCase() || '?';
+
+            const parts = [];
+            if (age) parts.push(age + 'Y');
+            if (gen)  parts.push(gen);
+            if (bg)   parts.push(bg);
+            document.getElementById('prevMeta').textContent = parts.join(' • ') || 'Age • Gender • Blood Group';
+        }
+
+        document.querySelectorAll('#registerForm input, #registerForm select, #registerForm textarea').forEach(el => {
+            el.addEventListener('input', updatePreview);
+            el.addEventListener('change', updatePreview);
+            el.addEventListener('focus', () => el.classList.remove('invalid'));
+        });
+
+        // ─── Form Submit ───
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!validateStep(3)) return;
+
+            const patientData = {
+                fullName:          document.getElementById('fullName').value.trim(),
+                bloodGroup:        document.getElementById('bloodGroup').value,
+                age:               document.getElementById('age').value,
+                gender:            document.getElementById('gender').value,
+                email:             document.getElementById('userEmail').value.trim(),
+                contact1_Name:     document.getElementById('contact1_Name').value.trim(),
+                contact1_Relation: document.getElementById('contact1_Relation').value.trim(),
+                contact1_Phone:    document.getElementById('contact1_Phone').value.trim(),
+                contact1_Email:    document.getElementById('contact1_Email').value.trim(),
+                contact2_Name:     (document.getElementById('contact2_Name').value || '').trim(),
+                contact2_Relation: (document.getElementById('contact2_Relation').value || '').trim(),
+                contact2_Phone:    (document.getElementById('contact2_Phone').value || '').trim(),
+                conditions:        document.getElementById('conditions').value.trim(),
+                allergies:         document.getElementById('allergies').value.trim(),
+                medications:       document.getElementById('medications').value.trim(),
+                medicalNotes:      document.getElementById('medicalNotes').value.trim(),
+                organDonor:        document.getElementById('organDonor').checked
+            };
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width:16px;" class="animate-spin"></i> Saving to Cloud...';
+            lucide.createIcons();
+
+            try {
+                const result = await window.Storage.savePatient(patientData);
+
+                if (result && result.id) {
+                    generatedPatientData = result.patient;
+                    generatedPatientData.patientId = result.id;
+                    if (result.supabaseId) generatedPatientData.id = result.supabaseId;
+
+                    // Update sync status message
+                    const syncBox = document.getElementById('syncStatusBox');
+                    if (!result.cloudSynced) {
+                        syncBox.style.borderColor = 'rgba(245,158,11,0.3)';
+                        syncBox.style.background = 'rgba(245,158,11,0.05)';
+                        syncBox.innerHTML = '<strong style="color:#f59e0b;">⚠️ Saved Locally (Cloud sync pending)</strong>Run the SQL migration script in Supabase first to enable cloud sync.';
+                    }
+
+                    // Show success step and generate QR
+                    setStep(4);
+                    document.getElementById('successPatientId').textContent = result.id;
+                    generateQRCode(result.patient);
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="shield-check" style="width:16px;"></i> Try Again';
+                lucide.createIcons();
+                showToast('❌ Error: ' + err.message, 'error');
+            }
+        });
+
+        // ─── QR Code Generation ───
+        function generateQRCode(patient) {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas || !window.Storage) return;
+
+            // Build the emergency URL (cloud lookup by Supabase ID if available)
+            const baseUrl = window.location.origin + '/emergency.html';
+            let qrContent = '';
+
+            if (patient && patient.id) {
+                // Cloud-linked QR: emergency.html?sid=UUID
+                qrContent = `${baseUrl}?sid=${encodeURIComponent(patient.id)}`;
+            } else if (patient && patient.patientId) {
+                // Offline QR: embed medical data directly in URL
+                const encoded = window.Storage.encodeForQR(patient);
+                qrContent = encoded ? `${baseUrl}?d=${encoded}` : `${baseUrl}?id=${patient.patientId}`;
+            }
+
+            console.log('[QR] Generating QR for:', qrContent.substring(0, 80) + '...');
+
+            QRCode.toCanvas(canvas, qrContent, {
+                width: 240,
+                margin: 2,
+                color: { dark: '#000000', light: '#ffffff' },
+                errorCorrectionLevel: 'M'
+            }, (err) => {
+                if (err) {
+                    console.error('[QR] Generation error:', err);
+                    // Fallback: simple patient ID QR
+                    QRCode.toCanvas(canvas, `${baseUrl}?id=${patient.patientId}`, { width: 240, margin: 2 });
+                }
+            });
+        }
+
+        // ─── Download QR ───
+        window.downloadQR = function() {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+
+            const link = document.createElement('a');
+            link.download = `sehat-point-qr-${generatedPatientData?.patientId || 'profile'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('✅ QR Code downloaded!', 'success');
+        };
+
+        // ─── Share QR ───
+        window.shareQR = function() {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'sehat-point-qr.png', { type: 'image/png' });
+                if (navigator.share && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Sehat Point Emergency QR',
+                            text: 'My medical emergency QR code. Scan for instant access to my health profile.',
+                            files: [file]
+                        });
+                    } catch (e) {
+                        window.downloadQR();
+                    }
+                } else {
+                    window.downloadQR(); // fallback
+                }
+            });
+        };
+
+        // ─── Toast ───
+        function showToast(msg, type = 'info') {
+            const existing = document.querySelector('.mini-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'mini-toast';
+            toast.style.color = type === 'error' ? '#f87171' : type === 'success' ? '#34d399' : '#94a3b8';
+            toast.style.border = `1px solid ${type === 'error' ? 'rgba(248,113,113,0.3)' : type === 'success' ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+    </script>
 </body>
 </html>

@@ -70,6 +70,7 @@
         setupEvents();
         updateClock();
         setInterval(updateClock, 30000);
+
         showToast('Secure SaaS Session Active', 'success');
     }
 
@@ -99,21 +100,43 @@
         const allPatients = await window.Storage.getAllPatients();
         txt('stat-profiles', allPatients.length.toString());
 
-        // Medical ID Card
-        txt('id-name', p.fullName);
-        txt('id-meta', `${p.patientId} • ${p.age}Y / ${p.gender}`);
-        txt('id-blood', p.bloodGroup);
-        txt('id-phone', p.contact1_Phone);
-        txt('id-avatar', p.fullName.charAt(0).toUpperCase());
-        
-        // Sync Status Indicator
-        const syncBadge = $('id-sync-badge');
-        if (syncBadge) {
-            if (p.cloudSynced) {
-                syncBadge.innerHTML = '<i data-lucide="cloud-check" style="width:14px; color:#22c55e;"></i> <span style="color:#22c55e;">Cloud Synced</span>';
-            } else {
-                syncBadge.innerHTML = '<i data-lucide="cloud-off" style="width:14px; color:#ef4444;"></i> <span style="color:#ef4444;">Local Only (Not Synced)</span>';
+        // Premium Medical ID Card Population
+        txt('p-premium-name', p.fullName);
+        txt('p-premium-updated', new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
+        txt('p-premium-blood', p.bloodGroup);
+        txt('p-premium-condition', p.conditions || 'Stable / No chronic conditions');
+        txt('p-premium-allergy', p.allergies || 'No known clinical allergies');
+        txt('p-premium-medication', p.medications || 'No active medication cycle');
+        txt('p-premium-notes', p.medicalNotes || 'No additional responder notes provided.');
+        txt('p-premium-contact', `${p.contact1_Name} (${p.contact1_Phone})`);
+
+        // Risk Severity Badge (Smart Triage)
+        const riskLevel = window.Storage.calculateRiskLevel(p);
+        const riskTag = $('p-premium-risk');
+        if (riskTag) {
+            riskTag.textContent = `${riskLevel} RISK`;
+            riskTag.style.display = 'inline-block';
+            
+            // Adjust colors based on risk
+            const colors = {
+                'CRITICAL': '#e11d48',
+                'HIGH': '#f59e0b',
+                'MODERATE': '#2563eb',
+                'LOW': '#059669'
+            };
+            riskTag.style.background = colors[riskLevel] || '#64748b';
+            
+            // Color the header based on risk for high visibility
+            const premiumHeader = document.querySelector('.premium-header');
+            if (premiumHeader) {
+                premiumHeader.style.background = colors[riskLevel] || '#e11d48';
             }
+        }
+
+        // Family Call Button
+        const familyBtn = $('p-premium-btn-family');
+        if (familyBtn && p.contact1_Phone) {
+            familyBtn.href = `tel:${p.contact1_Phone}`;
         }
 
         // Organ Donor
@@ -362,28 +385,33 @@
             const statusPill = $('realtime-status-pill');
             const instructions = $('realtime-instructions');
 
-            const channel = window.supabaseClient
+            window.supabaseClient
                 .channel('emergency-alerts')
                 // 1. Listen for Scans
-                .on('postgres_changes', { event: 'INSERT', table: 'scans' }, (payload) => {
+                .on('postgres_changes', { event: 'INSERT', table: 'scans' }, async (payload) => {
                     console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
-                    showToast('🚨 NEW EMERGENCY SCAN DETECTED!', 'error');
-                    renderAll(); 
+                    await renderAll();
+                    if (payload.new && payload.new.is_emergency) {
+                        showToast('🆘 EMERGENCY SCAN LOGGED!', 'error');
+                    } else {
+                        showToast('🔍 NEW QR SCAN DETECTED!', 'info');
+                    }
                 })
                 // 2. Listen for New Patients (Instant Sync)
                 .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
                     console.log('[Dashboard] REALTIME PATIENT INSERTED:', payload);
                     showToast(`✨ NEW PROFILE CREATED: ${payload.new.full_name}`, 'success');
-                    
-                    // Re-fetch all and refresh UI
                     await window.Storage.getAllPatients(); 
                     await renderAll();
-                    
-                    if ($('tab-patients').style.display !== 'none') {
-                        await renderPatientsList();
-                    }
+                })
+                // 3. Listen for SOS Email Alerts
+                .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, async (payload) => {
+                    console.log('[Dashboard] SOS ALERT SENT:', payload);
+                    showToast(`📧 SOS ALERT SENT TO FAMILY: ${payload.new.family_email.toUpperCase()}`, 'error');
+                    await renderAll();
                 })
                 .subscribe((status) => {
+
                     console.log('[Dashboard] Real-time Channel Status:', status);
                     if (statusPill) {
                         if (status === 'SUBSCRIBED') {
@@ -724,68 +752,57 @@
         const countEl = $('profiles-count-text');
         if (countEl) countEl.textContent = `${all.length} profile${all.length !== 1 ? 's' : ''} ${filter ? 'found' : 'registered'}`;
 
-        const wrap = $('patientsTableWrap');
-        if (!wrap) return;
+    // ─── Render Patients List (WhatsApp Style) ───
+    async function renderPatientsList() {
+        const container = $('patientsTableWrap');
+        if (!container) return;
+
+        const all = await window.Storage.getAllPatients();
+        txt('profiles-count-text', `${all.length} PROFILES`);
 
         if (all.length === 0) {
-            wrap.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted);">
-                <i data-lucide="search-x" style="width:40px; height:40px; margin-bottom:1rem; opacity:0.3;"></i>
-                <p style="font-size:0.9375rem;">No patients found</p>
-            </div>`;
-            lucide.createIcons();
+            container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-muted);">No profiles found</div>';
             return;
         }
 
-        wrap.innerHTML = `
-            <table class="patients-table">
-                <thead>
-                    <tr>
-                        <th>Patient</th>
-                        <th>Blood</th>
-                        <th>Age</th>
-                        <th>Allergies</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${all.map(p => {
-                        const completion = window.Storage.getProfileCompletion(p);
-                        const hasAllergies = p.allergies && p.allergies.toLowerCase() !== 'none' && p.allergies.trim();
-                        return `
-                        <tr>
-                            <td>
-                                <div class="patient-row-name">
-                                    <div class="patient-row-avatar">${p.fullName.charAt(0)}</div>
-                                    <div>
-                                        <div style="font-weight:600;">${p.fullName}</div>
-                                        <div style="font-size:0.6875rem; color:var(--text-muted);">${p.patientId}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge badge-red">${p.bloodGroup}</span></td>
-                            <td>${p.age}Y / ${p.gender}</td>
-                            <td>${hasAllergies ? `<span class="badge badge-yellow">⚠ Yes</span>` : '<span style="color:var(--text-muted);">None</span>'}</td>
-                            <td><span class="badge badge-green">${completion}% Complete</span></td>
-                             <td>
-                                <div style="display:flex; align-items:center; gap:0.5rem;">
-                                    <button class="btn btn-ghost btn-sm" onclick="switchTo('${p.patientId}')">
-                                        <i data-lucide="eye" style="width:14px;"></i>
-                                        View
-                                    </button>
-                                    ${!p.cloudSynced ? `
-                                    <button class="btn btn-ghost btn-sm" onclick="syncPatient('${p.patientId}')" title="Sync to Cloud">
-                                        <i data-lucide="refresh-cw" style="width:14px; color:#ef4444;"></i>
-                                    </button>
-                                    ` : ''}
-                                </div>
-                            </td>
-                        </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>
-        `;
+        container.innerHTML = '';
+        all.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'glass-card animate-slide';
+            row.style.padding = '1rem';
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.justifyContent = 'space-between';
+            row.style.cursor = 'pointer';
+            row.onclick = async () => {
+                localStorage.setItem('current_patient_id', p.patientId);
+                currentPatient = await window.Storage.getCurrentPatient();
+                showToast(`Switched to ${p.fullName}`);
+                // Switch to home tab
+                document.querySelector('.nav-btn[data-tab="overview"]').click();
+                renderAll();
+            };
 
+            const risk = window.Storage.calculateRiskLevel(p);
+            const riskColors = { 'CRITICAL': '#e11d48', 'HIGH': '#f59e0b', 'MODERATE': '#2563eb', 'LOW': '#059669' };
+
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <div style="width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid ${riskColors[risk]}; display:flex; align-items:center; justify-content:center; color:${riskColors[risk]}; font-weight:900;">
+                        ${p.bloodGroup}
+                    </div>
+                    <div>
+                        <div style="font-weight:700; font-size:0.9375rem;">${p.fullName}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:0.5rem;">
+                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${riskColors[risk]};"></span>
+                            ${risk} RISK • ${p.age}Y ${p.gender}
+                        </div>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" style="width:16px; color:var(--text-muted);"></i>
+            `;
+            container.appendChild(row);
+        });
         lucide.createIcons();
     }
 
@@ -945,6 +962,32 @@
     window.renderAdminTab = renderAdminTab;
 
     // ─── Run ───
-    init();
+    // Theme Toggle Logic
+    const themeBtn = $('theme-toggle');
+    if (themeBtn) {
+        themeBtn.onclick = () => {
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            const icon = themeBtn.querySelector('i');
+            icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+            lucide.createIcons();
+            localStorage.setItem('sehat_theme', isDark ? 'light' : 'dark');
+        };
+        // Load saved theme
+        const saved = localStorage.getItem('sehat_theme');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+            if (saved === 'light') themeBtn.querySelector('i').setAttribute('data-lucide', 'sun');
+        }
+    }
 
+    // Expose for external calls
+    window.Dashboard = {
+        init,
+        renderAll,
+        renderPatientsList,
+        renderRecentActivity
+    };
+
+    init();
 })();

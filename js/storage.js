@@ -1,7 +1,8 @@
 /* ============================================================
-   storage.js — v3.0 Cloud-First, Local Fallback
-   Fixed: user_id resolution, local fallback on cloud fail,
-          QR truncation, detailed console logging
+   storage.js — v4.0 Cloud-First, Anonymous Save
+   Fixed: RLS bypass (open INSERT policy), email fields,
+          emergency_alerts table, QR generation on success,
+          admin sees all profiles, users see own profiles
    ============================================================ */
 
 const Storage = {
@@ -16,46 +17,51 @@ const Storage = {
 
     mapToDB: function (p) {
         return {
-            patient_id:       p.patientId,
-            full_name:        p.fullName,
-            blood_group:      p.bloodGroup,
-            age:              parseInt(p.age) || 0,
-            gender:           p.gender,
-            contact1_name:    p.contact1_Name || '',
+            patient_id:        p.patientId,
+            full_name:         p.fullName,
+            blood_group:       p.bloodGroup,
+            age:               parseInt(p.age) || 0,
+            gender:            p.gender,
+            email:             p.email || '',
+            contact1_name:     p.contact1_Name || '',
             contact1_relation: p.contact1_Relation || '',
-            contact1_phone:   p.contact1_Phone || '',
-            contact2_name:    p.contact2_Name || '',
+            contact1_phone:    p.contact1_Phone || '',
+            contact1_email:    p.contact1_Email || '',
+            contact2_name:     p.contact2_Name || '',
             contact2_relation: p.contact2_Relation || '',
-            contact2_phone:   p.contact2_Phone || '',
-            conditions:       p.conditions || '',
-            allergies:        p.allergies || '',
-            medications:      p.medications || '',
-            medical_notes:    p.medicalNotes || '',
-            organ_donor:      p.organDonor === true || p.organDonor === 'true',
+            contact2_phone:    p.contact2_Phone || '',
+            conditions:        p.conditions || '',
+            allergies:         p.allergies || '',
+            medications:       p.medications || '',
+            medical_notes:     p.medicalNotes || '',
+            organ_donor:       p.organDonor === true || p.organDonor === 'true',
+            // user_id is intentionally omitted — open RLS policy allows null
         };
     },
 
     mapFromDB: function (row) {
         return {
-            id:               row.id,
-            patientId:        row.patient_id,
-            fullName:         row.full_name,
-            bloodGroup:       row.blood_group,
-            age:              row.age,
-            gender:           row.gender,
-            contact1_Name:    row.contact1_name,
+            id:                row.id,
+            patientId:         row.patient_id,
+            fullName:          row.full_name,
+            bloodGroup:        row.blood_group,
+            age:               row.age,
+            gender:            row.gender,
+            email:             row.email || '',
+            contact1_Name:     row.contact1_name,
             contact1_Relation: row.contact1_relation,
-            contact1_Phone:   row.contact1_phone,
-            contact2_Name:    row.contact2_name,
+            contact1_Phone:    row.contact1_phone,
+            contact1_Email:    row.contact1_email || '',
+            contact2_Name:     row.contact2_name,
             contact2_Relation: row.contact2_relation,
-            contact2_Phone:   row.contact2_phone,
-            conditions:       row.conditions,
-            allergies:        row.allergies,
-            medications:      row.medications,
-            medicalNotes:     row.medical_notes,
-            organDonor:       row.organ_donor,
-            userId:           row.user_id,
-            createdAt:        row.created_at
+            contact2_Phone:    row.contact2_phone,
+            conditions:        row.conditions,
+            allergies:         row.allergies,
+            medications:       row.medications,
+            medicalNotes:      row.medical_notes,
+            organDonor:        row.organ_donor,
+            userId:            row.user_id,
+            createdAt:         row.created_at
         };
     },
 
@@ -77,6 +83,17 @@ const Storage = {
             return uid;
         } catch (e) {
             console.error('[Storage] _getUserId error:', e);
+            return null;
+        }
+    },
+
+    // ────── GET CURRENT USER OBJECT (includes email) ──────
+    _getCurrentUserObj: async function () {
+        try {
+            if (!window.Auth) return null;
+            const session = await window.Auth.getSession();
+            return session?.user || null;
+        } catch (e) {
             return null;
         }
     },
@@ -107,7 +124,7 @@ const Storage = {
         return count;
     },
 
-    // ────── SAVE PATIENT ──────
+    // ────── SAVE PATIENT (v4: Anonymous-Safe Cloud-First) ──────
     savePatient: async function (data) {
         const id = 'EMS-' + Math.random().toString(36).substr(2, 6).toUpperCase();
         const patientData = {
@@ -120,19 +137,24 @@ const Storage = {
         console.log('[Storage] Attempting to save patient:', id);
 
         // ── Step 1: Save to Supabase (cloud first) ──
+        // IMPORTANT: We do NOT set user_id here.
+        // The new RLS policy (allow_anon_insert) allows inserts without auth.
+        // Admin can see ALL rows because admin_full_access policy uses USING(true).
         let cloudSaved = false;
+        let cloudId = null;
+
         if (this.db()) {
             try {
-                let userId = await this._getUserId();
-                // Default to Master Admin ID for guest saves to ensure they sync with the dashboard
-                if (!userId) {
-                    userId = '0438c434-b85c-4eca-96d1-b2b692576d53'; 
-                    console.log('[Storage] Guest user detected, linking to Master Admin ID:', userId);
-                }
-
-                // Removed mandatory login restriction for overhaul
                 const dbRow = this.mapToDB(patientData);
-                dbRow.user_id = userId;
+
+                // Attach user_id only if user is logged in (optional, for self-service view later)
+                const userId = await this._getUserId();
+                if (userId) {
+                    dbRow.user_id = userId;
+                    console.log('[Storage] Authenticated user, linking user_id:', userId);
+                } else {
+                    console.log('[Storage] Anonymous user — saving without user_id (allowed by RLS policy)');
+                }
 
                 console.log('[Storage] Inserting row into Supabase:', dbRow);
 
@@ -143,51 +165,39 @@ const Storage = {
                     .single();
 
                 if (error) {
-                    console.error('[Storage] Supabase Insert Error:', error);
-                    throw new Error('Database error: ' + (error.message || JSON.stringify(error)));
-                }
-
-                if (row) {
+                    console.error('[Storage] Supabase Insert Error:', error.message, error.code);
+                    // Don't throw — fall back to local save gracefully
+                } else if (row) {
                     patientData.id = row.id;
-                    patientData.cloudSynced = true; // Mark as cloud-saved
+                    cloudId = row.id;
                     cloudSaved = true;
-                    console.log('[Storage] Cloud save SUCCESS. Supabase row id:', row.id);
+                    console.log('[Storage] ✅ Cloud save SUCCESS. Supabase UUID:', row.id);
                 }
             } catch (err) {
-                // Re-throw auth errors (user not logged in) — these should block the save
-                if (err.message && err.message.includes('must be logged in')) {
-                    throw err;
-                }
-                // For other cloud errors, log but continue to local save
-                console.error('[Storage] Cloud save failed (will save locally as fallback):', err.message);
+                console.error('[Storage] Cloud save exception (will save locally):', err.message);
             }
         } else {
-            console.warn('[Storage] Supabase client not available. Saving locally only.');
+            console.warn('[Storage] Supabase not available. Saving locally only.');
         }
 
-        if (!cloudSaved) {
-            patientData.cloudSynced = false;
-        } else {
-            patientData.cloudSynced = true;
-        }
+        patientData.cloudSynced = cloudSaved;
 
-        // ── Step 2: Always save to localStorage ──
+        // ── Step 2: Always save to localStorage (cache + offline fallback) ──
         const patients = this.getAllPatientsLocal();
-        // Update if already exists (shouldn't happen on new save)
         const idx = patients.findIndex(p => p.patientId === id);
         if (idx !== -1) patients[idx] = patientData;
         else patients.push(patientData);
 
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
         localStorage.setItem('current_patient_id', id);
-        console.log('[Storage] Local save SUCCESS:', id, '| Cloud synced:', patientData.cloudSynced);
+        console.log('[Storage] Local save SUCCESS:', id, '| Cloud synced:', cloudSaved);
 
-        // ── Step 3: Log the scan event (best-effort, don't block) ──
+        // ── Step 3: Log profile creation event ──
         try {
-            await this.logScan(id, 'profile_created', 'Dashboard');
+            await this.logScan(id, 'profile_created', navigator.userAgent || 'Web');
         } catch (e) { /* ignore */ }
 
-        return { id, cloudSynced };
+        return { id, cloudSynced: cloudSaved, supabaseId: cloudId, patient: patientData };
     },
 
     // ────── GET ALL PATIENTS ──────
@@ -199,10 +209,23 @@ const Storage = {
             try {
                 const userId = await this._getUserId();
                 let query = this.db().from('patients').select('*');
-                // Admin sees all (or filtered by user_id if they want, but typically all)
-                // For now, if logged in, show user-specific
-                if (userId) {
+                
+                // Admin sees ALL records. Regular users see own. Anonymous use local cache.
+                const adminEmail = 'firstemergencyresponse4@gmail.com';
+                const currentUser = await this._getCurrentUserObj();
+                const isAdmin = currentUser?.email?.toLowerCase() === adminEmail.toLowerCase();
+
+                if (isAdmin) {
+                    // No user_id filter — admin sees EVERYONE's profiles
+                    console.log('[Storage] 🔴 ADMIN MODE: fetching ALL profiles from cloud.');
+                } else if (userId) {
+                    // Normal authenticated user: only their own profiles
                     query = query.eq('user_id', userId);
+                    console.log('[Storage] 👤 User mode: fetching own profiles for', userId);
+                } else {
+                    // Anonymous (just registered, not logged in): return local cache
+                    console.log('[Storage] 👻 Anonymous: using local cache.');
+                    return this.getAllPatientsLocal();
                 }
                 
                 const { data, error } = await query.order('created_at', { ascending: false });
@@ -212,7 +235,7 @@ const Storage = {
                 if (data && data.length > 0) {
                     cloudPatients = data.map(r => this.mapFromDB(r));
                     this._cache = cloudPatients;
-                    console.log('[Storage] Fetched', cloudPatients.length, 'patients from cloud.');
+                    console.log('[Storage] ✅ Fetched', cloudPatients.length, 'patients from cloud.');
                 }
             } catch (err) {
                 console.error('[Storage] getAllPatients cloud error:', err.message);
@@ -222,30 +245,17 @@ const Storage = {
         const localPatients = this.getAllPatientsLocal();
         const merged = [];
 
-        // 1. Add all cloud patients to merged list
-        cloudPatients.forEach(cp => {
-            merged.push({ ...cp, cloudSynced: true });
-        });
+        cloudPatients.forEach(cp => merged.push({ ...cp, cloudSynced: true }));
 
-        // 2. Add local patients that aren't in cloud yet
         localPatients.forEach(lp => {
-            const existsInCloud = merged.find(cp => cp.patientId === lp.patientId);
-            if (!existsInCloud) {
-                // If we attempted a cloud fetch and didn't find this, mark as not synced
-                // BUT if db was unavailable, we keep the previous local sync status if it was true
-                let status = false;
-                if (!dbAvailable && lp.cloudSynced) status = true; 
-                merged.push({ ...lp, cloudSynced: status });
-            } else {
-                // Already in merged (from cloud), but we might want to update local storage
-                // with latest cloud data if they match
+            const inCloud = merged.find(cp => cp.patientId === lp.patientId || cp.id === lp.id);
+            if (!inCloud) {
+                merged.push({ ...lp, cloudSynced: dbAvailable ? false : (lp.cloudSynced || false) });
             }
         });
 
-        // ─── CRITICAL: Persist merged state back to local storage ───
-        // This ensures the "cloudSynced" status is remembered between tab refreshes
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(merged));
-        console.log('[Storage] Merged state persisted to localStorage. Total:', merged.length);
+        console.log('[Storage] Merged. Total:', merged.length);
 
         return merged;
     },
@@ -461,6 +471,7 @@ const Storage = {
             g:   p.gender || '',
             c1n: trunc(p.contact1_Name, 30),
             c1p: trunc(p.contact1_Phone, 15),
+            c1e: trunc(p.contact1_Email, 60),  // family email for SOS alerts
             con: trunc(p.conditions, 80),
             alg: trunc(p.allergies, 60),
             med: trunc(p.medications, 60),
@@ -518,21 +529,22 @@ const Storage = {
             console.log('[Storage] QR decode success for:', d.n);
 
             return {
-                patientId:     d.id  || '',
-                id:            d.sid || '',
-                fullName:      d.n   || 'Unknown',
-                bloodGroup:    d.b   || '—',
-                age:           d.a   || '—',
-                gender:        d.g   || '—',
+                patientId:      d.id  || '',
+                id:             d.sid || '',
+                fullName:       d.n   || 'Unknown',
+                bloodGroup:     d.b   || '—',
+                age:            d.a   || '—',
+                gender:         d.g   || '—',
                 contact1_Name:  d.c1n || '',
                 contact1_Phone: d.c1p || '',
-                conditions:    d.con || '',
-                allergies:     d.alg || '',
-                medications:   d.med || '',
-                organDonor:    d.org === '1',
+                contact1_Email: d.c1e || '',   // family email for SOS
+                conditions:     d.con || '',
+                allergies:      d.alg || '',
+                medications:    d.med || '',
+                organDonor:     d.org === '1',
                 contact2_Name:  '',
                 contact2_Phone: '',
-                medicalNotes:  ''
+                medicalNotes:   ''
             };
         } catch (e) {
             console.error('[Storage] QR decode error:', e.message);
@@ -542,7 +554,7 @@ const Storage = {
 
     // ────── SCAN HISTORY ──────
     logScan: async function (patientId, type, device, location, lat, long) {
-        // Local log always
+        // Always log locally first
         const scans = this.getScanHistoryLocal();
         scans.unshift({
             patientId,
@@ -555,26 +567,23 @@ const Storage = {
         });
         localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
 
-        // Cloud log (best-effort)
+        // Cloud log (best-effort, anonymous-safe)
         if (this.db()) {
             try {
-                let userId = await this._getUserId();
-                if (!userId) userId = '0438c434-b85c-4eca-96d1-b2b692576d53'; // Default to admin
-
-                // We'll store lat/long in the location string if the table doesn't have specific columns yet,
                 const logData = {
-                    patient_id: patientId,
-                    user_id:    userId,
-                    type:       type || 'qr_scan',
-                    device:     device || 'Unknown',
-                    timestamp:  new Date().toISOString()
+                    patient_id:   patientId,
+                    type:         type || 'qr_scan',
+                    device:       device || 'Unknown',
+                    location:     lat && long ? `${location || 'GPS'} (${lat.toFixed(4)}, ${long.toFixed(4)})` : (location || 'Unknown'),
+                    latitude:     lat || null,
+                    longitude:    long || null,
+                    timestamp:    new Date().toISOString(),
+                    is_emergency: type === 'emergency_scan'
                 };
-                
-                if (lat && long) {
-                    logData.location = `${location || 'Unknown'} (${lat}, ${long})`;
-                } else {
-                    logData.location = location || 'Unknown';
-                }
+
+                // Attach user_id only if authenticated
+                const userId = await this._getUserId();
+                if (userId) logData.user_id = userId;
 
                 await this.db().from('scans').insert([logData]);
             } catch (err) {
@@ -607,6 +616,77 @@ const Storage = {
         } catch (e) {
             return [];
         }
+    },
+
+    // ────── SOS & TRIAGE ──────
+    
+    // Calculates a clinical risk level based on patient data
+    calculateRiskLevel: function(p) {
+        if (!p) return 'LOW';
+        const cond = (p.conditions || '').toLowerCase();
+        const alg = (p.allergies || '').toLowerCase();
+        const meds = (p.medications || '').toLowerCase();
+
+        // 🔴 CRITICAL: Immediate life threat
+        if (cond.includes('heart') || cond.includes('stroke') || cond.includes('cardiac') || cond.includes('unconscious')) return 'CRITICAL';
+        if (alg.includes('anaphylaxis') || alg.includes('severe')) return 'CRITICAL';
+        
+        // 🟡 HIGH: Significant chronic risk
+        if (cond.includes('diabet') || cond.includes('epilep') || cond.includes('seizure') || cond.includes('asthma')) return 'HIGH';
+        if (meds.includes('insulin') || meds.includes('warfarin') || meds.includes('thinner')) return 'HIGH';
+        if (alg !== 'none' && alg !== '' && alg !== 'no known allergies') return 'HIGH';
+
+        // 🟢 MODERATE: Controlled condition
+        if (cond !== 'none' && cond !== '' && cond !== 'stable') return 'MODERATE';
+
+        // ⚪ LOW: General wellness
+        return 'LOW';
+    },
+
+    // ────── SOS ALERT (v4: Writes to emergency_alerts table) ──────
+    // Called when a QR code is scanned on the emergency page.
+    // Writes a record to emergency_alerts which triggers an email to family.
+    triggerSOSAlert: async function(patient, lat, long) {
+        const patientId = typeof patient === 'string' ? patient : (patient.patientId || patient.id);
+        console.log(`[SOS] Triggering alert for ${patientId} at ${lat}, ${long}`);
+        
+        // 1. Log the emergency scan to scans table
+        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', 'GPS', lat, long);
+
+        // 2. Write to emergency_alerts table (drives email notifications)
+        if (this.db() && typeof patient === 'object') {
+            try {
+                const mapsLink = lat && long 
+                    ? `https://www.google.com/maps?q=${lat},${long}` 
+                    : 'Location not available';
+
+                const alertData = {
+                    patient_id:        patientId,
+                    patient_name:      patient.fullName || 'Unknown',
+                    patient_blood:     patient.bloodGroup || '',
+                    family_email:      patient.contact1_Email || '',
+                    family_name:       patient.contact1_Name || '',
+                    gps_lat:           lat || null,
+                    gps_long:          long || null,
+                    google_maps_link:  mapsLink,
+                    email_sent:        false
+                };
+
+                const { error } = await this.db()
+                    .from('emergency_alerts')
+                    .insert([alertData]);
+
+                if (error) {
+                    console.error('[SOS] emergency_alerts insert error:', error.message);
+                } else {
+                    console.log('[SOS] ✅ Emergency alert logged to cloud. Family will be notified.');
+                }
+            } catch (err) {
+                console.warn('[SOS] Cloud alert trigger failed:', err.message);
+            }
+        }
+        
+        return true;
     },
 
     // ────── UTILITIES ──────

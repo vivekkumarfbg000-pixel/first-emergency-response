@@ -48,12 +48,6 @@ const Auth = {
     async signIn(email, password) {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
-        // Force admin-only login
-        const adminEmail = 'firstemergencyresponse4@gmail.com';
-        if (email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
-            throw new Error('Unauthorized: Only the master administrator can access the dashboard.');
-        }
-
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({
             email,
             password
@@ -61,7 +55,6 @@ const Auth = {
 
         if (error) {
             console.error('[Auth] SignIn error:', error);
-            // Handle common Supabase errors more gracefully
             if (error.message.includes('Email not confirmed')) {
                 throw new Error('Please confirm your email address before signing in.');
             }
@@ -71,7 +64,7 @@ const Auth = {
             throw error;
         }
 
-        console.log('[Auth] SignIn success, user:', data?.user?.id);
+        console.log('[Auth] SignIn success, user:', data?.user?.email);
         return data;
     },
 
