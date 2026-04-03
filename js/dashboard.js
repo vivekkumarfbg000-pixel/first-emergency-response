@@ -38,11 +38,12 @@
 
     // ─── Init ───
     async function init() {
+        // Render icons immediately for UI shell
+        if (window.lucide) lucide.createIcons();
+
         // 1. Force Auth
         const user = await window.Auth.requireAuth();
         if (!user) return;
-
-        lucide.createIcons();
 
         // 2. Admin Check
         const isAdmin = await window.Auth.isAdmin();
@@ -216,7 +217,7 @@
         await renderSwitcher();
         generateQR();
         await renderRecentActivity();
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
     async function renderSwitcher() {
