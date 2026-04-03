@@ -1,15 +1,24 @@
 {
-  "name": "First Emergency Response",
-  "short_name": "EMS",
-  "start_url": "./index.html",
+  "name": "Sehat Point Emergency Response",
+  "short_name": "Sehat Point",
+  "description": "Professional Emergency medical profile and SOS alert system.",
+  "start_url": "/dashboard.html",
   "display": "standalone",
-  "background_color": "#060910",
-  "theme_color": "#ef4444",
+  "background_color": "#030712",
+  "theme_color": "#e11d48",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon"
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

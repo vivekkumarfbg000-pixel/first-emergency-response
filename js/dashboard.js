@@ -371,94 +371,79 @@
     // ─── Events ───
     function setupEvents() {
         // Patient Switcher
-        $('patientSwitcher').addEventListener('change', async (e) => {
-            const p = await window.Storage.getPatientById(e.target.value);
-            if (p) {
-                currentPatient = p;
-                localStorage.setItem('current_patient_id', p.patientId);
-                await renderAll();
-                showToast(`Switched to ${p.fullName}`, 'info');
-            }
+        const switcher = $('patientSwitcher');
+        if (switcher) {
+            switcher.addEventListener('change', async (e) => {
+                const p = await window.Storage.getPatientById(e.target.value);
+                if (p) {
+                    currentPatient = p;
+                    localStorage.setItem('current_patient_id', p.patientId);
+                    await renderAll();
+                    showToast(`Switched to ${p.fullName}`, 'info');
+                }
+            });
+        }
+
+        // Sidebar Navigation
+        const navItems = document.querySelectorAll('.nav-item[data-tab]');
+        navItems.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const tabId = btn.getAttribute('data-tab');
+                if (!tabId) return;
+
+                // Update UI active states
+                navItems.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Switch tabs
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                const targetTab = $(tabId);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                    
+                    // Trigger specific renders
+                    if (tabId === 'tab-patients') await renderPatientsList();
+                    if (tabId === 'tab-activity') await renderFullActivity();
+                    if (tabId === 'tab-admin') await renderAdminTab();
+                }
+
+                // Close sidebar on mobile
+                const sidebar = $('appSidebar');
+                if (sidebar) sidebar.classList.remove('open');
+            });
         });
 
-        // Real-time Scan Alerts & Patient Insertion (Pro-Grade SaaS Sync)
-        if (window.supabaseClient) {
-            const statusPill = $('realtime-status-pill');
-            const instructions = $('realtime-instructions');
+        // Mobile sidebar toggle
+        const sidebarToggle = $('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                const sidebar = $('appSidebar');
+                if (sidebar) sidebar.classList.toggle('open');
+            });
+        }
 
+        // Real-time Scan Alerts
+        if (window.supabaseClient) {
             window.supabaseClient
                 .channel('emergency-alerts')
-                // 1. Listen for Scans
                 .on('postgres_changes', { event: 'INSERT', table: 'scans' }, async (payload) => {
                     console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
                     await renderAll();
                     if (payload.new && payload.new.is_emergency) {
                         showToast('🆘 EMERGENCY SCAN LOGGED!', 'error');
-                    } else {
-                        showToast('🔍 NEW QR SCAN DETECTED!', 'info');
                     }
                 })
-                // 2. Listen for New Patients (Instant Sync)
                 .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
-                    console.log('[Dashboard] REALTIME PATIENT INSERTED:', payload);
                     showToast(`✨ NEW PROFILE CREATED: ${payload.new.full_name}`, 'success');
                     await window.Storage.getAllPatients(); 
                     await renderAll();
                 })
-                // 3. Listen for SOS Email Alerts
                 .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, async (payload) => {
-                    console.log('[Dashboard] SOS ALERT SENT:', payload);
                     showToast(`📧 SOS ALERT SENT TO FAMILY: ${payload.new.family_email.toUpperCase()}`, 'error');
                     await renderAll();
                 })
-                .subscribe((status) => {
-
-                    console.log('[Dashboard] Real-time Channel Status:', status);
-                    if (statusPill) {
-                        if (status === 'SUBSCRIBED') {
-                            statusPill.style.color = '#10b981';
-                            statusPill.style.background = 'rgba(16,185,129,0.1)';
-                            statusPill.innerHTML = '<span class="pulse-dot animate-pulse-green" style="width:8px; height:8px; background:currentColor; margin-right:4px;"></span> Live Sync Active';
-                            if (instructions) instructions.style.display = 'none';
-                        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                            statusPill.style.color = '#f59e0b';
-                            statusPill.style.background = 'rgba(245,158,11,0.1)';
-                            statusPill.innerHTML = '⚠️ Replication Pending';
-                            if (instructions) instructions.style.display = 'block';
-                        }
-                    }
-                });
+                .subscribe();
         }
-
-        // Sidebar Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', async () => {
-                const tab = item.dataset.tab;
-
-                if (!tab) {
-                    if (item.id === 'btn-live-view') {
-                        const encoded = window.Storage.encodeForQR(currentPatient);
-                        const baseUrl = window.location.href.split('dashboard.html')[0];
-                        const idToUse = currentPatient.id || currentPatient.patientId;
-                        window.open(`${baseUrl}emergency.html?id=${idToUse}&data=${encoded}`, '_blank');
-                    }
-                    return;
-                }
-
-                // Switch tabs
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                $(`tab-${tab}`).style.display = 'block';
-
-                if (tab === 'patients') await renderPatientsList();
-                if (tab === 'activity') await renderFullActivity();
-                if (tab === 'admin') await renderAdminTab();
-
-                // Close sidebar on mobile
-                $('sidebar').classList.remove('open');
-            });
-        });
 
         // Global Admin Search
         const adminSearch = $('adminSearch');
@@ -468,100 +453,99 @@
             });
         }
 
-        // Mobile hamburger
-        const hamburger = $('hamburgerBtn');
-        if (hamburger) {
-            hamburger.addEventListener('click', () => {
-                $('sidebar').classList.toggle('open');
+        // QR Actions
+        const dlBtn = $('downloadQR');
+        if (dlBtn) {
+            dlBtn.addEventListener('click', async () => {
+                if (!qrCanvas) return;
+                const link = document.createElement('a');
+                link.download = `EMS_QR_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
+                link.href = qrCanvas.toDataURL();
+                link.click();
+                await window.Storage.logScan(currentPatient.patientId, 'qr_download', 'Dashboard');
+                showToast('QR Image Downloaded');
             });
         }
 
-        // QR Actions
-        $('downloadQR').addEventListener('click', async () => {
-            if (!qrCanvas) return;
-            const link = document.createElement('a');
-            link.download = `EMS_QR_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
-            link.href = qrCanvas.toDataURL();
-            link.click();
-            await window.Storage.logScan(currentPatient.patientId, 'qr_download', 'Dashboard');
-            showToast('QR Image Downloaded');
-        });
+        const wpBtn = $('setWallpaper');
+        if (wpBtn) {
+            wpBtn.addEventListener('click', () => {
+                if (!qrCanvas) return;
+                createWallpaper(qrCanvas, currentPatient);
+                showToast('Emergency Wallpaper Generated');
+            });
+        }
 
-        $('setWallpaper').addEventListener('click', () => {
-            if (!qrCanvas) return;
-            createWallpaper(qrCanvas, currentPatient);
-            showToast('Emergency Wallpaper Generated');
-        });
+        // Management Actions
+        const btnEdit = $('btn-edit-main');
+        if (btnEdit) btnEdit.addEventListener('click', openEditModal);
 
-        // Management
-        $('btn-edit-main').addEventListener('click', openEditModal);
         const btnPrint = $('btn-print');
         if (btnPrint) {
             btnPrint.addEventListener('click', async () => {
                 const originalContent = btnPrint.innerHTML;
                 btnPrint.disabled = true;
                 btnPrint.innerHTML = '<i class="animate-spin-slow"></i> Generating...';
-                
                 try {
                     if (!window.CardGenerator) throw new Error('Card Generator not loaded');
                     const dataUrl = await window.CardGenerator.generate(currentPatient);
-                    
                     if (dataUrl) {
                         const link = document.createElement('a');
                         link.download = `EMS_CARD_${currentPatient.fullName.replace(/\s+/g, '_')}.png`;
                         link.href = dataUrl;
                         link.click();
                         showToast('✅ Medical ID Card Ready', 'success');
-                    } else {
-                        throw new Error('Canvas render failed');
                     }
                 } catch (err) {
-                    console.error('[Dashboard] Print error:', err);
                     showToast('❌ Printing Failed', 'error');
-                    alert(`ID Card Generation Error: ${err.message}\n\nPlease ensure the QRCode library is loaded and your browser supports Canvas.`);
                 } finally {
                     btnPrint.disabled = false;
                     btnPrint.innerHTML = originalContent;
                 }
             });
         }
-        $('btn-delete').addEventListener('click', deleteCurrent);
-        $('btn-export').addEventListener('click', () => {
-            // Simplified export for this version
-            alert('Cloud backup is active. Local export disabled.');
-        });
+
+        const btnDelete = $('btn-delete');
+        if (btnDelete) btnDelete.addEventListener('click', deleteCurrent);
+
+        const btnExport = $('btn-export');
+        if (btnExport) {
+            btnExport.addEventListener('click', () => {
+                alert('Cloud backup is active. Local export disabled.');
+            });
+        }
 
         // Edit Form
-        $('editForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveChanges();
-        });
+        const editForm = $('editForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveChanges();
+            });
+        }
 
-        // Settings
+        // Settings Actions
         const settingsReset = $('settings-reset');
         if (settingsReset) {
             settingsReset.addEventListener('click', () => {
                 if (confirm('⚠️ This will permanently delete ALL local and cloud profiles. Are you sure?')) {
-                    // Actual cleanup would require more logic for cloud
                     localStorage.clear();
                     showToast('Data reset requested. Reloading...', 'info');
+                    setTimeout(() => window.location.reload(), 1000);
                 }
             });
         }
 
-        // Cloud Test
         const btnTestCloud = $('btn-test-cloud');
         if (btnTestCloud) {
             btnTestCloud.addEventListener('click', testCloudConnection);
         }
 
-        // Seed Cloud (Admin Only)
         const btnSeedCloud = $('btn-seed-cloud');
         if (btnSeedCloud) {
             btnSeedCloud.addEventListener('click', async () => {
                 if (!confirm('This will create 3 mock profiles in Supabase. Proceed?')) return;
                 btnSeedCloud.disabled = true;
-                btnSeedCloud.textContent = 'Seeding...';
                 try {
                     const count = await window.Storage.seedCloud();
                     showToast(`Successfully seeded ${count} cloud records!`, 'success');
@@ -570,17 +554,14 @@
                     showToast('Cloud seeding failed: ' + e.message, 'error');
                 } finally {
                     btnSeedCloud.disabled = false;
-                    btnSeedCloud.innerHTML = '<i data-lucide="database-zap"></i> Seed Cloud Mock Data';
-                    if (window.lucide) lucide.createIcons();
                 }
             });
         }
 
-        // Search in patients tab
-        const searchInput = $('patientSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', async () => {
-                await renderPatientsList(searchInput.value.trim().toLowerCase());
+        const patientSearch = $('patientSearch');
+        if (patientSearch) {
+            patientSearch.addEventListener('input', async () => {
+                await renderPatientsList(patientSearch.value.trim().toLowerCase());
             });
         }
     }

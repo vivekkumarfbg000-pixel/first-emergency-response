@@ -51,36 +51,6 @@
             box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
         }
 
-        /* ─── SOS Status Bar ─── */
-        .sos-status-bar {
-            background: #fefce8;
-            border-bottom: 2px solid #fef08a;
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #854d0e;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        .sos-pulse {
-            width: 8px; height: 8px;
-            background: #eab308;
-            border-radius: 50%;
-            animation: pulseSimple 1.5s infinite;
-        }
-
-        @keyframes pulseSimple {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
         body {
             background: #e2e8f0;
             margin: 0;
@@ -481,12 +451,6 @@
         <p style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--clinical-slate);">
             Synchronizing Clinical Database...
         </p>
-    </div>
-
-    <!-- SOS Status Bar -->
-    <div class="sos-status-bar" id="sos-bar" style="display: none;">
-        <span class="sos-pulse"></span>
-        <span id="sos-text">NOTIFYING EMERGENCY CONTACTS...</span>
     </div>
 
     <!-- Main Report Container -->

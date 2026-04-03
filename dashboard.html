@@ -7,6 +7,13 @@
   <meta name="description" content="Manage emergency medical profiles, generate QR codes, and monitor scan activity.">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#e11d48">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <style>
@@ -50,126 +57,122 @@
 
     [data-theme="light"] body { background: #e2e8f0; }
 
-    /* ─── Mobile-First App Shell ─── */
-    .app-shell {
-      max-width: 500px;
-      margin: 0 auto;
+    /* ─── Sidebar-Based Layout ─── */
+    .app-layout {
+      display: flex;
       min-height: 100vh;
       background: var(--bg);
-      position: relative;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: 280px;
+      background: rgba(3, 7, 18, 0.4);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      box-shadow: 0 0 100px rgba(0,0,0,0.5);
-    }
-
-    @media (min-width: 501px) {
-      body {
-        background: radial-gradient(circle at top right, #111827, #000);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px 0;
-      }
-      .app-shell {
-        height: 90vh;
-        border-radius: 40px;
-        overflow: hidden;
-        border: 8px solid #1e293b;
-      }
-    }
-
-    .main-content {
-      flex: 1;
-      padding: 1.25rem;
-      padding-bottom: 5rem; /* Space for bottom nav */
-      overflow-y: auto;
-      scrollbar-width: none;
-    }
-    .main-content::-webkit-scrollbar { display: none; }
-
-    /* ─── Header ─── */
-    .app-header {
-      padding: 1.25rem;
-      background: rgba(3, 7, 18, 0.8);
-      backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      height: 100vh;
+      z-index: 1000;
+      transition: var(--transition);
+    }
+
+    .sidebar-header {
+      padding: 2rem;
       border-bottom: 1px solid var(--border);
     }
 
-    .app-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .app-brand .logo-cube {
-      width: 32px;
-      height: 32px;
-      background: var(--primary);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
-    }
-
-    /* ─── Bottom Navigation ─── */
-    .bottom-nav {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 70px;
-      background: rgba(3, 7, 18, 0.95);
-      backdrop-filter: blur(20px);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 0 1rem;
-      border-top: 1px solid var(--border);
-      z-index: 1000;
-    }
-
-    .nav-btn {
+    .sidebar-nav {
+      flex: 1;
+      padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 1rem;
+      padding: 0.875rem 1.25rem;
       color: var(--text-muted);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.875rem;
       cursor: pointer;
       transition: var(--transition);
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(225, 29, 72, 0.1);
+      color: var(--primary);
+    }
+
+    .nav-item i { width: 20px; height: 20px; }
+
+    .sidebar-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── Main Content ─── */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .main-header {
+      padding: 1.25rem 2.5rem;
+      background: rgba(3, 7, 18, 0.2);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+
+    .main-content {
+      padding: 2.5rem;
       flex: 1;
     }
 
-    .nav-btn i { width: 22px; height: 22px; transition: var(--transition); }
-    .nav-btn span { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-
-    .nav-btn.active { color: var(--primary); }
-    .nav-btn.active i { transform: translateY(-2px); stroke-width: 3; }
-
-    .nav-fab {
-      width: 56px;
-      height: 56px;
-      background: var(--primary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* ─── Mobile Hamburger ─── */
+    .hamburger {
+      display: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
       color: white;
-      margin-top: -40px;
-      box-shadow: 0 8px 24px rgba(225, 29, 72, 0.4);
-      border: 4px solid var(--bg);
-      transition: var(--transition);
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .nav-fab:hover { transform: scale(1.1) rotate(90deg); }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        height: 100vh;
+      }
+      .sidebar.open { left: 0; }
+      .hamburger { display: block; }
+      .main-header { padding: 1.25rem; }
+      .main-content { padding: 1.25rem; }
+    }
 
     /* Tabs Visibility */
     .tab-content { display: none; }
@@ -179,9 +182,6 @@
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* Remove legacy sidebar/desktop styles */
-    .sidebar, .hamburger, .app-layout { display: none; }
 
     /* ─── Glowing Stat Cards & Categorical Tints ─── */
     .stat-card {
@@ -471,56 +471,78 @@
   </style>
 </head>
 <body>
-  <div class="app-shell animate-fade-in">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="app-brand">
-        <div class="logo-cube">
-          <i data-lucide="shield-plus" style="width: 18px;"></i>
-        </div>
-        <span>SEHAT POINT</span>
-      </div>
-      <div style="display: flex; gap: 0.75rem; align-items: center;">
-        <div id="theme-toggle" style="width: 36px; height: 36px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <i data-lucide="moon" style="width: 18px; color: var(--text-secondary);"></i>
-        </div>
-        <i data-lucide="bell" style="width: 20px; color: var(--text-muted);"></i>
-        <div id="btn-signout" onclick="Auth.signOut()" style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <i data-lucide="log-out" style="width: 16px; color: var(--primary);"></i>
-        </div>
-      </div>
-    </header>
-
-    <!-- Content -->
-    <main class="main-content">
-      <!-- Welcome Section -->
-      <section style="margin-bottom: 2rem;">
-        <div id="welcome-msg" style="font-size: 1.25rem; font-weight: 800; color: white;">Loading...</div>
-        <div id="dash-time" style="font-size: 0.75rem; color: var(--text-muted);"></div>
-        <div class="heartbeat-pill" style="margin-top: 0.5rem;">
-          <span class="pulse-dot"></span>
-          Real-time Sync Active
-        </div>
-      </section>
-
-      <!-- Patient Switcher Mobile -->
-      <div class="glass-card" style="padding: 1rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--secondary);">
-            <i data-lucide="user"></i>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="app-brand">
+          <div class="logo-cube">
+            <i data-lucide="shield-plus"></i>
           </div>
-          <div>
-            <div style="font-size: 0.625rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Active Profile</div>
-            <select id="patientSwitcher" style="background: transparent; border: none; color: white; font-size: 0.9375rem; font-weight: 700; outline: none; padding: 0;">
-              <option>Loading...</option>
-            </select>
+          <span style="font-size: 1.25rem;">SEHAT POINT</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-tab="tab-overview">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Overview</span>
+        </div>
+        <div class="nav-item" data-tab="tab-patients">
+          <i data-lucide="users"></i>
+          <span>Profiles</span>
+        </div>
+        <div class="nav-item" data-tab="tab-activity">
+          <i data-lucide="activity"></i>
+          <span>Activity Log</span>
+        </div>
+        <div class="nav-item" data-tab="tab-admin" id="nav-admin" style="display: none;">
+          <i data-lucide="crown"></i>
+          <span>Admin Master</span>
+        </div>
+        <div class="nav-item" data-tab="tab-settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="window.Auth.signOut()">
+          <i data-lucide="log-out"></i>
+          <span>Sign Out</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+      <header class="main-header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="hamburger" id="sidebarToggle">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="welcome-user">
+            <h4 id="dash-time" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-bottom: 0.25rem;">--</h4>
+            <h2 id="welcome-msg" style="font-size: 1.125rem; font-weight: 700;">Welcome back</h2>
           </div>
         </div>
-        <i data-lucide="chevron-down" style="width: 16px; color: var(--text-muted);"></i>
-      </div>
 
-      <!-- TAB: OVERVIEW -->
-      <div id="tab-overview" class="tab-content active">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 1rem;">
+          <select class="patient-switcher-select" id="patientSwitcher" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; outline: none;">
+            <option>Loading profiles...</option>
+          </select>
+          <a href="register.html" class="p-btn" style="padding: 0.6rem 1.25rem; border-radius: 10px; background: var(--primary); font-size: 0.875rem; box-shadow: 0 4px 12px rgba(225,29,72,0.3);">
+            <i data-lucide="plus" style="width: 16px;"></i>
+            New Profile
+          </a>
+        </div>
+      </header>
+
+      <div class="main-content">
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- ─── TAB: OVERVIEW ─── -->
+        <div class="tab-content active" id="tab-overview">
         <!-- Stats -->
         <div class="stats-grid">
           <div class="glass-card stat-card stat-card-red animate-slide stagger-1">
@@ -923,7 +945,7 @@
       </div>
 
     </main>
-  </div>
+  </div><!-- end app-layout -->
 
   <!-- EDIT MODAL -->
   <div id="editModal" class="modal">
@@ -971,8 +993,6 @@
     </div>
   </div>
 
-  <div class="toast-container" id="toastContainer"></div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/auth.js"></script>
@@ -981,13 +1001,23 @@
   <script src="js/dashboard.js"></script>
 
   <script>
-      if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-              navigator.serviceWorker.register('service-worker.js')
-                  .then(reg => console.log('Service Worker registered:', reg.scope))
-                  .catch(err => console.log('Service Worker registration failed:', err));
-          });
-      }
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('[PWA] Service Worker Registered:', reg.scope))
+          .catch(err => console.error('[PWA] Service Worker Failed:', err));
+      });
+    }
+
+    // Sidebar logic
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('appSidebar');
+    if (toggle && sidebar) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+    }
   </script>
 </body>
 </html>
