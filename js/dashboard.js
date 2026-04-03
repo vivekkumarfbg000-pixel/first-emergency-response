@@ -297,7 +297,8 @@
     // ─── Full Activity Tab ───
     async function renderFullActivity() {
         const scans = await window.Storage.getScanHistory();
-        const logEl = $('full-activity-log');
+        // Support both possible container IDs
+        const logEl = $('full-activity-log') || $('recentActivityList');
         if (!logEl) return;
 
         if (scans.length === 0) {
@@ -737,23 +738,8 @@
         }
     }
 
-    // ─── Patients List ───
+    // ─── Patients List & Render (WhatsApp Style) ───
     async function renderPatientsList(filter = '') {
-        let all = await window.Storage.getAllPatients();
-
-        if (filter) {
-            all = all.filter(p =>
-                p.fullName.toLowerCase().includes(filter) ||
-                p.bloodGroup.toLowerCase().includes(filter) ||
-                (p.conditions || '').toLowerCase().includes(filter)
-            );
-        }
-
-        const countEl = $('profiles-count-text');
-        if (countEl) countEl.textContent = `${all.length} profile${all.length !== 1 ? 's' : ''} ${filter ? 'found' : 'registered'}`;
-
-    // ─── Render Patients List (WhatsApp Style) ───
-    async function renderPatientsList() {
         const container = $('patientsTableWrap');
         if (!container) return;
 

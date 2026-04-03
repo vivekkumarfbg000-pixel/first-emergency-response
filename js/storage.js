@@ -679,7 +679,17 @@ const Storage = {
                 if (error) {
                     console.error('[SOS] emergency_alerts insert error:', error.message);
                 } else {
-                    console.log('[SOS] ✅ Emergency alert logged to cloud. Family will be notified.');
+                    console.log('[SOS] ✅ Emergency alert logged to cloud. Invoking notification function...');
+                    // Attempt to call Supabase Edge Function for actual email delivery
+                    try {
+                        const { error: funcError } = await this.db().functions.invoke('send-sos-email', {
+                            body: alertData
+                        });
+                        if (funcError) throw funcError;
+                        console.log('[SOS] 📨 Edge function invoked successfully.');
+                    } catch (fErr) {
+                        console.warn('[SOS] Edge function invocation skipped/failed (likely not deployed):', fErr.message);
+                    }
                 }
             } catch (err) {
                 console.warn('[SOS] Cloud alert trigger failed:', err.message);

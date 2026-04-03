@@ -459,15 +459,14 @@
     .btn-ambulance { background: #e11d48; }
     .btn-clinic { background: #2563eb; grid-column: span 2; }
 
-    .lock-info {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 1.5rem;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #94a3b8;
+    @media (max-width: 480px) {
+      .premium-body { padding: 1.25rem; }
+      .premium-body h2 { font-size: 1.5rem; }
+      .premium-actions { grid-template-columns: 1fr; }
+      .btn-clinic { grid-column: span 1; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .stat-card { padding: 1rem; }
+      .stat-value { font-size: 1.375rem; }
     }
   </style>
 </head>
@@ -745,7 +744,7 @@
                   <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em;">System Status</div>
                   <div style="font-size:0.875rem; font-weight:700; color:var(--accent); margin-top:0.25rem;">● Online & Active</div>
                 </div>
-                <div class="waveform-container">
+              <div class="waveform-container">
                   <div class="waveform-bar"></div>
                   <div class="waveform-bar"></div>
                   <div class="waveform-bar"></div>
@@ -756,11 +755,10 @@
                 </div>
               </div>
             </div>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
+          <!-- End right column -->
+        </div><!-- End content-grid -->
+      </div><!-- End tab-overview -->
 
       <!-- TAB: PATIENTS LIST -->
       <div id="tab-patients" class="tab-content">
@@ -783,11 +781,12 @@
       <div id="tab-activity" class="tab-content">
         <header style="margin-bottom: 1.5rem;">
             <h2 style="font-size: 1.25rem; font-weight: 800;">Activity Alerts</h2>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">WhatsApp-style timeline of emergency scans.</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Timeline of emergency scans and profile events.</p>
         </header>
-        <div id="recentActivityList">
+        <div id="full-activity-log">
             <!-- Rendered via JS -->
         </div>
+        <div id="recentActivityList" style="display:none;"></div>
       </div>
 
       <!-- TAB: SETTINGS -->
