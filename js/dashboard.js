@@ -37,42 +37,100 @@
     }
 
     // ─── Init ───
-    async function init() {
-        // Render icons immediately for UI shell
-        if (window.lucide) lucide.createIcons();
-
-        // 1. Force Auth
-        const user = await window.Auth.requireAuth();
-        if (!user) return;
-
-        // 2. Admin Check
-        const isAdmin = await window.Auth.isAdmin();
-        const adminTab = $('nav-admin');
-        if (isAdmin && adminTab) {
-            adminTab.style.display = 'flex';
-        }
-
-        // 3. Load Data
-        currentPatient = await window.Storage.getCurrentPatient();
-
-        if (!currentPatient) {
-            const all = await window.Storage.getAllPatients();
-            if (all.length > 0) {
-                currentPatient = all[0];
-                localStorage.setItem('current_patient_id', currentPatient.patientId);
+    // ─── Loading Control ───
+    function setLoading(isLoading) {
+        const loader = $('app-loading');
+        if (loader) {
+            if (isLoading) {
+                loader.classList.remove('fade-out');
+                loader.style.display = 'flex';
             } else {
-                // If authenticated but no profile, redirect to register
-                window.location.href = 'register.html';
-                return;
+                loader.classList.add('fade-out');
+                setTimeout(() => loader.style.display = 'none', 500);
             }
         }
+    }
 
-        await renderAll();
-        setupEvents();
-        updateClock();
-        setInterval(updateClock, 30000);
+    // ─── Bootstrap UI (Interactive immediately) ───
+    function bootstrapUI() {
+        // Render initial icons
+        if (window.lucide) lucide.createIcons();
 
-        showToast('Secure SaaS Session Active', 'success');
+        // Mobile sidebar toggle
+        const sidebarToggle = $('sidebarToggle');
+        const sidebar = $('appSidebar');
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.onclick = () => sidebar.classList.toggle('open');
+        }
+
+        // Sidebar Navigation (Tab Switching)
+        const navItems = document.querySelectorAll('.nav-item[data-tab]');
+        navItems.forEach(btn => {
+            btn.onclick = async () => {
+                const tabId = btn.getAttribute('data-tab');
+                if (!tabId) return;
+
+                // UI updates (Fast)
+                navItems.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                const targetTab = $(tabId);
+                if (targetTab) targetTab.classList.add('active');
+
+                // Close sidebar on mobile
+                if (sidebar) sidebar.classList.remove('open');
+
+                // Lazy load data if needed
+                if (tabId === 'tab-patients') await renderPatientsList();
+                if (tabId === 'tab-activity') await renderFullActivity();
+                if (tabId === 'tab-admin') await renderAdminTab();
+            };
+        });
+    }
+
+    // ─── Global Initialization ───
+    async function init() {
+        setLoading(true);
+        try {
+            // 1. Parallel Auth & Data Fetching (Fast)
+            const [user, isAdmin, initialPatient] = await Promise.all([
+                window.Auth.requireAuth(),
+                window.Auth.isAdmin(),
+                window.Storage.getCurrentPatient()
+            ]);
+
+            if (!user) return; // requireAuth handles redirect
+
+            // 2. Admin Visibility
+            const adminTab = $('nav-admin');
+            if (isAdmin && adminTab) adminTab.style.display = 'flex';
+
+            // 3. Fallback Patient Selection
+            currentPatient = initialPatient;
+            if (!currentPatient) {
+                const all = await window.Storage.getAllPatients();
+                if (all.length > 0) {
+                    currentPatient = all[0];
+                    localStorage.setItem('current_patient_id', currentPatient.patientId);
+                } else {
+                    window.location.href = 'register.html';
+                    return;
+                }
+            }
+
+            // 4. Initial Render
+            await renderAll();
+            setupEvents();
+            updateClock();
+            setInterval(updateClock, 30000);
+
+            showToast('Session Active', 'success');
+        } catch (err) {
+            console.error('[Dashboard] Init Failure:', err);
+            showToast('Connection unstable. Retrying...', 'error');
+        } finally {
+            setLoading(false);
+        }
     }
 
     // ─── Render Everything ───
@@ -370,11 +428,13 @@
     }
 
     // ─── Events ───
+    // ─── Secondary Events (Requires Data) ───
     function setupEvents() {
         // Patient Switcher
         const switcher = $('patientSwitcher');
         if (switcher) {
-            switcher.addEventListener('change', async (e) => {
+            switcher.onchange = async (e) => {
+                setLoading(true);
                 const p = await window.Storage.getPatientById(e.target.value);
                 if (p) {
                     currentPatient = p;
@@ -382,45 +442,8 @@
                     await renderAll();
                     showToast(`Switched to ${p.fullName}`, 'info');
                 }
-            });
-        }
-
-        // Sidebar Navigation
-        const navItems = document.querySelectorAll('.nav-item[data-tab]');
-        navItems.forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const tabId = btn.getAttribute('data-tab');
-                if (!tabId) return;
-
-                // Update UI active states
-                navItems.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                // Switch tabs
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                const targetTab = $(tabId);
-                if (targetTab) {
-                    targetTab.classList.add('active');
-                    
-                    // Trigger specific renders
-                    if (tabId === 'tab-patients') await renderPatientsList();
-                    if (tabId === 'tab-activity') await renderFullActivity();
-                    if (tabId === 'tab-admin') await renderAdminTab();
-                }
-
-                // Close sidebar on mobile
-                const sidebar = $('appSidebar');
-                if (sidebar) sidebar.classList.remove('open');
-            });
-        });
-
-        // Mobile sidebar toggle
-        const sidebarToggle = $('sidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                const sidebar = $('appSidebar');
-                if (sidebar) sidebar.classList.toggle('open');
-            });
+                setLoading(false);
+            };
         }
 
         // Real-time Scan Alerts
@@ -428,20 +451,18 @@
             window.supabaseClient
                 .channel('emergency-alerts')
                 .on('postgres_changes', { event: 'INSERT', table: 'scans' }, async (payload) => {
-                    console.log('[Dashboard] REALTIME SCAN DETECTED:', payload);
                     await renderAll();
                     if (payload.new && payload.new.is_emergency) {
                         showToast('🆘 EMERGENCY SCAN LOGGED!', 'error');
                     }
                 })
                 .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
-                    showToast(`✨ NEW PROFILE CREATED: ${payload.new.full_name}`, 'success');
+                    showToast(`✨ NEW PROFILE: ${payload.new.full_name}`, 'success');
                     await window.Storage.getAllPatients(); 
                     await renderAll();
                 })
                 .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, async (payload) => {
-                    showToast(`📧 SOS ALERT SENT TO FAMILY: ${payload.new.family_email.toUpperCase()}`, 'error');
-                    await renderAll();
+                    showToast(`📧 ALERT SENT: ${payload.new.family_email.toUpperCase()}`, 'error');
                 })
                 .subscribe();
         }
@@ -949,13 +970,15 @@
         }
     }
 
-    // Expose for external calls
     window.Dashboard = {
         init,
+        bootstrapUI,
         renderAll,
         renderPatientsList,
         renderRecentActivity
     };
 
+    // Run Bootstrap immediately
+    bootstrapUI();
     init();
 })();

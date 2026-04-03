@@ -16,461 +16,16 @@
 
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-  <style>
-    /* ─── Variables (Light/Dark Support) ─── */
-    :root {
-      --primary: #e11d48;
-      --secondary: #3b82f6;
-      --accent: #10b827;
-      --purple: #8b5cf6;
-      --bg: #030712;
-      --bg-card: rgba(17, 24, 39, 0.7);
-      --border: rgba(255, 255, 255, 0.08);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --radius-sm: 12px;
-      --radius-md: 18px;
-      --radius-lg: 24px;
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    [data-theme="light"] {
-      --bg: #f8fafc;
-      --bg-card: #ffffff;
-      --border: rgba(15, 23, 42, 0.08);
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: 'Inter', -apple-system, system-ui, sans-serif;
-      background: #000;
-      color: var(--text-primary);
-      overflow-x: hidden;
-      line-height: 1.5;
-      transition: background 0.3s ease;
-    }
-
-    [data-theme="light"] body { background: #e2e8f0; }
-
-    /* ─── Sidebar-Based Layout ─── */
-    .app-layout {
-      display: flex;
-      min-height: 100vh;
-      background: var(--bg);
-    }
-
-    /* ─── Sidebar ─── */
-    .sidebar {
-      width: 280px;
-      background: rgba(3, 7, 18, 0.4);
-      backdrop-filter: blur(20px);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      z-index: 1000;
-      transition: var(--transition);
-    }
-
-    .sidebar-header {
-      padding: 2rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 1.5rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.875rem 1.25rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .nav-item:hover {
-      background: rgba(255, 255, 255, 0.03);
-      color: var(--text-primary);
-    }
-
-    .nav-item.active {
-      background: rgba(225, 29, 72, 0.1);
-      color: var(--primary);
-    }
-
-    .nav-item i { width: 20px; height: 20px; }
-
-    .sidebar-footer {
-      padding: 1.5rem;
-      border-top: 1px solid var(--border);
-    }
-
-    /* ─── Main Content ─── */
-    .main-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .main-header {
-      padding: 1.25rem 2.5rem;
-      background: rgba(3, 7, 18, 0.2);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 900;
-    }
-
-    .main-content {
-      padding: 2.5rem;
-      flex: 1;
-    }
-
-    /* ─── Mobile Hamburger ─── */
-    .hamburger {
-      display: none;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: white;
-      padding: 0.5rem;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    /* ─── Responsive ─── */
-    @media (max-width: 1024px) {
-      .sidebar {
-        position: fixed;
-        left: -280px;
-        height: 100vh;
-      }
-      .sidebar.open { left: 0; }
-      .hamburger { display: block; }
-      .main-header { padding: 1.25rem; }
-      .main-content { padding: 1.25rem; }
-    }
-
-    /* Tabs Visibility */
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ─── Glowing Stat Cards & Categorical Tints ─── */
-    .stat-card {
-      background: rgba(255, 255, 255, 0.04) !important;
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-radius: 20px !important;
-      padding: 1.75rem !important;
-      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0; right: 0; height: 3px;
-      opacity: 0.6;
-    }
-
-    /* Elite Categorical Themes */
-    .card-theme-red { background: rgba(244, 63, 94, 0.05) !important; border-color: rgba(244, 63, 94, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(244, 63, 94, 0.2); }
-    .card-theme-red::after { background: #f43f5e; }
-    
-    .card-theme-amber { background: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(245, 158, 11, 0.2); }
-    .card-theme-amber::after { background: #f59e0b; }
-    
-    .card-theme-green { background: rgba(34, 197, 94, 0.05) !important; border-color: rgba(34, 197, 94, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(34, 197, 94, 0.2); }
-    .card-theme-green::after { background: #22c55e; }
-
-    .card-theme-blue { background: rgba(59, 130, 246, 0.05) !important; border-color: rgba(59, 130, 246, 0.3) !important; box-shadow: 0 10px 40px -15px rgba(59, 130, 246, 0.2); }
-    .card-theme-blue::after { background: #3b82f6; }
-
-    .summary-value {
-      font-family: 'JetBrains Mono', monospace !important;
-      letter-spacing: -0.02em;
-    }
-
-    .stat-card:hover { 
-      background: rgba(255, 255, 255, 0.07) !important;
-      transform: translateY(-6px);
-      border-color: rgba(255, 255, 255, 0.15) !important;
-    }
-
-    /* ─── Dashboard Header ─── */
-    .dash-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2.5rem;
-    }
-
-    .heartbeat-pill {
-      font-size: 0.625rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 0.4rem 0.75rem;
-      background: rgba(34, 197, 94, 0.08);
-      color: #22c55e;
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      border-radius: 99px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .pulse-dot {
-      width: 6px; height: 6px;
-      background: currentColor;
-      border-radius: 50%;
-      animation: pulse 1.5s ease-infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.9); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    /* ─── Stats Grid ─── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.75rem;
-    }
-
-    .stat-card {
-      padding: 1.25rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card .stat-info { flex: 1; }
-
-    .stat-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-secondary);
-      margin-bottom: 0.375rem;
-      display: block;
-    }
-
-    .stat-value {
-      font-size: 1.625rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      color: #ffffff;
-    }
-
-    /* ─── Medical ID Card ─── */
-    .id-card {
-      background: rgba(255, 255, 255, 1);
-      border: 1.5px solid rgba(0,0,0,0.1);
-      border-radius: 20px;
-      padding: 2.25rem;
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-      color: #0f172a;
-      box-shadow: 
-        0 20px 40px -15px rgba(0,0,0,0.15),
-        0 0 0 1px rgba(0,0,0,0.05);
-    }
-
-    /* ─── Modal ─── */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .modal-content {
-      width: 100%;
-      max-width: 620px;
-      padding: 2rem;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    /* ─── Premium Profile Card (High-Impact UI) ─── */
-    .profile-card-premium {
-      background: #fff;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 
-        0 20px 50px -10px rgba(0,0,0,0.1),
-        0 0 0 1px rgba(0,0,0,0.05);
-      color: #1e293b;
-      margin-bottom: 2rem;
-      position: relative;
-    }
-
-    .premium-header {
-      background: #e11d48; /* Crimson Red */
-      padding: 1.25rem 1.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: white;
-    }
-
-    .premium-header .header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.875rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      font-size: 0.9375rem;
-    }
-
-    .premium-body {
-      padding: 1.75rem;
-    }
-
-    .premium-body h2 {
-      font-size: 1.75rem;
-      font-weight: 900;
-      margin-bottom: 0.5rem;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-    }
-
-    .last-updated-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: #fefce8;
-      color: #854d0e;
-      padding: 0.4rem 0.875rem;
-      border-radius: 99px;
-      font-size: 0.6875rem;
-      font-weight: 800;
-      margin-bottom: 1.5rem;
-      text-transform: uppercase;
-      border: 1px solid rgba(133, 77, 14, 0.1);
-    }
-
-    .info-badge {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1.125rem;
-      border-radius: 14px;
-      margin-bottom: 0.875rem;
-      transition: transform 0.2s ease;
-    }
-
-    .info-badge:hover { transform: translateX(4px); }
-
-    .info-badge i { width: 18px; color: currentColor; opacity: 0.8; margin-top: 2px; }
-    .info-badge .badge-content { flex: 1; }
-    .info-badge .badge-label { font-size: 0.625rem; font-weight: 800; opacity: 0.7; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
-    .info-badge .badge-value { font-size: 1.0625rem; font-weight: 800; line-height: 1.2; }
-    .info-badge .badge-text { font-size: 0.875rem; font-weight: 600; margin: 0; line-height: 1.5; color: #475569; }
-
-    .badge-red { background: #fee2e2; color: #991b1b; }
-    .badge-amber { background: #fffbeb; color: #92400e; }
-    .badge-orange { background: #fff7ed; color: #9a3412; }
-    .badge-green { background: #f0fdf4; color: #166534; }
-    .badge-blue { background: #f0f9ff; color: #075985; }
-    .badge-grey { background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; }
-
-    .risk-tag {
-      display: inline-block;
-      background: #f59e0b;
-      color: white;
-      font-size: 0.625rem;
-      font-weight: 900;
-      padding: 3px 10px;
-      border-radius: 6px;
-      margin-top: 0.5rem;
-      text-transform: uppercase;
-    }
-
-    .premium-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.875rem;
-      margin-top: 1.75rem;
-    }
-
-    .p-btn {
-      padding: 1rem;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 800;
-      font-size: 0.8125rem;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.625rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      color: white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .p-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); filter: brightness(1.05); }
-
-    .btn-family { background: #16a34a; }
-    .btn-ambulance { background: #e11d48; }
-    .btn-clinic { background: #2563eb; grid-column: span 2; }
-
-    @media (max-width: 480px) {
-      .premium-body { padding: 1.25rem; }
-      .premium-body h2 { font-size: 1.5rem; }
-      .premium-actions { grid-template-columns: 1fr; }
-      .btn-clinic { grid-column: span 1; }
-      .stats-grid { grid-template-columns: 1fr; }
-      .stat-card { padding: 1rem; }
-      .stat-value { font-size: 1.375rem; }
-    }
-  </style>
 </head>
-<body>
+<body class="dashboard-page">
+  <!-- Professional Loading Overlay -->
+  <div id="app-loading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p>Synchronizing Clinical Data...</p>
+    </div>
+  </div>
+
   <div class="app-layout">
     <!-- Sidebar -->
     <aside class="sidebar" id="appSidebar">
@@ -517,23 +72,26 @@
     <!-- Main Wrapper -->
     <main class="main-wrapper">
       <header class="main-header">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <button class="hamburger" id="sidebarToggle">
+        <div class="header-left">
+          <button class="hamburger-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
             <i data-lucide="menu"></i>
           </button>
-          <div class="welcome-user">
-            <h4 id="dash-time" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-bottom: 0.25rem;">--</h4>
-            <h2 id="welcome-msg" style="font-size: 1.125rem; font-weight: 700;">Welcome back</h2>
+          <div class="header-breadcrumb">
+            <span class="breadcrumb-item" id="dash-time">--</span>
+            <h1 class="header-title" id="welcome-msg">Dashboard</h1>
           </div>
         </div>
 
-        <div class="header-actions" style="display: flex; align-items: center; gap: 1rem;">
-          <select class="patient-switcher-select" id="patientSwitcher" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; outline: none;">
-            <option>Loading profiles...</option>
-          </select>
-          <a href="register.html" class="p-btn" style="padding: 0.6rem 1.25rem; border-radius: 10px; background: var(--primary); font-size: 0.875rem; box-shadow: 0 4px 12px rgba(225,29,72,0.3);">
-            <i data-lucide="plus" style="width: 16px;"></i>
-            New Profile
+        <div class="header-right">
+          <div class="switcher-wrapper">
+            <i data-lucide="user-circle-2" class="switcher-icon"></i>
+            <select class="patient-select" id="patientSwitcher">
+              <option>Loading...</option>
+            </select>
+          </div>
+          <a href="register.html" class="action-btn-primary">
+            <i data-lucide="plus-circle"></i>
+            <span>New Profile</span>
           </a>
         </div>
       </header>
@@ -1005,17 +563,8 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => console.log('[PWA] Service Worker Registered:', reg.scope))
-          .catch(err => console.error('[PWA] Service Worker Failed:', err));
-      });
-    }
-
-    // Sidebar logic
-    const toggle = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('appSidebar');
-    if (toggle && sidebar) {
-      toggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
+          .then(reg => console.log('[PWA] Active'))
+          .catch(err => console.error('[PWA] Failed:', err));
       });
     }
   </script>
