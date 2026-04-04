@@ -103,8 +103,8 @@
         <div class="tab-content active" id="tab-overview">
         <!-- Stats -->
         <div class="stats-grid">
-          <div class="glass-card stat-card stat-card-red animate-slide stagger-1">
-            <div class="stat-icon" style="background:rgba(255,59,59,0.12); color:var(--primary);">
+          <div class="glass-card stat-card red animate-slide stagger-1">
+            <div class="stat-icon">
               <i data-lucide="droplet"></i>
             </div>
             <div class="stat-info">
@@ -112,36 +112,34 @@
               <div class="stat-value" id="stat-blood">--</div>
             </div>
           </div>
-          <div class="glass-card stat-card stat-card-blue animate-slide stagger-2">
-            <div class="stat-icon" style="background:rgba(59,130,246,0.12); color:var(--secondary);">
+          <div class="glass-card stat-card blue animate-slide stagger-2">
+            <div class="stat-icon">
               <i data-lucide="pie-chart"></i>
             </div>
             <div class="stat-info">
               <span class="stat-label">Profile Complete</span>
               <div class="stat-value" id="stat-completion">0%</div>
               <div style="height:4px; background:rgba(255,255,255,0.06); border-radius:2px; margin-top:6px; overflow:hidden;">
-                <div id="progress-bar" style="height:100%; background:var(--secondary); width:0%; transition: width 1s ease; border-radius:2px;"></div>
+                <div id="progress-bar" style="height:100%; background:#3b82f6; width:0%; transition: width 1s ease; border-radius:2px;"></div>
               </div>
             </div>
           </div>
-          <div class="glass-card stat-card stat-card-green animate-slide stagger-3">
-            <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:var(--accent);">
-              <i data-lucide="scan-line"></i>
+          <div class="glass-card stat-card green animate-slide stagger-3">
+            <div class="stat-icon">
+              <i data-lucide="activity"></i>
             </div>
             <div class="stat-info">
-              <span class="stat-label">Total QR Scans</span>
+              <span class="stat-label">Total Activity</span>
               <div class="stat-value" id="stat-scans">0</div>
-              <div class="stat-subtext" id="stat-scan-info">Across all profiles</div>
             </div>
           </div>
-          <div class="glass-card stat-card stat-card-purple animate-slide stagger-4">
-            <div class="stat-icon" style="background:rgba(139,92,246,0.12); color:var(--purple);">
+          <div class="glass-card stat-card purple animate-slide stagger-4">
+            <div class="stat-icon">
               <i data-lucide="users"></i>
             </div>
             <div class="stat-info">
               <span class="stat-label">Managed Profiles</span>
               <div class="stat-value" id="stat-profiles">0</div>
-              <div class="stat-subtext">Active emergency IDs</div>
             </div>
           </div>
         </div>

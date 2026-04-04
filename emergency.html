@@ -453,6 +453,12 @@
         </p>
     </div>
 
+    <!-- SOS Alert Bar (populated by JS on scan) -->
+    <div id="sos-bar" style="display:none; position:sticky; top:0; z-index:100; padding:1rem 1.5rem; background:#fef3c7; border:2px solid #fbbf24; display:none; align-items:center; gap:0.75rem; font-size:0.8125rem; font-weight:700; color:#92400e; max-width:700px; width:100%;">
+        <i data-lucide="radio" style="width:18px; flex-shrink:0;"></i>
+        <span id="sos-text" data-i18n="sos-msg">NOTIFYING EMERGENCY CONTACTS...</span>
+    </div>
+
     <!-- Main Report Container -->
     <div class="emergency-card" id="main-card" style="display: none;">
         <!-- Clinical Stamp -->
@@ -752,26 +758,30 @@
             }
 
             // Trigger SOS Geolocation + Emergency Alert
-            document.getElementById('sos-bar').style.display = 'flex';
+            const sosBar = document.getElementById('sos-bar');
+            if (sosBar) sosBar.style.display = 'flex';
+
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const { latitude, longitude } = position.coords;
                     console.log('[SOS] Geolocation captured:', latitude, longitude);
                     try {
-                        // Pass FULL patient object so family email is captured for emergency_alerts
                         await window.Storage.triggerSOSAlert(patient, latitude, longitude);
                         const sosText = document.getElementById('sos-text');
+                        const sosBarEl = document.getElementById('sos-bar');
                         const hasEmail = patient.contact1_Email || '';
-                        if (hasEmail) {
+                        if (sosText && hasEmail) {
                             sosText.textContent = `✅ SOS EMAIL SENT TO ${hasEmail.split('@')[0].toUpperCase()} — GPS LOCATION SHARED`;
                             sosText.style.color = '#059669';
-                        } else {
+                        } else if (sosText) {
                             sosText.setAttribute('data-i18n', 'sos-done');
                             setLang(localStorage.getItem('sehat_lang') || 'en');
                             sosText.style.color = '#059669';
                         }
-                        document.getElementById('sos-bar').style.background = '#dcfce7';
-                        document.getElementById('sos-bar').style.borderColor = '#86efac';
+                        if (sosBarEl) {
+                            sosBarEl.style.background = '#dcfce7';
+                            sosBarEl.style.borderColor = '#86efac';
+                        }
                     } catch (e) {
                         console.error('[SOS] Alert trigger failed:', e);
                     }

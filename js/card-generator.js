@@ -158,10 +158,10 @@ window.CardGenerator = {
         ctx.closePath();
 
         try {
-            const baseUrl = window.location.href.split('dashboard.html')[0];
-            const profileUrl = `${baseUrl}emergency.html?id=${p.patientId || p.id}`;
-            // Switched from vCard to simple Website QR as requested
-            const qrPayload = profileUrl; 
+            // Use the shared buildEmergencyUrl for consistent QR links
+            const qrPayload = window.Storage
+                ? window.Storage.buildEmergencyUrl(p)
+                : (window.SITE_BASE_URL || window.location.origin + '/') + 'emergency.html?id=' + (p.patientId || p.id);
             
             const qrcLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);
             

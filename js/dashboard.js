@@ -10,6 +10,9 @@
     // ─── State ───
     let currentPatient = null;
     let qrCanvas = null;
+    let _cachedIsAdmin = null;
+    let _cachedPatients = null;
+    let _lastRenderTime = 0;
 
     // ─── Helpers ───
     const $ = (id) => document.getElementById(id);
@@ -79,7 +82,7 @@
                 const tabId = btn.getAttribute('data-tab');
                 if (!tabId) return;
 
-                // Sync UI State
+                // INSTANT visual feedback (no async wait)
                 navItems.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
@@ -90,13 +93,16 @@
                 // Close sidebar on mobile
                 if (sidebar) sidebar.classList.remove('open');
 
-                // Lazy load tab-specific data
-                if (tabId === 'tab-patients') await renderPatientsList();
-                if (tabId === 'tab-activity') await renderFullActivity();
-                if (tabId === 'tab-admin') await renderAdminTab();
-
-                // Ensure icons are rendered in the new tab
-                SafeCreateIcons();
+                // Lazy load tab-specific data (only when needed)
+                requestAnimationFrame(async () => {
+                    if (tabId === 'tab-overview' && Date.now() - _lastRenderTime > 5000) {
+                        await renderAll();
+                    }
+                    if (tabId === 'tab-patients') await renderPatientsList();
+                    if (tabId === 'tab-activity') await renderFullActivity();
+                    if (tabId === 'tab-admin') await renderAdminTab();
+                    SafeCreateIcons();
+                });
             };
         });
     }
@@ -114,14 +120,18 @@
 
             if (!user) return; // requireAuth handles redirect
 
-            // 2. Admin Visibility
+            // 2. Cache admin status to avoid redundant API calls
+            _cachedIsAdmin = isAdmin;
+
+            // 3. Admin Visibility
             const adminTab = $('nav-admin');
             if (adminTab) adminTab.style.display = isAdmin ? 'flex' : 'none';
 
-            // 3. Fallback Patient Selection
+            // 4. Fallback Patient Selection
             currentPatient = initialPatient;
             if (!currentPatient) {
                 const all = await window.Storage.getAllPatients();
+                _cachedPatients = all;
                 if (all.length > 0) {
                     currentPatient = all[0];
                     localStorage.setItem('current_patient_id', currentPatient.patientId);
@@ -131,7 +141,7 @@
                 }
             }
 
-            // 4. Initial Render
+            // 5. Initial Render
             await renderAll();
             setupEvents();
             updateClock();
@@ -150,26 +160,29 @@
     async function renderAll() {
         if (!currentPatient) return;
         const p = currentPatient;
+        _lastRenderTime = Date.now();
 
-        // Header
-        const isAdmin = await window.Auth.isAdmin();
+        // Use cached admin status (set in init) to avoid redundant API calls
+        const isAdmin = _cachedIsAdmin !== null ? _cachedIsAdmin : await window.Auth.isAdmin();
         if (isAdmin) {
             txt('welcome-msg', `Master Admin Panel | ${p.fullName}`);
         } else {
             txt('welcome-msg', `Records for ${p.fullName.split(' ')[0]}`);
         }
 
-        // Stats
+        // Stats — use cached patients list when possible
         txt('stat-blood', p.bloodGroup);
 
         const pct = window.Storage.getProfileCompletion(p);
         txt('stat-completion', `${pct}%`);
-        $('progress-bar').style.width = `${pct}%`;
+        const progressBar = $('progress-bar');
+        if (progressBar) progressBar.style.width = `${pct}%`;
 
         const totalScans = await window.Storage.getTotalScans();
         txt('stat-scans', totalScans.toString());
 
-        const allPatients = await window.Storage.getAllPatients();
+        const allPatients = _cachedPatients || await window.Storage.getAllPatients();
+        _cachedPatients = allPatients;
         txt('stat-profiles', allPatients.length.toString());
 
         // Premium Medical ID Card Population (Matched to Image)
@@ -221,38 +234,21 @@
             clinicBtn.rel = 'noopener noreferrer';
         }
 
-        // ─── Render Contextual Tabs (Summary Stats) ───
-        const condBadge = $('sum-conditions')?.closest('.info-badge');
-        const medBadge = $('sum-medications')?.closest('.info-badge');
-        const allergyBadge = $('sum-allergies')?.closest('.info-badge');
+        // ─── Render Contextual Tab Summary Cards ───
+        txt('sum-conditions', p.conditions || 'Stable');
+        txt('sum-medications', p.medications || 'None');
 
-        if (condBadge) {
-            condBadge.className = 'info-badge ' + (isCritical ? 'theme-red' : 'theme-amber');
-            txt('sum-conditions', p.conditions || 'Stable');
-        }
-        if (medBadge) {
-            medBadge.className = 'info-badge theme-green';
-            txt('sum-medications', p.medications || 'None');
-        }
-        if (allergyBadge) {
+        const allergyEl = $('sum-allergies');
+        if (allergyEl) {
             const hasAllergies = p.allergies && p.allergies.toLowerCase() !== 'none';
-            allergyBadge.className = 'info-badge ' + (hasAllergies ? 'theme-red' : 'theme-blue');
             txt('sum-allergies', p.allergies || 'No known allergies');
         }
 
-        // Clinical Health Summary
-        const healthSummary = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
+        // Clinical Health Summary (single computation)
+        const healthReport = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
                              (p.conditions ? `Conditions: ${p.conditions}. ` : 'Stable clinical history. ') +
                              (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
-        const healthSummaryCard = $('health-summary-card');
-        txt('sum-health-report', healthSummary);
-        if (healthSummaryCard) {
-            healthSummaryCard.classList.add('card-theme-blue');
-            const healthReport = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
-                               (p.conditions ? `Conditions: ${p.conditions}. ` : 'Stable clinical history. ') +
-                               (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
-            txt('sum-health-report', healthReport);
-        }
+        txt('sum-health-report', healthReport);
 
         // Medical Notes
         const notesCard = $('notes-card');
@@ -278,7 +274,8 @@
     }
 
     async function renderSwitcher() {
-        const all = await window.Storage.getAllPatients();
+        const all = _cachedPatients || await window.Storage.getAllPatients();
+        _cachedPatients = all;
         const sel = $('patientSwitcher');
         if (!sel) return;
         sel.innerHTML = all.map(p =>
@@ -441,20 +438,28 @@
         // Real-time Scan Alerts
         if (window.supabaseClient) {
             window.supabaseClient
-                .channel('emergency-alerts')
+                .channel('emergency-realtime')
                 .on('postgres_changes', { event: 'INSERT', table: 'scans' }, async (payload) => {
+                    console.log('[Realtime] New scan detected:', payload.new.type);
+                    await window.Storage.getAllPatients(); // Refresh cache
                     await renderAll();
-                    if (payload.new && payload.new.is_emergency) {
+                    if (payload.new && payload.new.type === 'emergency_scan') {
                         showToast('🆘 EMERGENCY SCAN LOGGED!', 'error');
                     }
                 })
                 .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
+                    console.log('[Realtime] New patient registered');
                     showToast(`✨ NEW PROFILE: ${payload.new.full_name}`, 'success');
                     await window.Storage.getAllPatients(); 
                     await renderAll();
                 })
                 .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, async (payload) => {
-                    showToast(`📧 ALERT SENT: ${payload.new.family_email.toUpperCase()}`, 'error');
+                    showToast(`🚨 SOS TRIGGERED: ${payload.new.family_email.toUpperCase()}`, 'error');
+                })
+                .on('postgres_changes', { event: 'UPDATE', table: 'emergency_alerts' }, async (payload) => {
+                    if (payload.new.email_sent) {
+                        showToast(`📧 SUCCESS: Email sent to family!`, 'success');
+                    }
                 })
                 .subscribe();
         }
@@ -607,7 +612,8 @@
                 // Persist the status by re-fetching all
                 await window.Storage.getAllPatients(); 
                 await renderAll();
-                if (document.getElementById('tab-patients').style.display !== 'none') {
+                const patientsTab = document.getElementById('tab-patients');
+                if (patientsTab && patientsTab.classList.contains('active')) {
                     await renderPatientsList();
                 }
             } else {
@@ -760,13 +766,18 @@
             row.style.justifyContent = 'space-between';
             row.style.cursor = 'pointer';
             row.onclick = async () => {
+                // INSTANT switch using the data we already have in the loop
+                currentPatient = p;
                 localStorage.setItem('current_patient_id', p.patientId);
-                currentPatient = await window.Storage.getCurrentPatient();
                 showToast(`Switched to ${p.fullName}`);
+                
                 // Switch to home tab
                 const overviewTab = document.querySelector('.nav-item[data-tab="tab-overview"]');
-                if (overviewTab) overviewTab.click();
-                else await renderAll();
+                if (overviewTab) {
+                    overviewTab.click(); 
+                } else {
+                    await renderAll();
+                }
             };
 
             const risk = window.Storage.calculateRiskLevel(p);
@@ -793,7 +804,13 @@
     }
 
     async function switchTo(id) {
-        const p = await window.Storage.getPatientById(id);
+        // Optimization: Check cache first
+        let p = _cachedPatients ? _cachedPatients.find(x => x.patientId === id) : null;
+        
+        if (!p) {
+            p = await window.Storage.getPatientById(id);
+        }
+
         if (p) {
             currentPatient = p;
             localStorage.setItem('current_patient_id', id);

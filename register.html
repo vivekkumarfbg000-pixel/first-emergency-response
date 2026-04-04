@@ -721,6 +721,10 @@
                                 <a href="index.html" class="btn btn-outline" style="margin-top:0.25rem; font-size:0.8125rem; color:var(--text-muted);">
                                     Go to Home Page
                                 </a>
+                                <a href="dashboard.html" class="btn btn-outline" style="font-size:0.8125rem; color:var(--secondary); border-color:rgba(59,130,246,0.3);">
+                                    <i data-lucide="layout-dashboard" style="width:14px;"></i>
+                                    Open Admin Dashboard
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -849,10 +853,13 @@
 
                     // Update sync status message
                     const syncBox = document.getElementById('syncStatusBox');
-                    if (!result.cloudSynced) {
+                    if (result.cloudSynced) {
+                        syncBox.innerHTML = '<strong>✅ Synced to Sehat Point Cloud</strong>Your profile is visible to the admin dashboard instantly. When anyone scans your QR code, your family will receive an emergency email at the address you provided.';
+                    } else {
                         syncBox.style.borderColor = 'rgba(245,158,11,0.3)';
                         syncBox.style.background = 'rgba(245,158,11,0.05)';
-                        syncBox.innerHTML = '<strong style="color:#f59e0b;">⚠️ Saved Locally (Cloud sync pending)</strong>Run the SQL migration script in Supabase first to enable cloud sync.';
+                        const reason = result.cloudError || 'Unknown error';
+                        syncBox.innerHTML = `<strong style="color:#f59e0b;">⚠️ Saved Locally (Cloud sync failed)</strong>Reason: ${reason}<br>Your QR code still works offline. Admin will see this profile once cloud sync succeeds.`;
                     }
 
                     // Show success step and generate QR
