@@ -1,14 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
 serve(async (req) => {
   try {
-    const { body } = await req.json()
+    const body = await req.json()
     const { patient_name, family_email, family_name, patient_blood, google_maps_link } = body
 
     if (!family_email) throw new Error('No family email provided')
+    if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY is not configured')
 
     console.log(`Sending SOS for ${patient_name} to ${family_email}`)
 
@@ -48,6 +47,10 @@ serve(async (req) => {
     })
 
     const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.message || 'Failed to send SOS email')
+    }
+
     return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } })
 
   } catch (error) {

@@ -15,6 +15,15 @@
     const $ = (id) => document.getElementById(id);
     const txt = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
+    // ─── Utility: Safe Icon Renderer ───
+    async function SafeCreateIcons() {
+        if (window.lucide) {
+            lucide.createIcons();
+        } else {
+            setTimeout(SafeCreateIcons, 100);
+        }
+    }
+
     // ─── Toast System ───
     function showToast(msg, type = 'success') {
         const container = $('toastContainer');
@@ -53,8 +62,8 @@
 
     // ─── Bootstrap UI (Interactive immediately) ───
     function bootstrapUI() {
-        // Render initial icons
-        if (window.lucide) lucide.createIcons();
+        // Render initial icons safely
+        SafeCreateIcons();
 
         // Mobile sidebar toggle
         const sidebarToggle = $('sidebarToggle');
@@ -85,6 +94,9 @@
                 if (tabId === 'tab-patients') await renderPatientsList();
                 if (tabId === 'tab-activity') await renderFullActivity();
                 if (tabId === 'tab-admin') await renderAdminTab();
+
+                // Ensure icons are rendered in the new tab
+                SafeCreateIcons();
             };
         });
     }
@@ -104,7 +116,7 @@
 
             // 2. Admin Visibility
             const adminTab = $('nav-admin');
-            if (isAdmin && adminTab) adminTab.style.display = 'flex';
+            if (adminTab) adminTab.style.display = isAdmin ? 'flex' : 'none';
 
             // 3. Fallback Patient Selection
             currentPatient = initialPatient;
@@ -201,6 +213,14 @@
             familyBtn.style.display = 'none';
         }
 
+        const clinicBtn = $('p-premium-btn-clinic');
+        if (clinicBtn) {
+            const query = encodeURIComponent('hospital near me');
+            clinicBtn.href = `https://www.google.com/maps/search/${query}/`;
+            clinicBtn.target = '_blank';
+            clinicBtn.rel = 'noopener noreferrer';
+        }
+
         // ─── Render Contextual Tabs (Summary Stats) ───
         const condBadge = $('sum-conditions')?.closest('.info-badge');
         const medBadge = $('sum-medications')?.closest('.info-badge');
@@ -224,6 +244,7 @@
         const healthSummary = `Clinical data for ${p.fullName} (${p.bloodGroup}). ` + 
                              (p.conditions ? `Conditions: ${p.conditions}. ` : 'Stable clinical history. ') +
                              (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
+        const healthSummaryCard = $('health-summary-card');
         txt('sum-health-report', healthSummary);
         if (healthSummaryCard) {
             healthSummaryCard.classList.add('card-theme-blue');
@@ -271,12 +292,8 @@
         if (!container) return;
         container.innerHTML = '';
 
-        const encodedData = window.Storage.encodeForQR(currentPatient);
-        if (!encodedData) return;
-
-        const baseUrl = window.location.href.split('dashboard.html')[0];
-        const sidToUse = currentPatient.id || currentPatient.patientId;
-        const profileUrl = `${baseUrl}emergency.html?sid=${sidToUse}`;
+        const profileUrl = window.Storage.buildEmergencyUrl(currentPatient);
+        if (!profileUrl) return;
         
         // Use DIRECT URL for 100% redirection reliability on all scanners
         console.log('[Dashboard] Generating Redirect QR for:', profileUrl);
@@ -325,7 +342,7 @@
             `;
         }).join('');
 
-        lucide.createIcons();
+        SafeCreateIcons();
     }
 
     // ─── Full Activity Tab ───
@@ -376,7 +393,7 @@
             `;
         }).join('');
 
-        lucide.createIcons();
+        SafeCreateIcons();
     }
 
     function getScanMeta(type) {
@@ -507,9 +524,17 @@
 
         const btnExport = $('btn-export');
         if (btnExport) {
-            btnExport.addEventListener('click', () => {
-                alert('Cloud backup is active. Local export disabled.');
-            });
+            btnExport.addEventListener('click', exportData);
+        }
+
+        const settingsExport = $('settings-export');
+        if (settingsExport) {
+            settingsExport.addEventListener('click', exportData);
+        }
+
+        const settingsImport = $('settings-import');
+        if (settingsImport) {
+            settingsImport.addEventListener('change', importData);
         }
 
         // Edit Form
@@ -561,6 +586,12 @@
                 await renderPatientsList(patientSearch.value.trim().toLowerCase());
             });
         }
+
+        const realtimePill = $('realtime-status-pill');
+        if (realtimePill) {
+            realtimePill.textContent = window.supabaseClient ? 'Realtime client ready' : 'Realtime unavailable';
+            realtimePill.style.color = window.supabaseClient ? '#22c55e' : '#f59e0b';
+        }
     }
 
     async function syncPatient(id) {
@@ -591,6 +622,8 @@
     // ─── Edit Modal ───
     function openEditModal() {
         const p = currentPatient;
+        const modal = $('editModal');
+        if (!p || !modal) return;
         $('edit_fullName').value = p.fullName;
         $('edit_bloodGroup').value = p.bloodGroup;
         $('edit_age').value = p.age;
@@ -603,37 +636,15 @@
         $('edit_allergies').value = p.allergies || '';
         $('edit_medications').value = p.medications || '';
         $('edit_medicalNotes').value = p.medicalNotes || '';
-        // Force Sync Button (Settings Tab)
-        const btnForceSync = $('btn-force-sync');
-        if (btnForceSync) {
-            btnForceSync.addEventListener('click', async () => {
-                const count = (await window.Storage.getAllPatients()).filter(p => !p.cloudSynced).length;
-                if (count === 0) {
-                    showToast('Everything is already in the cloud! ☁️', 'success');
-                    return;
-                }
+        modal.classList.add('open');
+        modal.style.display = 'flex';
+    }
 
-                if (!confirm(`Found ${count} unsynced records. Force push to the cloud?`)) return;
-
-                const progress = $('sync-progress');
-                const bar = $('sync-bar');
-                const text = $('sync-count');
-                
-                btnForceSync.disabled = true;
-                if (progress) progress.style.display = 'block';
-
-                try {
-                    const result = await window.Storage.forceSyncAll();
-                    showToast(`✅ Successfully synced ${result.synced}/${result.total} records!`, 'success');
-                    await renderAll();
-                } catch (e) {
-                    showToast('Sync process failed: ' + e.message, 'error');
-                } finally {
-                    btnForceSync.disabled = false;
-                    setTimeout(() => { if (progress) progress.style.display = 'none'; }, 2000);
-                }
-            });
-        }
+    function closeModal() {
+        const modal = $('editModal');
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.style.display = 'none';
     }
 
     async function saveChanges() {
@@ -643,7 +654,7 @@
         try {
             btn.disabled = true;
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader"></i> Saving...';
-            if (window.lucide) lucide.createIcons();
+            SafeCreateIcons();
 
             const updated = {
                 fullName: $('edit_fullName').value,
@@ -679,6 +690,7 @@
         const btn = $('btn-test-cloud');
         const pill = $('connection-status-pill');
         const details = $('connection-details');
+        if (!btn || !pill || !details) return;
         
         btn.disabled = true;
         btn.textContent = 'Testing...';
@@ -722,15 +734,24 @@
         if (!container) return;
 
         const all = await window.Storage.getAllPatients();
-        txt('profiles-count-text', `${all.length} PROFILES`);
+        const filtered = filter
+            ? all.filter(p =>
+                (p.fullName || '').toLowerCase().includes(filter) ||
+                (p.patientId || '').toLowerCase().includes(filter) ||
+                (p.conditions || '').toLowerCase().includes(filter) ||
+                (p.bloodGroup || '').toLowerCase().includes(filter)
+            )
+            : all;
 
-        if (all.length === 0) {
+        txt('profiles-count-text', `${filtered.length} PROFILES`);
+
+        if (filtered.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-muted);">No profiles found</div>';
             return;
         }
 
         container.innerHTML = '';
-        all.forEach(p => {
+        filtered.forEach(p => {
             const row = document.createElement('div');
             row.className = 'glass-card animate-slide';
             row.style.padding = '1rem';
@@ -743,8 +764,9 @@
                 currentPatient = await window.Storage.getCurrentPatient();
                 showToast(`Switched to ${p.fullName}`);
                 // Switch to home tab
-                document.querySelector('.nav-btn[data-tab="overview"]').click();
-                renderAll();
+                const overviewTab = document.querySelector('.nav-item[data-tab="tab-overview"]');
+                if (overviewTab) overviewTab.click();
+                else await renderAll();
             };
 
             const risk = window.Storage.calculateRiskLevel(p);
@@ -767,7 +789,7 @@
             `;
             container.appendChild(row);
         });
-        lucide.createIcons();
+        SafeCreateIcons();
     }
 
     async function switchTo(id) {
@@ -791,6 +813,53 @@
     }
     // Make global for onclick
     window.switchTo = switchTo;
+    window.closeModal = closeModal;
+
+    async function exportData() {
+        const allPatients = await window.Storage.getAllPatients();
+        const scans = await window.Storage.getScanHistory();
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            patients: allPatients,
+            scans
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = `sehat-point-export-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        showToast('Data export ready', 'success');
+    }
+
+    async function importData(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            const patients = Array.isArray(parsed.patients) ? parsed.patients : [];
+            const scans = Array.isArray(parsed.scans) ? parsed.scans : [];
+
+            localStorage.setItem(window.Storage.SAVE_KEY, JSON.stringify(patients));
+            localStorage.setItem(window.Storage.SCAN_KEY, JSON.stringify(scans));
+
+            if (patients[0]?.patientId) {
+                localStorage.setItem('current_patient_id', patients[0].patientId);
+            }
+
+            currentPatient = await window.Storage.getCurrentPatient();
+            await renderAll();
+            showToast('Backup imported successfully', 'success');
+        } catch (err) {
+            showToast('Import failed: ' + err.message, 'error');
+        } finally {
+            event.target.value = '';
+        }
+    }
 
     // ─── Wallpaper Generator ───
     function createWallpaper(qrCanvas, patient) {
@@ -957,3 +1026,4 @@
     bootstrapUI();
     init();
 })();
+

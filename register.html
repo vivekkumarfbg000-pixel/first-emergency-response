@@ -845,7 +845,6 @@
 
                 if (result && result.id) {
                     generatedPatientData = result.patient;
-                    generatedPatientData.patientId = result.id;
                     if (result.supabaseId) generatedPatientData.id = result.supabaseId;
 
                     // Update sync status message
@@ -858,7 +857,7 @@
 
                     // Show success step and generate QR
                     setStep(4);
-                    document.getElementById('successPatientId').textContent = result.id;
+                    document.getElementById('successPatientId').textContent = result.patient.patientId;
                     generateQRCode(result.patient);
                 }
             } catch (err) {
@@ -874,18 +873,7 @@
             const canvas = document.getElementById('qrCanvas');
             if (!canvas || !window.Storage) return;
 
-            // Build the emergency URL (cloud lookup by Supabase ID if available)
-            const baseUrl = window.location.origin + '/emergency.html';
-            let qrContent = '';
-
-            if (patient && patient.id) {
-                // Cloud-linked QR: emergency.html?sid=UUID
-                qrContent = `${baseUrl}?sid=${encodeURIComponent(patient.id)}`;
-            } else if (patient && patient.patientId) {
-                // Offline QR: embed medical data directly in URL
-                const encoded = window.Storage.encodeForQR(patient);
-                qrContent = encoded ? `${baseUrl}?d=${encoded}` : `${baseUrl}?id=${patient.patientId}`;
-            }
+            let qrContent = window.Storage.buildEmergencyUrl(patient);
 
             console.log('[QR] Generating QR for:', qrContent.substring(0, 80) + '...');
 
@@ -898,7 +886,9 @@
                 if (err) {
                     console.error('[QR] Generation error:', err);
                     // Fallback: simple patient ID QR
-                    QRCode.toCanvas(canvas, `${baseUrl}?id=${patient.patientId}`, { width: 240, margin: 2 });
+                    const fallbackUrl = new URL('emergency.html', window.location.href);
+                    fallbackUrl.searchParams.set('id', patient.patientId);
+                    QRCode.toCanvas(canvas, fallbackUrl.toString(), { width: 240, margin: 2 });
                 }
             });
         }

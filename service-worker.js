@@ -3,7 +3,7 @@
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
-const CACHE_NAME = 'sehat-point-v2';
+const CACHE_NAME = 'sehat-point-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -49,22 +49,33 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
 
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+                    return response;
+                })
+                .catch(async () => {
+                    const cached = await caches.match(event.request);
+                    if (cached) return cached;
+                    return caches.match('./index.html');
+                })
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;
             return fetch(event.request).then((response) => {
-                // Optionally cache new successful GET requests
-                if (response.ok && response.type === 'basic') {
+                if (response.ok && (response.type === 'basic' || response.type === 'cors')) {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
                 }
                 return response;
             });
-        }).catch(() => {
-            // Fallback for offline if not in cache (e.g. show emergency.html if available)
-            if (event.request.mode === 'navigate') {
-                return caches.match('./dashboard.html');
-            }
         })
     );
 });

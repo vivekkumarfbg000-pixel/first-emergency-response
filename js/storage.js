@@ -9,6 +9,8 @@ const Storage = {
     SAVE_KEY: 'ems_patient_data_v2',
     SCAN_KEY: 'ems_scan_history',
     _cache: [],
+    MASTER_ADMIN_EMAIL: 'firstemergencyresponse4@gmail.com',
+    MASTER_ADMIN_UUID: '0438c434-b85c-4eca-96d1-b2b692576d53',
 
     // ────── HELPERS ──────
     db: function () {
@@ -98,6 +100,32 @@ const Storage = {
         }
     },
 
+    _isAdminUser: async function () {
+        const user = await this._getCurrentUserObj();
+        return (user?.email || '').trim().toLowerCase() === this.MASTER_ADMIN_EMAIL.toLowerCase();
+    },
+
+    _getAssignedOwnerId: async function () {
+        const userId = await this._getUserId();
+        return userId || this.MASTER_ADMIN_UUID;
+    },
+
+    buildEmergencyUrl: function (patient) {
+        if (!patient) return '';
+
+        const emergencyUrl = new URL('emergency.html', window.location.href);
+        const identifier = patient.id || patient.patientId;
+
+        if (identifier) {
+            emergencyUrl.searchParams.set('sid', identifier);
+        } else {
+            const encoded = this.encodeForQR(patient);
+            if (encoded) emergencyUrl.searchParams.set('d', encoded);
+        }
+
+        return emergencyUrl.toString();
+    },
+
     seed: function () {
         // ... previous seed logic ...
     },
@@ -126,12 +154,12 @@ const Storage = {
 
     // ────── SAVE PATIENT (v4: Anonymous-Safe Cloud-First) ──────
     savePatient: async function (data) {
-        const id = 'EMS-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        const id = data.patientId || ('EMS-' + Math.random().toString(36).substr(2, 6).toUpperCase());
         const patientData = {
             ...data,
             patientId:  id,
             organDonor: data.organDonor === true || data.organDonor === 'true',
-            createdAt:  new Date().toISOString()
+            createdAt:  data.createdAt || new Date().toISOString()
         };
 
         console.log('[Storage] Attempting to save patient:', id);
@@ -157,6 +185,8 @@ const Storage = {
                 }
 
                 console.log('[Storage] Inserting row into Supabase:', dbRow);
+                dbRow.user_id = await this._getAssignedOwnerId();
+                console.log('[Storage] Final owner user_id:', dbRow.user_id);
 
                 const { data: row, error } = await this.db()
                     .from('patients')
@@ -184,7 +214,7 @@ const Storage = {
 
         // ── Step 2: Always save to localStorage (cache + offline fallback) ──
         const patients = this.getAllPatientsLocal();
-        const idx = patients.findIndex(p => p.patientId === id);
+        const idx = patients.findIndex(p => p.patientId === id || p.id === patientData.id);
         if (idx !== -1) patients[idx] = patientData;
         else patients.push(patientData);
 
@@ -211,9 +241,7 @@ const Storage = {
                 let query = this.db().from('patients').select('*');
                 
                 // Admin sees ALL records. Regular users see own. Anonymous use local cache.
-                const adminEmail = 'firstemergencyresponse4@gmail.com';
-                const currentUser = await this._getCurrentUserObj();
-                const isAdmin = currentUser?.email?.toLowerCase() === adminEmail.toLowerCase();
+                const isAdmin = await this._isAdminUser();
 
                 if (isAdmin) {
                     // No user_id filter — admin sees EVERYONE's profiles
@@ -350,6 +378,8 @@ const Storage = {
 
         console.log('[Storage] Updating patient:', id);
 
+        let cloudSynced = false;
+
         if (this.db()) {
             try {
                 const userId = await this._getUserId();
@@ -397,13 +427,22 @@ const Storage = {
                         if (error.code === '42501' || error.status === 403) {
                             console.warn('[Storage] Permission denied. Attempting to "claim" row with user_id...');
                             if (userId) {
-                                await this.db().from('patients').update({ user_id: userId }).eq(queryField, id);
+                                const { error: claimError } = await this.db().from('patients').update({ user_id: userId }).eq(queryField, id);
                                 // Retry update once
-                                await this.db().from('patients').update(dbUpdate).eq(queryField, id);
+                                if (!claimError) {
+                                    const { error: retryError } = await this.db().from('patients').update(dbUpdate).eq(queryField, id);
+                                    cloudSynced = !retryError;
+                                    if (retryError) {
+                                        console.error('[Storage] Supabase Update Retry Error:', retryError);
+                                    }
+                                } else {
+                                    console.error('[Storage] Supabase Claim Error:', claimError);
+                                }
                             }
                         }
                     } else {
                         console.log('[Storage] Cloud update SUCCESS for:', id);
+                        cloudSynced = true;
                     }
                 }
             } catch (err) {
@@ -414,18 +453,18 @@ const Storage = {
         // Always update locally
         const patients = this.getAllPatientsLocal();
         const idx = patients.findIndex(p => p.patientId === id || p.id === id);
-        let cloudSynced = !!(this.db() && (await this._getUserId() || true)); // Tentative
 
         if (idx !== -1) {
-            // Keep existing cloudSynced status if the update failed, but if it succeeded (logical check)
-            // we should ideally get this from the cloud update result.
-            // For now, let's mark it as synced if we have a database connection and attempted the update.
-            patients[idx] = { ...patients[idx], ...updatedData, cloudSynced: true }; 
+            patients[idx] = {
+                ...patients[idx],
+                ...updatedData,
+                cloudSynced: cloudSynced || !!patients[idx].cloudSynced
+            };
             localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
             console.log('[Storage] Local update SUCCESS for:', id);
         }
 
-        return { success: true, cloudSynced: true };
+        return { success: true, cloudSynced };
     },
 
     // ────── DELETE PATIENT ──────
@@ -724,22 +763,32 @@ const Storage = {
         if (!this.db()) return { success: false, message: 'Supabase client not initialized.' };
 
         try {
-            const userId = await this._getUserId();
-            if (!userId) return { success: false, message: 'No active session. Please log in.' };
-
-            const { count, error } = await this.db()
+            const isAdmin = await this._isAdminUser();
+            const ownerId = await this._getAssignedOwnerId();
+            let query = this.db()
                 .from('patients')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId);
+                .select('*', { count: 'exact', head: true });
+
+            if (!isAdmin && ownerId) {
+                query = query.eq('user_id', ownerId);
+            }
+
+            const { count, error } = await query;
 
             if (error) throw error;
 
-            return { success: true, message: `✅ Cloud connected! Found ${count} profile(s) for your account.` };
+            return {
+                success: true,
+                message: isAdmin
+                    ? 'Cloud connected. Admin visibility is active with ' + (count || 0) + ' profile(s) available.'
+                    : 'Cloud connected. Public profile intake is active and ' + (count || 0) + ' profile(s) are linked to the backend owner.'
+            };
         } catch (err) {
-            return { success: false, message: '❌ ' + (err.message || 'Connection failed.') };
+            return { success: false, message: 'Cloud check failed: ' + (err.message || 'Connection failed.') };
         }
     }
 };
 
 Storage.seed();
 window.Storage = Storage;
+
