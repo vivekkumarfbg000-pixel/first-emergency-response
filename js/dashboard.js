@@ -144,10 +144,9 @@
             // 5. Initial Render
             await renderAll();
             setupEvents();
-            updateClock();
-            setInterval(updateClock, 30000);
+            setupRealtime();
+            setupGPS(); // Functional Fix: Mobile GPS Sync
 
-            setupRealtime(); // Clinical functional fix
             showToast('Session Active', 'success');
         } catch (err) {
             console.error('[Dashboard] Init Failure:', err);
@@ -1027,6 +1026,53 @@
                 console.log('[Realtime] Connectivity:', status);
             });
     }
+
+    // ─── GPS Hub (Functional Fix for Mobile) ───
+    function setupGPS() {
+        const gpsCard = $('gps-stat-card');
+        if (gpsCard) {
+            gpsCard.onclick = () => requestLocation();
+        }
+    }
+
+    async function requestLocation() {
+        const text = $('gps-text');
+        const badge = $('stat-gps');
+        const pill = $('gps-status');
+
+        if (!navigator.geolocation) {
+            showToast('GPS not supported by device', 'error');
+            return;
+        }
+
+        txt('gps-text', 'GPS: SYNCING...');
+        txt('stat-gps', 'Syncing...');
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                console.log('[GPS] Success:', latitude, longitude);
+                
+                txt('gps-text', 'GPS: ACTIVE');
+                txt('stat-gps', 'Enabled');
+                if (pill) pill.classList.add('active');
+                
+                showToast('Location Sync Active', 'success');
+                // Store in session-state if needed for activity logs
+                window.Storage.last_lat = latitude;
+                window.Storage.last_lng = longitude;
+            },
+            (err) => {
+                console.error('[GPS] Error:', err);
+                txt('gps-text', 'GPS: ERROR');
+                txt('stat-gps', 'Denied');
+                if (pill) pill.classList.remove('active');
+                showToast('Please enable Location in settings', 'error');
+            },
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
+    }
+    window.requestLocation = requestLocation;
 
     window.Dashboard = {
         init,

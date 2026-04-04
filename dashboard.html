@@ -78,6 +78,10 @@
           </button>
           <div class="header-breadcrumb">
             <span class="breadcrumb-item" id="dash-time">--</span>
+            <div id="gps-status" class="gps-status-pill">
+              <span class="pulse-dot"></span>
+              <span id="gps-text">GPS: DEFERRED</span>
+            </div>
             <h1 class="header-title" id="welcome-msg">Dashboard</h1>
           </div>
         </div>
@@ -133,13 +137,14 @@
               <div class="stat-value" id="stat-scans">0</div>
             </div>
           </div>
-          <div class="glass-card stat-card purple animate-slide stagger-4">
+          <div class="glass-card stat-card purple animate-slide stagger-4" id="gps-stat-card" style="cursor:pointer;">
             <div class="stat-icon">
-              <i data-lucide="users"></i>
+              <i data-lucide="map-pin"></i>
             </div>
             <div class="stat-info">
-              <span class="stat-label">Managed Profiles</span>
-              <div class="stat-value" id="stat-profiles">0</div>
+              <span class="stat-label">Location Sync</span>
+              <div class="stat-value" id="stat-gps" style="font-size: 1rem;">Not Linked</div>
+              <div class="stat-subtext">Tap to Enable GPS</div>
             </div>
           </div>
         </div>
