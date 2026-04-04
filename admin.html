@@ -114,7 +114,7 @@
         </header>
 
         <!-- Dynamic Content Area -->
-        <div class="flex-1 p-6 relative overflow-hidden">
+        <div class="flex-1 p-6 relative overflow-hidden min-h-[600px]">
             
             <!-- OVERVIEW: BENTO GRID DASHBOARD -->
             <section id="section-overview" class="h-full grid grid-cols-12 grid-rows-6 gap-6 animate-tactical-reveal opacity-100">
@@ -246,6 +246,11 @@
                 <!-- Log content... -->
             </section>
 
+        </div>
+
+        <!-- DIAGNOSTIC HUD (Hidden by default, toggle with 'D') -->
+        <div id="admin-debug-log" class="hidden fixed bottom-0 left-0 right-0 bg-black/90 text-[10px] font-mono p-4 z-[9999] border-t border-red-500/50 max-h-40 overflow-y-auto">
+            <div class="text-white font-bold mb-2">/ TACTICAL DIAGNOSTIC CONSOLE /</div>
         </div>
     </main>
 

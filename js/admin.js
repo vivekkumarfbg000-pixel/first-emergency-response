@@ -10,16 +10,55 @@
 
     let _activeSection = 'overview';
     let _realtimeChannel = null;
+    let _errorLogs = [];
+
+    // ─── Diagnostic HUD ───
+    function logError(msg, err) {
+        const errorMsg = `[Tactical Error] ${msg}: ${err?.message || err}`;
+        console.error(errorMsg);
+        _errorLogs.push(errorMsg);
+        const hud = $('admin-debug-log');
+        if (hud) {
+            hud.innerHTML += `<div class="mb-1 text-red-400"># ${errorMsg}</div>`;
+        }
+    }
+
+    window.onerror = function(msg, url, line) {
+        logError(`Runtime Error at ${line}`, msg);
+        return false;
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'd') {
+            const hud = $('admin-debug-log');
+            if (hud) hud.classList.toggle('hidden');
+        }
+    });
 
     // ─── Initialization ───
     async function init() {
-        console.log('[MasterDispatch] v12.0 Tactical Console Active...');
+        console.log('[MasterDispatch] v12.1 Tactical Console Stability Mode...');
         
-        const isAdmin = await window.Storage._isAdminUser();
-        if (!isAdmin && window.location.hostname !== 'localhost') {
-            window.location.href = 'login.html';
+        // 1. Dependency Waiter
+        let retries = 0;
+        while ((!window.Storage || !window.Auth) && retries < 10) {
+            console.log('[MasterDispatch] Waiting for Core Dependencies...');
+            await new Promise(r => setTimeout(r, 500));
+            retries++;
+        }
+
+        if (!window.Storage || !window.Auth) {
+            logError('Critical Failure', 'Core Dependencies (Storage/Auth) failed to load.');
             return;
         }
+
+        try {
+            const isAdmin = await window.Storage._isAdminUser();
+            if (!isAdmin && window.location.hostname !== 'localhost') {
+                window.location.href = 'login.html';
+                return;
+            }
+        } catch (e) { logError('Auth Check Failed', e); }
 
         updateConnectionStatus('connected');
         
@@ -164,8 +203,13 @@
         const body = $('admin-table-body');
         if (!body) return;
 
-        const all = await window.Storage.getAllPatients();
-        const filtered = filter ? all.filter(p => p.fullName.toLowerCase().includes(filter)) : all;
+        const all = await window.Storage.getAllPatients() || [];
+        const filtered = filter ? all.filter(p => p.fullName?.toLowerCase().includes(filter)) : all;
+ 
+        if (filtered.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" class="py-20 text-center opacity-30 text-[10px] uppercase font-black tracking-[0.3em]">No Personnel Records Detected</td></tr>`;
+            return;
+        }
 
         body.innerHTML = filtered.map(p => {
             const isCritical = (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5;
@@ -198,9 +242,12 @@
         const mini = $('admin-live-log-mini');
         
         try {
-            const scans = await window.Storage.getScanHistory();
-            if (!scans || scans.length === 0) return;
-
+            const scans = await window.Storage.getScanHistory() || [];
+            if (scans.length === 0) {
+                if(mini) mini.innerHTML = `<div class="py-6 text-center opacity-20 text-[8px] uppercase font-black tracking-widest">Awaiting Scanner Signals...</div>`;
+                return;
+            }
+ 
             const html = scans.map(s => {
                 const time = new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const isEmergency = s.type === 'emergency_scan';
@@ -234,33 +281,35 @@
     };
 
     async function renderAnalytics() {
-        const patients = await window.Storage.getAllPatients();
-        const scans = await window.Storage.getScanHistory();
-
-        const critical = patients.filter(p => (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5).length;
-        const regular = patients.length - critical;
-        
-        const triageList = $('admin-triage-list');
-        if (triageList && patients.length > 0) {
-            triageList.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Stable Entities</span></div>
-                    <span class="text-[11px] font-black text-white">${Math.round((regular/patients.length)*100)}%</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Critical Risk</span></div>
-                    <span class="text-[11px] font-black text-white">${Math.round((critical/patients.length)*100)}%</span>
-                </div>
-            `;
-        }
-
-        const chart = $('chart-velocity');
-        if (chart) {
-            const seed = [15, 25, 10, 35, 45, 30, (scans.length % 50) + 20];
-            chart.innerHTML = seed.map(c => `
-                <div class="flex-1 rounded-t-sm transition-all duration-1000 ${c > 40 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-slate-800'}" style="height: ${c}%"></div>
-            `).join('');
-        }
+        try {
+            const patients = await window.Storage.getAllPatients() || [];
+            const scans = await window.Storage.getScanHistory() || [];
+ 
+            const critical = patients.filter(p => (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5).length;
+            const regular = patients.length - critical;
+            
+            const triageList = $('admin-triage-list');
+            if (triageList && patients.length > 0) {
+                triageList.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Stable Entities</span></div>
+                        <span class="text-[11px] font-black text-white">${Math.round((regular/patients.length)*100)}%</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span><span class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Critical Risk</span></div>
+                        <span class="text-[11px] font-black text-white">${Math.round((critical/patients.length)*100)}%</span>
+                    </div>
+                `;
+            }
+ 
+            const chart = $('chart-velocity');
+            if (chart) {
+                const seed = [15, 25, 10, 35, 45, 30, ((scans.length || 0) % 50) + 20];
+                chart.innerHTML = seed.map(c => `
+                    <div class="flex-1 rounded-t-sm transition-all duration-1000 ${c > 40 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-slate-800'}" style="height: ${c}%"></div>
+                `).join('');
+            }
+        } catch (e) { logError('Analytics Failed', e); }
     }
 
     window.switchTab = function(tab) {
