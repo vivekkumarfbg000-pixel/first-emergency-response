@@ -4,569 +4,188 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Sehat Point</title>
-  <meta name="description" content="Manage emergency medical profiles, generate QR codes, and monitor scan activity.">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
   
-  <!-- PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#e11d48">
-  <link rel="apple-touch-icon" href="assets/icon-192.png">
-
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-</head>
-<body class="dashboard-page">
-  <!-- Professional Loading Overlay -->
-  <div id="app-loading" class="loading-overlay">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <p>Synchronizing Clinical Data...</p>
-    </div>
-  </div>
-
-  <div class="app-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="appSidebar">
-      <div class="sidebar-header">
-        <div class="app-brand">
-          <div class="logo-cube">
-            <i data-lucide="shield-plus"></i>
-          </div>
-          <span class="sidebar-brand">SEHAT POINT</span>
-        </div>
-      </div>
-      
-      <nav class="sidebar-nav">
-        <div class="nav-item active" data-tab="tab-overview">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Overview</span>
-        </div>
-        <div class="nav-item" data-tab="tab-patients">
-          <i data-lucide="users"></i>
-          <span>Profiles</span>
-        </div>
-        <div class="nav-item" data-tab="tab-activity">
-          <i data-lucide="activity"></i>
-          <span>Activity Log</span>
-        </div>
-        <div class="nav-item" data-tab="tab-admin" id="nav-admin" style="display:none;">
-          <i data-lucide="crown"></i>
-          <span>Admin Master</span>
-        </div>
-        <div class="nav-item" data-tab="tab-settings">
-          <i data-lucide="settings"></i>
-          <span>Settings</span>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="nav-item" onclick="window.Auth.signOut()">
-          <i data-lucide="log-out"></i>
-          <span>Sign Out</span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Wrapper -->
-    <main class="main-wrapper">
-      <header class="main-header">
-        <div class="header-left">
-          <button class="hamburger-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
-            <i data-lucide="menu"></i>
-          </button>
-          <div class="header-branding">
-            <div class="logo-cube-sm">
-              <i data-lucide="shield-plus"></i>
-            </div>
-            <span class="brand-text">SEHAT POINT</span>
-          </div>
-          <div class="header-breadcrumb">
-            <div id="gps-status" class="gps-status-pill">
-              <span class="pulse-dot"></span>
-              <span id="gps-text">GPS: DEFERRED</span>
-            </div>
-            <h1 class="header-title" id="welcome-msg">Dashboard</h1>
-          </div>
-        </div>
-
-        <div class="header-right">
-          <div class="switcher-wrapper">
-            <i data-lucide="user-circle-2" class="switcher-icon"></i>
-            <select class="patient-select" id="patientSwitcher">
-              <option>Loading...</option>
-            </select>
-          </div>
-          <a href="register.html" class="action-btn-primary">
-            <i data-lucide="plus-circle"></i>
-            <span>New Profile</span>
-          </a>
-        </div>
-      </header>
-
-      <div class="main-content">
-        <div id="toastContainer" class="toast-container"></div>
-
-        <!-- ─── TAB: OVERVIEW ─── -->
-        <div class="tab-content active" id="tab-overview">
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="glass-card stat-card red animate-slide stagger-1">
-            <div class="stat-icon">
-              <i data-lucide="droplet"></i>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Blood Type</span>
-              <div class="stat-value" id="stat-blood">--</div>
-            </div>
-          </div>
-          <div class="glass-card stat-card blue animate-slide stagger-2">
-            <div class="stat-icon">
-              <i data-lucide="pie-chart"></i>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Profile Complete</span>
-              <div class="stat-value" id="stat-completion">0%</div>
-              <div style="height:4px; background:rgba(255,255,255,0.06); border-radius:2px; margin-top:6px; overflow:hidden;">
-                <div id="progress-bar" style="height:100%; background:#3b82f6; width:0%; transition: width 1s ease; border-radius:2px;"></div>
-              </div>
-            </div>
-          </div>
-          <div class="glass-card stat-card green animate-slide stagger-3">
-            <div class="stat-icon">
-              <i data-lucide="activity"></i>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Total Activity</span>
-              <div class="stat-value" id="stat-scans">0</div>
-            </div>
-          </div>
-          <div class="glass-card stat-card purple animate-slide stagger-4" id="gps-stat-card" style="cursor:pointer;">
-            <div class="stat-icon">
-              <i data-lucide="map-pin"></i>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Location Sync</span>
-              <div class="stat-value" id="stat-gps" style="font-size: 1rem;">Not Linked</div>
-              <div class="stat-subtext">Tap to Enable GPS</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Main Grid -->
-        <div class="content-grid">
-          <!-- Left Column -->
-          <div>
-            <!-- Medical ID Card (Premium Redesign) -->
-            <div class="profile-card-premium animate-fade-in">
-              <div class="premium-header">
-                <div class="header-left">
-                  <i data-lucide="shield-plus"></i>
-                  <span>SEHAT POINT</span>
-                </div>
-              </div>
-              <div class="premium-body">
-                <h2 id="p-premium-name">--</h2>
-                <div class="last-updated-pill">
-                  <i data-lucide="clock" style="width:12px;"></i>
-                  LAST UPDATED: <span id="p-premium-updated">--</span>
-                </div>
-
-                <!-- Vitals Badges (Matched to Image) -->
-                <div class="info-badge theme-red">
-                  <i data-lucide="droplet"></i>
-                  <div class="info-badge-content">
-                    <span class="info-badge-label">Blood Group</span>
-                    <div class="info-badge-value" id="p-premium-blood">--</div>
-                  </div>
-                </div>
-
-                <div class="info-badge theme-amber">
-                  <div class="info-badge-content">
-                    <span class="info-badge-label">Clinical Condition</span>
-                    <div class="info-badge-value" id="p-premium-condition">--</div>
-                    <div class="risk-tag" id="p-premium-risk">Critical Risk</div>
-                  </div>
-                </div>
-
-                <div class="info-badge theme-amber">
-                  <i data-lucide="alert-octagon"></i>
-                  <div class="info-badge-content">
-                    <span class="info-badge-label">Critical Allergies</span>
-                    <div class="info-badge-value" id="p-premium-allergy">--</div>
-                  </div>
-                </div>
-
-                <div class="info-badge theme-green">
-                  <i data-lucide="pill"></i>
-                  <div class="info-badge-content">
-                    <span class="info-badge-label">Active Medication</span>
-                    <div class="info-badge-value" id="p-premium-medication">--</div>
-                  </div>
-                </div>
-
-                <div class="info-badge theme-blue">
-                  <i data-lucide="clipboard-list"></i>
-                  <div class="info-badge-content">
-                    <span class="info-badge-label">Responder Notes</span>
-                    <div class="info-badge-value" id="p-premium-notes">--</div>
-                  </div>
-                </div>
-
-                <!-- Premium Actions -->
-                <div class="premium-actions">
-                  <a href="#" id="p-premium-btn-family" class="p-btn btn-family">
-                    <i data-lucide="phone"></i> CALL FAMILY
-                  </a>
-                  <a href="tel:102" class="p-btn btn-ambulance">
-                    <i data-lucide="ambulance"></i> CALL AMBULANCE
-                  </a>
-                  <a href="#" id="p-premium-btn-clinic" class="p-btn btn-clinic">
-                    <i data-lucide="hospital"></i> VISIT NEAREST CLINIC
-                  </a>
-                </div>
-                
-                <div class="lock-info">
-                  <i data-lucide="lock" style="width:14px;"></i>
-                  View Full Medical Record (OTP Required)
-                </div>
-              </div>
-            </div>
-
-            <!-- Health Summary Section -->
-            <div class="glass-card stat-card stat-card-blue" id="health-summary-card" style="margin-bottom: 1.5rem;">
-                <div class="summary-card-header" style="color:var(--secondary); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                    <i data-lucide="shield-plus"></i>
-                    <h3 style="font-size: 0.875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Clinical Health Summary</h3>
-                </div>
-                <div class="summary-value" id="sum-health-report" style="font-size: 0.9375rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-weight: 500;">--</div>
-            </div>
-
-            <!-- Medical Summaries -->
-            <div class="grid-2">
-              <div class="glass-card stat-card stat-card-purple">
-                <div class="summary-card-header" style="color:var(--purple); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                  <i data-lucide="activity"></i>
-                  <h3 style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Medical Conditions</h3>
-                </div>
-                <div class="summary-value" id="sum-conditions" style="color: white; font-weight: 600;">--</div>
-              </div>
-              <div class="glass-card stat-card stat-card-blue">
-                <div class="summary-card-header" style="color:var(--secondary); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                  <i data-lucide="pill"></i>
-                  <h3 style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Medications</h3>
-                </div>
-                <div class="summary-value" id="sum-medications" style="color: white; font-weight: 600;">--</div>
-              </div>
-            </div>
-
-            <!-- Allergies Alert -->
-            <div class="glass-card summary-card" id="allergy-card" style="border-color: #ef4444 !important; border-width: 2px !important;">
-              <div class="summary-card-header card-head-orange">
-                <i data-lucide="alert-triangle"></i>
-                <h3>Critical Allergies</h3>
-              </div>
-              <div class="summary-value bold-red" id="sum-allergies">No reported allergies</div>
-              <div style="font-size:0.625rem; color:#94a3b8; margin-top:0.5rem; font-weight:600;">Highlighted in RED on the Rescuer View</div>
-            </div>
-
-            <!-- Notes -->
-            <div class="glass-card summary-card" id="notes-card" style="display:none;">
-              <div class="summary-card-header card-head-teal">
-                <i data-lucide="clipboard-list"></i>
-                <h3>Responder Notes</h3>
-              </div>
-              <div class="summary-value" id="sum-notes">--</div>
-            </div>
-
-            <!-- Management -->
-            <div class="glass-card" style="padding:1.25rem; margin-top:1rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.875rem;">
-                <h3 style="font-size:0.8125rem; font-weight:700;">Manage Profile</h3>
-              </div>
-              <div class="mgmt-grid">
-                <button class="mgmt-btn" id="btn-edit-main"><i data-lucide="edit-3"></i> Edit Details</button>
-                <button class="mgmt-btn" id="btn-print"><i data-lucide="printer"></i> Print Card</button>
-                <button class="mgmt-btn" id="btn-export"><i data-lucide="download"></i> Export Data</button>
-                <button class="mgmt-btn danger" id="btn-delete"><i data-lucide="trash-2"></i> Delete Profile</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Column -->
-          <div>
-            <!-- QR Code -->
-            <div class="glass-card qr-section">
-              <div class="qr-title">Emergency QR Code</div>
-              <div class="qr-subtitle" style="color:#10b981; font-weight:700;">✅ HYBRID ELITE: OFFLINE + ONLINE</div>
-              <p style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:0.25rem;">Medical vitals & emergency contact appear immediately on scan.</p>
-              <div class="qr-glow">
-                <div id="qrcode-canvas-container" class="qr-canvas-wrap"></div>
-              </div>
-              <div class="qr-actions">
-                <button id="downloadQR" class="btn btn-primary btn-sm">
-                  <i data-lucide="download" style="width:14px;"></i>
-                  Download QR Image
-                </button>
-                <button id="setWallpaper" class="btn btn-outline btn-sm">
-                  <i data-lucide="smartphone" style="width:14px;"></i>
-                  Wallpaper Generator
-                </button>
-              </div>
-            </div>
-
-            <!-- Waveform -->
-            <div class="glass-card" style="padding:1.25rem; margin-bottom:1.25rem;">
-              <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                  <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em;">System Status</div>
-                  <div style="font-size:0.875rem; font-weight:700; color:var(--accent); margin-top:0.25rem;">● Online & Active</div>
-                </div>
-              <div class="waveform-container">
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                  <div class="waveform-bar"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- End right column -->
-        </div><!-- End content-grid -->
-      </div><!-- End tab-overview -->
-
-      <!-- TAB: PATIENTS LIST -->
-      <div id="tab-patients" class="tab-content">
-        <header style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 1.25rem; font-weight: 800;">All Profiles</h2>
-            <div id="profiles-count-text" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">0 PROFILES</div>
-        </header>
-        <div style="margin-bottom: 1rem;">
-            <div class="glass-card" style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.75rem;">
-                <i data-lucide="search" style="width: 16px; color: var(--text-muted);"></i>
-                <input type="text" id="patientSearch" placeholder="Search profiles..." style="background: transparent; border: none; color: white; width: 100%; font-size: 0.875rem; outline: none; padding: 0.5rem 0;">
-            </div>
-        </div>
-        <div id="patientsTableWrap" style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <!-- Rendered via JS as WhatsApp-style rows -->
-        </div>
-      </div>
-
-      <!-- TAB: ACTIVITY LOGS -->
-      <div id="tab-activity" class="tab-content">
-        <header style="margin-bottom: 1.5rem;">
-            <h2 style="font-size: 1.25rem; font-weight: 800;">Activity Alerts</h2>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Timeline of emergency scans and profile events.</p>
-        </header>
-        <div id="full-activity-log">
-            <!-- Rendered via JS -->
-        </div>
-        <div id="recentActivityList" style="display:none;"></div>
-      </div>
-
-      <!-- TAB: SETTINGS -->
-      <div id="tab-settings" class="tab-content">
-        <div class="glass-card" style="padding:2rem;">
-          <header style="margin-bottom:2rem;">
-            <h2 style="font-size:1.375rem; font-weight:800;">Settings</h2>
-            <p style="font-size:0.8125rem; color:var(--text-muted); margin-top:0.25rem;">Configure your EMS dashboard.</p>
-          </header>
-
-          <div class="settings-group" style="padding:1.5rem; border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-bottom:1.5rem;">
-            <h3 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
-              <i data-lucide="cloud-lightning" style="width:18px; color:var(--accent);"></i>
-              Cloud Synchronization Diagnostics
-            </h3>
-            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.25rem;">Verify your connection to Supabase and check if your profiles are correctly syncing to the cloud.</p>
-            <div style="display:flex; align-items:center; gap:1rem;">
-              <button id="btn-test-cloud" class="btn btn-primary btn-sm">Test Cloud Connection</button>
-              <div id="connection-status-pill" style="font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem; border-radius:20px; display:none;"></div>
-            </div>
-            <div id="connection-details" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem; font-family:monospace; display:none;"></div>
-          </div>
-
-          <!-- Real-time Diagnostics -->
-          <div class="settings-group" style="padding:1.5rem; border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-bottom:1.5rem;">
-            <h3 style="font-size:1rem; font-weight:700; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
-              <i data-lucide="radio" style="width:18px; color:#10b981;"></i>
-              PostgreSQL Real-time Status
-            </h3>
-            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.25rem;">Live emergency alerts require "Replication" to be enabled for the <b>scans</b> table in your Supabase Dashboard.</p>
-            <div id="realtime-status-pill" style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.75rem; font-weight:600; padding:0.4rem 0.8rem; border-radius:20px; background:rgba(255,255,255,0.05); color:var(--text-secondary);">
-                <span class="pulse-dot" style="width:8px; height:8px; background:currentColor;"></span>
-                Initializing...
-            </div>
-            <div id="realtime-instructions" style="display:none; margin-top:1rem; padding:1rem; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:8px;">
-                <div style="font-size:0.75rem; font-weight:700; color:#f59e0b; margin-bottom:0.25rem;">⚠️ ACTION REQUIRED</div>
-                <div style="font-size:0.7rem; color:var(--text-secondary); line-height:1.4;">
-                    1. Go to <b>Supabase Dashboard</b> -> <b>Database</b> -> <b>Publications</b>.<br>
-                    2. Click on the <b>supabase_realtime</b> publication.<br>
-                    3. Toggle the <b>scans</b> switch to <b>ON</b>.
-                </div>
-            </div>
-          </div>
-
-          <div class="settings-group">
-            <div class="settings-group-title">Data Management</div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <h4>Export All Data</h4>
-                <p>Download all patient profiles and scan history as JSON</p>
-              </div>
-              <button class="btn btn-outline btn-sm" id="settings-export"><i data-lucide="download" style="width:14px;"></i> Export</button>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <h4>Import Data</h4>
-                <p>Restore from a previously exported JSON backup</p>
-              </div>
-              <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-                <i data-lucide="upload" style="width:14px;"></i> Import
-                <input type="file" accept=".json" id="settings-import" style="display:none;">
-              </label>
-            </div>
-          </div>
-
-          <div class="settings-group">
-            <div class="settings-group-title">Danger Zone</div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <h4 style="color:#ef4444;">Reset All Data</h4>
-                <p>Permanently delete all profiles and scan history</p>
-              </div>
-              <button class="btn btn-outline btn-sm" id="settings-reset" style="color:#ef4444; border-color:rgba(239,68,68,0.3);">
-                <i data-lucide="alert-triangle" style="width:14px;"></i> Reset
-              </button>
-            </div>
-          </div>
-
-          <div class="settings-group">
-            <div class="settings-group-title">About</div>
-            <div style="font-size:0.8125rem; color:var(--text-secondary); line-height:1.7;">
-              <p><strong>EMS Response</strong> — Emergency Medical Profile System</p>
-              <p>Version 2.0 • Data stored locally in browser localStorage</p>
-              <p>All medical data is encoded directly into QR codes for offline access.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: ADMIN MASTER -->
-      <div id="tab-admin" class="tab-content">
-        <div class="glass-card" style="padding:2rem;">
-          <header style="margin-bottom:2rem;">
-            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-                <h2 style="font-size:1.375rem; font-weight:800;">Global System Master</h2>
-                <span style="background:rgba(239,68,68,0.1); color:#ef4444; font-size:0.625rem; padding:2px 8px; border-radius:99px; font-weight:800;">ADMIN ONLY</span>
-            </div>
-            <p style="font-size:0.8125rem; color:var(--text-muted);">Oversee all profiles and activity across the entire SaaS platform.</p>
-          </header>
-
-          <div class="stats-grid" style="margin-bottom:2rem;">
-            <div class="glass-card stat-card">
-              <div class="stat-info">
-                <span class="stat-label">Total Users</span>
-                <div class="stat-value" id="admin-total-users">--</div>
-              </div>
-            </div>
-            <div class="glass-card stat-card">
-              <div class="stat-info">
-                <span class="stat-label">Total Profiles</span>
-                <div class="stat-value" id="admin-total-profiles">--</div>
-              </div>
-            </div>
-            <div class="glass-card stat-card">
-              <div class="stat-info">
-                <span class="stat-label">Total Scans</span>
-                <div class="stat-value" id="admin-total-scans">--</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="search-bar" style="margin-bottom:1.5rem; max-width:100%;">
-            <i data-lucide="search"></i>
-            <input type="text" placeholder="Global Search (Name, ID, Blood, Conditions)..." id="adminSearch">
-          </div>
-
-          <div id="adminPatientsTableWrap">
-             <div style="text-align:center; padding:3rem; opacity:0.5;">
-                <i data-lucide="loader" class="animate-pulse"></i>
-                <p>Fetching global records...</p>
-             </div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div><!-- end app-layout -->
-
-  <!-- EDIT MODAL -->
-  <div id="editModal" class="modal">
-    <div class="glass-card modal-content">
-      <div class="modal-header">
-        <div>
-          <h2>Edit Medical Profile</h2>
-          <p>Changes reflect instantly on the QR and Rescuer View.</p>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i data-lucide="x"></i></button>
-      </div>
-
-      <form id="editForm">
-        <div class="grid-2">
-          <div class="input-group"><label>Full Name</label><input type="text" id="edit_fullName" required></div>
-          <div class="input-group"><label>Blood Group</label>
-            <select id="edit_bloodGroup" required>
-              <option value="A+">A+</option><option value="A-">A-</option>
-              <option value="B+">B+</option><option value="B-">B-</option>
-              <option value="AB+">AB+</option><option value="AB-">AB-</option>
-              <option value="O+">O+</option><option value="O-">O-</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="input-group"><label>Age</label><input type="number" id="edit_age" required></div>
-          <div class="input-group"><label>Gender</label>
-            <select id="edit_gender"><option>Male</option><option>Female</option><option>Other</option></select>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="input-group"><label>Emergency Contact 1</label><input type="text" id="edit_contactName" required></div>
-          <div class="input-group"><label>Contact 1 Phone</label><input type="tel" id="edit_contactPhone" required></div>
-        </div>
-        <div class="grid-2">
-          <div class="input-group"><label>Emergency Contact 2</label><input type="text" id="edit_contact2Name"></div>
-          <div class="input-group"><label>Contact 2 Phone</label><input type="tel" id="edit_contact2Phone"></div>
-        </div>
-        <div class="input-group"><label>Chronic Conditions</label><textarea id="edit_conditions" rows="2"></textarea></div>
-        <div class="input-group"><label>Critical Allergies</label><textarea id="edit_allergies" rows="2"></textarea></div>
-        <div class="input-group"><label>Medications</label><textarea id="edit_medications" rows="2"></textarea></div>
-        <div class="input-group"><label>Responder Notes</label><textarea id="edit_medicalNotes" rows="2"></textarea></div>
-        <button type="submit" class="btn btn-primary btn-block" style="margin-top:1rem;">Save Changes</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/card-generator.js"></script>
-  <script src="js/dashboard.js"></script>
 
   <script>
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => {
-            setupRealtime();
-            showToast('Session Active', 'success');
-        }).catch(err => console.error('[PWA] Failed:', err));
-      });
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            clinical: {
+                red: '#ef4444',
+                amber: '#f59e0b',
+                slate: '#0f172a',
+                emerald: '#10b981',
+                paper: '#f8fafc'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { display: none; }
+    body { background-color: #e2e8f0; }
+    .nav-tab.active { color: #0f172a; border-top: 2.5px solid #0f172a; }
+  </style>
+</head>
+<body class="font-sans text-slate-900 antialiased flex justify-center min-h-screen py-0 md:py-8">
+
+  <!-- Mobile App Container -->
+  <main class="w-full max-w-[400px] bg-clinical-paper min-h-screen relative shadow-2xl md:rounded-[2.5rem] overflow-hidden border-[6px] border-slate-800 md:h-[850px] flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+      <div class="flex items-center gap-2">
+        <div class="logo-cube bg-blue-600 p-1.5 rounded-lg">
+          <i data-lucide="shield-plus" class="w-4 h-4"></i>
+        </div>
+        <span class="text-[12px] font-black tracking-widest uppercase">Sehat Point</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div id="gps-status" class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">
+          <span class="w-2 h-2 bg-slate-500 rounded-full" id="gps-dot"></span>
+          <span class="text-[10px] font-bold text-slate-400 uppercase" id="gps-text">NO_SYNC</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Content Area (Scrollable) -->
+    <div class="flex-1 overflow-y-auto pb-24 pt-4" id="app-container">
+      
+      <!-- ─── TAB: OVERVIEW ─── -->
+      <div id="tab-overview" class="tab-content px-5 space-y-6">
+        <!-- Patient Switcher Hero -->
+        <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Profile</p>
+              <h2 class="text-xl font-black text-slate-900" id="welcome-msg">Loading...</h2>
+            </div>
+            <div class="bg-slate-100 p-2 rounded-2xl">
+              <select id="patientSwitcher" class="bg-transparent border-none text-[10px] font-black uppercase text-slate-600 focus:ring-0">
+                <option>Loading...</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <a href="register.html" class="flex-1 bg-slate-900 text-white py-3 rounded-2xl text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+              <i data-lucide="plus-circle" class="w-3 h-3"></i> New Profile
+            </a>
+            <button onclick="window.Storage.triggerSOSAlert(null,0,0)" class="flex-1 bg-red-50 text-red-600 border border-red-100 py-3 rounded-2xl text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                <i data-lucide="alert-circle" class="w-3 h-3"></i> SOS Test
+              </button>
+          </div>
+        </div>
+
+        <!-- Dashboard Stats Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div id="gps-stat-card" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between cursor-pointer active:scale-95 transition-all">
+            <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-3">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live GPS</span>
+              <p class="text-xs font-black text-slate-800" id="stat-gps">Tap to Sync</p>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-3">
+              <i data-lucide="scan" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Scans</span>
+              <p class="text-xs font-black text-slate-800" id="stat-scans">--</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medical ID Preview Card -->
+        <div id="emergency-card-preview" class="hidden">
+           <!-- Rendered by JS -->
+        </div>
+
+        <!-- Global Sync Status -->
+        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3">
+            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            <p class="text-[10px] font-bold text-emerald-700 tracking-wider">SYNCING WITH SEHAT CENTRAL...</p>
+        </div>
+      </div>
+
+      <!-- ─── TAB: PROFILES ─── -->
+      <div id="tab-patients" class="tab-content hidden px-5 space-y-4">
+        <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Patient Profiles</h2>
+        <div id="patients-list" class="space-y-3">
+            <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- ─── TAB: ACTIVITY ─── -->
+      <div id="tab-activity" class="tab-content hidden px-5 space-y-4">
+        <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Emergency Activity</h2>
+        <div id="activity-list" class="space-y-3">
+            <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM TAB NAVIGATION -->
+    <nav class="absolute bottom-0 left-0 right-0 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-slate-200 px-6 pt-2 pb-8 flex justify-between z-50">
+      <button onclick="switchTab('tab-overview')" class="nav-tab active flex flex-col items-center gap-1 p-2 transition-all">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Center</span>
+      </button>
+      <button onclick="switchTab('tab-patients')" class="nav-tab flex flex-col items-center gap-1 p-2 text-slate-400 transition-all">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Users</span>
+      </button>
+      <button onclick="switchTab('tab-activity')" class="nav-tab flex flex-col items-center gap-1 p-2 text-slate-400 transition-all">
+        <i data-lucide="activity" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Sos</span>
+      </button>
+      <button onclick="window.Auth.signOut()" class="flex flex-col items-center gap-1 p-2 text-slate-400">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Exit</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- PWA & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      
+      document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active', 'text-slate-900'));
+      document.querySelectorAll('.nav-tab').forEach(n => n.classList.add('text-slate-400'));
+      
+      const activeTab = Array.from(document.querySelectorAll('.nav-tab')).find(n => n.getAttribute('onclick').includes(tabId));
+      if(activeTab) {
+        activeTab.classList.add('active', 'text-slate-900');
+        activeTab.classList.remove('text-slate-400');
+      }
     }
   </script>
 </body>
