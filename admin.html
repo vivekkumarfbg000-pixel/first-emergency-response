@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🛰️ COMMAND CENTER | Sehat Point Admin</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +38,8 @@
         ::-webkit-scrollbar-track { background: #0B1120; }
         ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 10px; }
         .leaflet-container { background: #0B1120 !important; }
+        
+        /* Tactical Marker Styles */
         .emergency-pulse-ring {
             width: 60px;
             height: 60px;
@@ -65,159 +67,158 @@
         }
         .animate-blink { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .mobile-stack-card { min-height: auto; }
+            .map-container { height: 350px !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-blue-500/30">
 
-    <!-- ─── TOP HEADER (REFINED AS PER IMAGE 1) ─── -->
-    <header class="bg-[#0F172A] border-b border-slate-800/60 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-4">
-            <div class="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20">
-                <i data-lucide="shield-plus" class="text-white w-6 h-6"></i>
+    <!-- ─── TOP HEADER (v10-pro Mobile-Responsive) ─── -->
+    <header class="bg-[#0F172A] border-b border-slate-800/60 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-[1000] shadow-sm">
+        <div class="flex items-center gap-3 md:gap-4">
+            <div class="bg-blue-600 p-2 md:p-2.5 rounded-xl shadow-lg shadow-blue-900/20">
+                <i data-lucide="shield-plus" class="text-white w-5 h-5 md:w-6 md:h-6"></i>
             </div>
             <div>
-                <h1 class="text-xl font-black tracking-tight text-white leading-none">SEHAT POINT</h1>
-                <div class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 mt-1">
+                <h1 class="text-base md:text-xl font-black tracking-tight text-white leading-none">SEHAT POINT</h1>
+                <div class="flex items-center gap-1.5 text-[9px] md:text-[10px] font-bold text-emerald-400 mt-1">
                     <span class="relative flex h-1.5 w-1.5">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                     </span>
-                    SYSTEM ONLINE
+                    SYNCING REAL-TIME
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-4 md:gap-6">
             <div class="relative cursor-pointer group">
-                <i data-lucide="bell" class="w-6 h-6 text-slate-400 group-hover:text-white transition-colors"></i>
-                <span class="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-[#0F172A]"></span>
+                <i data-lucide="bell" class="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-white"></i>
+                <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-[#0F172A]"></span>
                 </span>
             </div>
-            <div class="h-8 w-px bg-slate-800"></div>
-            <div class="flex items-center gap-3 cursor-pointer">
-                <div class="text-right hidden md:block">
+            <div class="h-8 w-px bg-slate-800 hidden md:block"></div>
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='dashboard.html'">
+                <div class="text-right hidden sm:block">
                     <p class="text-sm font-bold text-white">Master Admin</p>
                     <p class="text-[10px] font-bold text-slate-400 tracking-wider" id="admin-time">00:00:00 UTC</p>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-[#1E293B] border border-slate-700/50 flex items-center justify-center shadow-lg">
-                    <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
+                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#1E293B] border border-slate-700/50 flex items-center justify-center shadow-lg">
+                    <i data-lucide="user" class="w-4 h-4 md:w-5 md:h-5 text-slate-300"></i>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 p-6 flex flex-col gap-6 max-w-[1600px] w-full mx-auto">
+    <main class="flex-1 p-3 md:p-6 flex flex-col gap-4 md:gap-6 max-w-[1700px] w-full mx-auto">
         
-        <!-- ─── METRICS BAR (AS PER IMAGE 1) ─── -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+        <!-- ─── METRICS BAR (Stacked on Mobile) ─── -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
                 <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Active Users</p>
-                    <h3 class="text-3xl font-black text-white" id="metric-users">24,592</h3>
+                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Users</p>
+                    <h3 class="text-xl md:text-3xl font-black text-white" id="metric-users">24,592</h3>
                 </div>
-                <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
-                </div>
+                <i data-lucide="users" class="w-4 h-4 md:w-6 md:h-6 text-blue-500 opacity-40"></i>
             </div>
 
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
                 <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Scans (24h)</p>
-                    <h3 class="text-3xl font-black text-white" id="metric-scans">143</h3>
+                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Scans (24h)</p>
+                    <h3 class="text-xl md:text-3xl font-black text-white" id="metric-scans">143</h3>
                 </div>
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-                    <i data-lucide="scan" class="w-6 h-6 text-emerald-500"></i>
-                </div>
+                <i data-lucide="scan" class="w-4 h-4 md:w-6 md:h-6 text-emerald-500 opacity-40"></i>
             </div>
 
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg ring-1 ring-red-500/10">
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg ring-1 ring-red-500/10">
                 <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Active Emergencies</p>
-                    <h3 class="text-3xl font-black text-red-500 animate-blink">2</h3>
+                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Emergency</p>
+                    <h3 class="text-xl md:text-3xl font-black text-red-500 animate-blink">Live</h3>
                 </div>
-                <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500"></i>
-                </div>
+                <i data-lucide="alert-triangle" class="w-4 h-4 md:w-6 md:h-6 text-red-500 opacity-40"></i>
             </div>
 
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
                 <div class="flex flex-col gap-1.5">
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest tracking-widest">Cloud Connection</p>
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="database" class="w-4 h-4 text-emerald-500"></i>
-                        <span class="text-sm font-bold text-white tracking-tight leading-none">Supabase Real-time Active</span>
+                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">Connect</p>
+                    <div class="flex items-center gap-1">
+                        <span class="text-[10px] md:text-sm font-bold text-white leading-none">Supabase Link</span>
                     </div>
                 </div>
+                <i data-lucide="database" class="w-4 h-4 text-emerald-500 opacity-40"></i>
             </div>
         </div>
 
-        <!-- ─── THE PIT: MONITORING (SPLIT VIEW) (AS PER IMAGE 2) ─── -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[560px]">
-            <!-- Left: Live Map Monitoring -->
-            <div class="lg:col-span-8 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden relative shadow-2xl">
+        <!-- ─── THE PIT: MONITORING (60/40 Split or Stacked) ─── -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 h-auto lg:h-[500px]">
+            <!-- Left: Live Map Monitoring (Stacks on top on mobile) -->
+            <div class="lg:col-span-7 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden relative shadow-2xl map-container min-h-[300px]">
                 <div class="absolute top-4 left-4 z-[400] px-4 py-2 bg-[#0F172A]/90 backdrop-blur rounded-xl border border-slate-700/50 shadow-2xl">
                     <div class="flex items-center gap-2">
                         <i data-lucide="crosshair" class="w-4 h-4 text-red-500 "></i>
-                        <span class="text-[11px] font-black uppercase tracking-widest text-white">Live Emergency Tracking</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-white">Live Tracking</span>
                     </div>
                 </div>
-                <div id="admin-live-map" class="w-full h-full grayscale opacity-40"></div>
-                <!-- Map Crosshair Overlay -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                <div id="admin-live-map" class="w-full h-full opacity-60"></div>
+                <!-- Tactical Scan Grid Overlay (Visible on Desktop) -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10 hidden md:flex">
                     <div class="w-32 h-32 border border-blue-500 rounded-full flex items-center justify-center">
                         <div class="w-1 h-1 bg-blue-500 rounded-full"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Real-Time Alert Feed (AS PER IMAGE 2 & 3) -->
-            <div class="lg:col-span-4 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-                <div class="p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40 backdrop-blur">
-                    <h2 class="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+            <!-- Right: Real-Time Alert Feed (Stacks below map on mobile) -->
+            <div class="lg:col-span-5 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl h-[500px] lg:h-full">
+                <div class="p-4 md:p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40 backdrop-blur">
+                    <h2 class="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
                         <i data-lucide="radio" class="w-4 h-4 text-dispatch-red animate-pulse"></i>
-                        Live Alert Feed
+                        Dispatch Feed
                     </h2>
-                    <span class="px-2 py-0.5 bg-[#0F172A] text-[9px] font-black text-slate-400 rounded-md border border-slate-800">AUTO-SCROLLING</span>
+                    <span class="px-2 py-0.5 bg-[#0F172A] text-[9px] font-black text-slate-400 rounded-md border border-slate-800 tracking-widest uppercase">Live Link</span>
                 </div>
-                <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-5 space-y-4">
-                    <!-- Dynamic Alert Cards Refined (Templates match images exactly) -->
+                <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-3 md:p-5 space-y-4">
+                    <!-- Dynamic Alert Cards (Refined for touch) -->
                     <div class="flex flex-col items-center justify-center py-20 opacity-20">
-                        <i data-lucide="radar" class="w-12 h-12 mb-4 animate-pulse"></i>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>Waiting for active scans</p>
+                        <i data-lucide="radar" class="w-10 h-10 mb-4 animate-pulse"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>No incidents reported</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ─── GLOBAL PATIENT DATABASE (AS PER IMAGE 4) ─── -->
-        <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col mb-10">
-            <div class="p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40">
-                <h2 class="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
+        <!-- ─── GLOBAL PATIENT DATABASE (Scrollable on Mobile) ─── -->
+        <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col mb-10 overflow-x-auto">
+            <div class="p-4 md:p-5 border-b border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#0F172A]/40">
+                <h2 class="text-[10px] md:text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
                     <i data-lucide="database" class="w-4 h-4 text-blue-500"></i>
-                    Global User Database
+                    Global Database
                 </h2>
-                <div class="relative">
+                <div class="relative w-full sm:w-72">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input type="text" id="db-search" placeholder="Search ID, Name, Blood..." 
-                           class="bg-[#0F172A] border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500 transition-all w-72">
+                    <input type="text" id="db-search" placeholder="Search Patient..." 
+                           class="bg-[#0F172A] border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-[10px] md:text-xs font-bold text-white focus:outline-none focus:border-blue-500 transition-all w-full">
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-[13px] border-collapse">
-                    <thead class="bg-[#0B1120]/60 text-[10px] font-black uppercase text-slate-500 border-b border-slate-800/60">
+            <div class="overflow-x-auto min-w-full">
+                <table class="w-full text-left text-[11px] md:text-[13px] border-collapse min-w-[700px]">
+                    <thead class="bg-[#0B1120]/60 text-[9px] md:text-[10px] font-black uppercase text-slate-500 border-b border-slate-800/60">
                         <tr>
-                            <th class="px-6 py-4 tracking-widest">User ID</th>
-                            <th class="px-6 py-4 tracking-widest text-white">Patient Name</th>
-                            <th class="px-6 py-4 tracking-widest">Blood Group</th>
-                            <th class="px-6 py-4 tracking-widest">Status / Risk</th>
-                            <th class="px-6 py-4 tracking-widest">Last Scan</th>
-                            <th class="px-6 py-4 tracking-widest text-right">Actions</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest">ID</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest text-white">Name</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest">Blood</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest">Risk Profile</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest">Last Activity</th>
+                            <th class="px-4 md:px-6 py-4 tracking-widest text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/40" id="admin-table-body">
-                        <!-- Populated dynamic rows as per image #4 -->
+                        <!-- Populated by JS -->
                     </tbody>
                 </table>
             </div>
@@ -246,6 +247,13 @@
 
             window.adminMap = map;
             lucide.createIcons();
+            
+            // Auto-update clock
+            setInterval(() => {
+                const now = new Date();
+                const clock = document.getElementById('admin-time');
+                if (clock) clock.textContent = now.toLocaleTimeString('en-GB') + ' UTC';
+            }, 1000);
         });
     </script>
 </body>

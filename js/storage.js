@@ -8,7 +8,7 @@ const Storage = {
     SAVE_KEY: 'ems_patient_data_v2',
     SCAN_KEY: 'ems_scan_history',
     _cache: [],
-    MASTER_ADMIN_EMAIL: 'firstemergencyresponse4@gmail.com',
+    MASTER_ADMIN_EMAIL: 'firstemergencyresponse@gmail.com',
     MASTER_ADMIN_UUID: '0438c434-b85c-4eca-96d1-b2b692576d53',
 
     // ────── HELPERS ──────
