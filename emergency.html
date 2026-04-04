@@ -58,20 +58,71 @@
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        /* ─── Clinical Toast Notification ─── */
+        .clinical-toast-wrapper {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .clinical-toast {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+        }
+
+        .clinical-toast.success { border-left: 4px solid #10b981; }
+        .clinical-toast.error { border-left: 4px solid #f43f5e; }
+        .clinical-toast.info { border-left: 4px solid #3b82f6; }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .clinical-toast.fade-out {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.4s ease;
         }
 
         /* ─── Case File Aesthetics (Elite) ─── */
         .emergency-card {
             background: #ffffff;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             min-height: 90vh;
-            padding: 3.5rem;
+            padding: 4rem;
             border: 1px solid #cbd5e1;
             position: relative;
             overflow: hidden;
             box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15);
+            border-radius: 8px;
         }
 
         /* Paper Texture Effect */
@@ -142,11 +193,12 @@
         }
 
         .patient-name {
-            font-size: 2.25rem;
-            font-weight: 900;
-            letter-spacing: -0.04em;
+            font-size: 2.75rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
             color: var(--clinical-slate);
             margin: 0;
+            line-height: 1.1;
         }
 
         .patient-id-sub {
@@ -200,15 +252,16 @@
         }
 
         .clinical-box {
-            background: rgba(15, 23, 42, 0.03);
-            border-left: 5px solid var(--clinical-slate);
-            padding: 1.75rem;
-            border-radius: 0 12px 12px 0;
+            background: rgba(15, 23, 42, 0.035);
+            border-left: 6px solid var(--clinical-slate);
+            padding: 1.5rem 2rem;
+            border-radius: 0 16px 16px 0;
             font-size: 1rem;
-            line-height: 1.6;
+            line-height: 1.7;
             font-weight: 600;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             transition: all 0.3s ease;
+            letter-spacing: -0.01em;
         }
 
         /* Elite Categorical Themes (Responder Sync) */
@@ -312,8 +365,8 @@
             margin-bottom: 0.25rem;
         }
 
-        .guide-name { font-weight: 800; font-size: 0.875rem; color: var(--clinical-slate); }
-        .guide-content { font-size: 0.8125rem; color: var(--text-muted); display: none; line-height: 1.5; margin-top: 0.75rem; }
+        .guide-name { font-weight: 800; font-size: 0.9375rem; color: var(--clinical-slate); letter-spacing: -0.02em; }
+        .guide-content { font-size: 0.875rem; color: var(--text-muted); display: none; line-height: 1.6; margin-top: 1rem; }
         .guide-card.open .guide-content { display: block; }
 
         .guide-action-item {
@@ -453,11 +506,8 @@
         </p>
     </div>
 
-    <!-- SOS Alert Bar (populated by JS on scan) -->
-    <div id="sos-bar" style="display:none; position:sticky; top:0; z-index:100; padding:1rem 1.5rem; background:#fef3c7; border:2px solid #fbbf24; display:none; align-items:center; gap:0.75rem; font-size:0.8125rem; font-weight:700; color:#92400e; max-width:700px; width:100%;">
-        <i data-lucide="radio" style="width:18px; flex-shrink:0;"></i>
-        <span id="sos-text" data-i18n="sos-msg">NOTIFYING EMERGENCY CONTACTS...</span>
-    </div>
+    <!-- Clinical Toast Container -->
+    <div id="toast-container" class="clinical-toast-wrapper"></div>
 
     <!-- Main Report Container -->
     <div class="emergency-card" id="main-card" style="display: none;">
@@ -716,9 +766,32 @@
             lucide.createIcons();
         }
 
+        function showClinicalToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `clinical-toast ${type}`;
+            
+            const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 400);
+            }, 5000);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const savedLang = localStorage.getItem('sehat_lang') || 'en';
             setLang(savedLang);
+            
+            // Show background processing status
+            showClinicalToast("Initializing secure profile synchronization...", "info");
             
             const params = new URLSearchParams(window.location.search);
             let patient = null;
@@ -757,37 +830,24 @@
                 return;
             }
 
-            // Trigger SOS Geolocation + Emergency Alert
-            const sosBar = document.getElementById('sos-bar');
-            if (sosBar) sosBar.style.display = 'flex';
-
+            // Background SOS Triggering
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const { latitude, longitude } = position.coords;
-                    console.log('[SOS] Geolocation captured:', latitude, longitude);
                     try {
                         await window.Storage.triggerSOSAlert(patient, latitude, longitude);
-                        const sosText = document.getElementById('sos-text');
-                        const sosBarEl = document.getElementById('sos-bar');
                         const hasEmail = patient.contact1_Email || '';
-                        if (sosText && hasEmail) {
-                            sosText.textContent = `✅ SOS EMAIL SENT TO ${hasEmail.split('@')[0].toUpperCase()} — GPS LOCATION SHARED`;
-                            sosText.style.color = '#059669';
-                        } else if (sosText) {
-                            sosText.setAttribute('data-i18n', 'sos-done');
-                            setLang(localStorage.getItem('sehat_lang') || 'en');
-                            sosText.style.color = '#059669';
-                        }
-                        if (sosBarEl) {
-                            sosBarEl.style.background = '#dcfce7';
-                            sosBarEl.style.borderColor = '#86efac';
+                        if (hasEmail) {
+                            showClinicalToast(`✅ SOS CONTACT NOTIFIED: ${hasEmail.split('@')[0].toUpperCase()}`, 'success');
+                        } else {
+                            showClinicalToast("✅ EMERGENCY PROTOCOL ACTIVATED", 'success');
                         }
                     } catch (e) {
                         console.error('[SOS] Alert trigger failed:', e);
                     }
                 }, (err) => {
-                    console.warn('[SOS] Geolocation denied. Logging scan without GPS.');
                     window.Storage.triggerSOSAlert(patient, null, null);
+                    showClinicalToast("⚠️ GPS UNAVAILABLE: Alert sent without location", 'info');
                 });
             } else {
                 window.Storage.triggerSOSAlert(patient, null, null);

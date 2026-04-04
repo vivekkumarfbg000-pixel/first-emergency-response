@@ -34,7 +34,7 @@
           <div class="logo-cube">
             <i data-lucide="shield-plus"></i>
           </div>
-          <span style="font-size: 1.25rem;">SEHAT POINT</span>
+          <span class="sidebar-brand">SEHAT POINT</span>
         </div>
       </div>
       
@@ -552,8 +552,10 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => console.log('[PWA] Active'))
-          .catch(err => console.error('[PWA] Failed:', err));
+          .then(reg => {
+            setupRealtime();
+            showToast('Session Active', 'success');
+        }).catch(err => console.error('[PWA] Failed:', err));
       });
     }
   </script>

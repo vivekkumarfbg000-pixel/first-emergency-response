@@ -147,6 +147,7 @@
             updateClock();
             setInterval(updateClock, 30000);
 
+            setupRealtime(); // Clinical functional fix
             showToast('Session Active', 'success');
         } catch (err) {
             console.error('[Dashboard] Init Failure:', err);
@@ -164,10 +165,11 @@
 
         // Use cached admin status (set in init) to avoid redundant API calls
         const isAdmin = _cachedIsAdmin !== null ? _cachedIsAdmin : await window.Auth.isAdmin();
+        const firstName = (p.fullName || 'User').split(' ')[0];
         if (isAdmin) {
             txt('welcome-msg', `Master Admin Panel | ${p.fullName}`);
         } else {
-            txt('welcome-msg', `Records for ${p.fullName.split(' ')[0]}`);
+            txt('welcome-msg', `Medical Records for ${firstName}`);
         }
 
         // Stats — use cached patients list when possible
@@ -250,16 +252,9 @@
                              (p.allergies ? `WARNING: Hypersensitivity to ${p.allergies}.` : 'No allergic hazards detected.');
         txt('sum-health-report', healthReport);
 
-        // Medical Notes
-        const notesCard = $('notes-card');
-        if (p.medicalNotes && p.medicalNotes.trim()) {
-            if (notesCard) {
-                notesCard.style.display = 'block';
-                txt('sum-notes', p.medicalNotes);
-            }
-        } else {
-            if (notesCard) notesCard.style.display = 'none';
-        }
+        // Clinical h2 cap
+        const nameH2 = $('p-premium-name');
+        if (nameH2) nameH2.style.fontSize = '1.5rem';
 
         // Sidebar badge & Switcher & QR
         if (isAdmin) {
@@ -435,34 +430,8 @@
             };
         }
 
-        // Real-time Scan Alerts
-        if (window.supabaseClient) {
-            window.supabaseClient
-                .channel('emergency-realtime')
-                .on('postgres_changes', { event: 'INSERT', table: 'scans' }, async (payload) => {
-                    console.log('[Realtime] New scan detected:', payload.new.type);
-                    await window.Storage.getAllPatients(); // Refresh cache
-                    await renderAll();
-                    if (payload.new && payload.new.type === 'emergency_scan') {
-                        showToast('🆘 EMERGENCY SCAN LOGGED!', 'error');
-                    }
-                })
-                .on('postgres_changes', { event: 'INSERT', table: 'patients' }, async (payload) => {
-                    console.log('[Realtime] New patient registered');
-                    showToast(`✨ NEW PROFILE: ${payload.new.full_name}`, 'success');
-                    await window.Storage.getAllPatients(); 
-                    await renderAll();
-                })
-                .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, async (payload) => {
-                    showToast(`🚨 SOS TRIGGERED: ${payload.new.family_email.toUpperCase()}`, 'error');
-                })
-                .on('postgres_changes', { event: 'UPDATE', table: 'emergency_alerts' }, async (payload) => {
-                    if (payload.new.email_sent) {
-                        showToast(`📧 SUCCESS: Email sent to family!`, 'success');
-                    }
-                })
-                .subscribe();
-        }
+        // Real-time Hub handled by setupRealtime() for precision and performance
+        if (window.lucide) lucide.createIcons();
 
         // Global Admin Search
         const adminSearch = $('adminSearch');
@@ -1029,6 +998,34 @@
             document.documentElement.setAttribute('data-theme', saved);
             if (saved === 'light') themeBtn.querySelector('i').setAttribute('data-lucide', 'sun');
         }
+    }
+
+    // ─── Real-time Engine (Functional Fix) ───
+    function setupRealtime() {
+        const client = window.Storage.db();
+        if (!client) return;
+
+        console.log('[Dashboard] Initializing Professional Realtime Hub...');
+        
+        client.channel('any')
+            .on('postgres_changes', { event: '*', table: 'scans' }, async (payload) => {
+                console.log('[Realtime] Activity Detected:', payload.eventType);
+                // Atomic update of stats and activity without full reload
+                const total = await window.Storage.getTotalScans();
+                txt('stat-scans', total.toString());
+                const profiles = await window.Storage.getAllPatients();
+                txt('stat-profiles', profiles.length.toString());
+                await renderRecentActivity();
+                showToast('Activity Log Updated', 'info');
+            })
+            .on('postgres_changes', { event: 'INSERT', table: 'emergency_alerts' }, (payload) => {
+                console.log('[Realtime] SOS ALERT DETECTED');
+                showToast('🚨 EMERGENCY ALERT TRIGGERED', 'error');
+                renderAll();
+            })
+            .subscribe((status) => {
+                console.log('[Realtime] Connectivity:', status);
+            });
     }
 
     window.Dashboard = {
