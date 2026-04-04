@@ -124,6 +124,22 @@
         const all = await window.Storage.getAllPatients();
         const filtered = filter ? all.filter(p => p.fullName.toLowerCase().includes(filter)) : all;
 
+        if (filtered.length === 0) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-20 text-center">
+                        <div class="flex flex-col items-center justify-center opacity-40">
+                            <i data-lucide="database-zap" class="w-10 h-10 mb-4 text-slate-500"></i>
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">No Patient Records Synchronized</p>
+                            <p class="text-[10px] font-bold text-slate-600 mt-2 uppercase tracking-tighter italic">Register profiles at Sehat Point Home to populate registry</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
         body.innerHTML = filtered.map(p => {
             const isCritical = p.conditions?.toLowerCase().includes('allergy') || p.conditions?.toLowerCase().includes('heart');
             const truncId = (p.id || p.patientId || '').substring(0, 4);
