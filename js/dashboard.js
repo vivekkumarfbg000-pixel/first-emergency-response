@@ -1,197 +1,184 @@
 /* ============================================================
-   dashboard.js — v6-pro Clinical Logic Overhaul
-   Features: Real-time Sync, Tailwind UI Integration, 
-             Multi-Profile Management, and GPS Hub.
+   dashboard.js — v9-pro Personal Command Center Engine
+   Features: Multi-Profile Clinical Hub, Real-time Scan Sync,
+             Tactical Medical ID Generation & Activity Tracking.
    ============================================================ */
 
 (function () {
     const $ = (id) => document.getElementById(id);
     const txt = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
-    let currentPatient = null;
-    let _cachedPatients = null;
+    let _currentView = 'tab-overview';
+    let _patients = [];
+    let _activePatient = null;
 
+    // ─── Initialization ───
     async function init() {
-        console.log('[Dashboard] v6-pro Clinical Engine Starting...');
+        console.log('[PersonalCommand] Initializing v9-pro Tactical Engine...');
         
-        // 1. Auth Check
-        const user = await window.Auth.getUser();
-        if (!user) {
+        // 1. Auth & Session Check
+        const session = await window.Auth.getSession();
+        if (!session) {
             window.location.href = 'login.html';
             return;
         }
 
         // 2. Initial Data Pull
-        currentPatient = await window.Storage.getCurrentPatient();
-        _cachedPatients = await window.Storage.getAllPatients();
-
-        // 3. UI Setup
-        bootstrapUI();
-        await renderAll();
+        await loadDashboardData();
         
-        // 4. Real-time Listeners
-        setupRealtime();
-        setupGPS();
+        // 3. Register Global Listeners
+        if ($('patientSwitcher')) {
+            $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
+        }
 
-        // 5. Finishing Touches
+        // 4. GPS & Sync Heartbeat
+        setupGPS();
+        setInterval(() => txt('admin-time', new Date().toLocaleTimeString('en-GB') + ' UTC'), 1000);
+
         if (window.lucide) lucide.createIcons();
     }
 
-    function bootstrapUI() {
-        // UI event listeners for static elements
-        const gpsCard = $('gps-stat-card');
-        if (gpsCard) gpsCard.onclick = () => requestLocation();
-    }
+    async function loadDashboardData() {
+        _patients = await window.Storage.getAllPatients();
+        
+        // Populate Registry Metrics
+        txt('stat-profiles', _patients.length);
+        
+        // Populate Switcher
+        const switcher = $('patientSwitcher');
+        if (switcher && _patients.length > 0) {
+            switcher.innerHTML = _patients.map(p => `
+                <option value="${p.id}" ${p.isPrimary ? 'selected' : ''}>${p.fullName.split(' ')[0]}</option>
+            `).join('');
 
-    // ─── Rendering Engine (v6-pro Tailwind) ───
-    async function renderAll() {
-        try {
-            currentPatient = await window.Storage.getCurrentPatient();
-            const allPatients = await window.Storage.getAllPatients();
-            _cachedPatients = allPatients;
-            
-            // 1. Welcome & Switcher
-            txt('welcome-msg', currentPatient ? currentPatient.fullName : 'Welcome, Admin');
-
-            const switcher = $('patientSwitcher');
-            if (switcher) {
-                switcher.innerHTML = allPatients.map(p => 
-                    `<option value="${p.id || p.patientId}" ${ (currentPatient && (currentPatient.id === p.id || currentPatient.patientId === p.patientId)) ? 'selected' : ''}>
-                        ${p.fullName}
-                    </option>`
-                ).join('');
-                
-                switcher.onchange = async (e) => {
-                    localStorage.setItem('current_patient_id', e.target.value);
-                    await renderAll();
-                };
-            }
-
-            // 2. Metrics & SOS
-            const totalScans = await window.Storage.getTotalScans();
-            txt('stat-scans', (totalScans || 0).toLocaleString());
-
-            // 3. Emergency Card (QR)
-            renderEmergencyQR(currentPatient);
-
-            // 4. Tab Lists
-            await renderPatientsList(allPatients);
-            await renderRecentActivity();
-
-        } catch (err) {
-            console.error('[Dashboard] Render Error:', err);
+            // Set Initial Active
+            const primary = _patients.find(p => p.isPrimary) || _patients[0];
+            await switchPatient(primary.id);
         }
+
+        // Render Tables & Feeds
+        renderPatientRegistry();
+        renderActivityLog();
+        refreshScanCount();
     }
 
-    function renderEmergencyQR(patient) {
-        const wrapper = $('emergency-card-preview');
-        if (!patient || !wrapper) return;
+    async function switchPatient(id) {
+        _activePatient = _patients.find(p => p.id === id);
+        if (!_activePatient) return;
 
-        wrapper.classList.remove('hidden');
-        wrapper.innerHTML = `
-            <div class="bg-white rounded-3xl p-6 border-2 border-slate-900 shadow-xl relative overflow-hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-red-600">Clinical ID</span>
+        txt('welcome-msg', _activePatient.fullName.split(' ')[0]);
+        renderMedicalIDHub(_activePatient);
+        
+        // Update Session Meta
+        console.log(`[PersonalCommand] Switched to Frequency: ${_activePatient.fullName}`);
+    }
+
+    // ─── Tactical UI Rendering (v9-pro Style) ───
+    function renderMedicalIDHub(p) {
+        const container = $('emergency-card-preview');
+        if (!container) return;
+
+        const isCritical = p.conditions?.toLowerCase().includes('allergy') || p.conditions?.toLowerCase().includes('heart');
+        const bloodClass = p.bloodGroup?.includes('-') ? 'text-red-500' : 'text-blue-500';
+
+        container.innerHTML = `
+            <div class="clinical-id-card rounded-[2rem] p-8 border border-white/5 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-dispatch-blue/20 text-dispatch-blue text-[9px] font-black px-4 py-2 rounded-bl-2xl tracking-widest">ENCRYPTED ID</div>
+                
+                <div class="flex items-start justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-black text-white italic uppercase leading-none mb-2">${p.fullName}</h2>
+                        <div class="flex items-center gap-3">
+                            <span class="bg-slate-900 border border-slate-700 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest leading-none">AGE: ${p.age || '--'}</span>
+                            <span class="bg-slate-900 border border-slate-700 ${bloodClass} px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">BLOOD: ${p.bloodGroup || '--'}</span>
+                        </div>
                     </div>
-                    <button onclick="downloadQR()" class="text-slate-400 hover:text-slate-900">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </button>
                 </div>
-                <div id="qr-code-zone" class="flex justify-center mb-6"></div>
-                <div class="text-center">
-                    <h3 class="text-xl font-black text-slate-900 uppercase tracking-tight">${patient.fullName}</h3>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: ${patient.patientId || patient.id || 'EMS-REF'}</p>
+
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <div class="bg-white p-4 rounded-3xl shadow-inner ring-8 ring-white/5">
+                        <canvas id="qr-canvas-${p.id}" class="w-40 h-40"></canvas>
+                    </div>
+                    
+                    <div class="flex-1 space-y-4 w-full">
+                        <div class="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                                <i data-lucide="alert-octagon" class="w-3 h-3 text-red-500"></i> Critical Alert
+                            </p>
+                            <p class="text-xs font-bold ${isCritical ? 'text-red-400' : 'text-slate-300'} uppercase">${p.conditions || 'None Reported'}</p>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                                <i data-lucide="phone" class="w-3 h-3 text-blue-400"></i> Emergency Line
+                            </p>
+                            <p class="text-xs font-bold text-white mono tracking-tighter">${p.emergencyContact || 'Not Set'}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
 
-        const qrZone = $('qr-code-zone');
-        if (qrZone && window.QRCode) {
-            const url = window.Storage.buildEmergencyUrl(patient);
-            QRCode.toCanvas(url, {
-                width: 180,
-                margin: 0,
-                color: { dark: '#0f172a', light: '#ffffff' }
-            }, (err, canvas) => {
-                if (!err) qrZone.appendChild(canvas);
-            });
-        }
         if (window.lucide) lucide.createIcons();
+        generateQR(p.id, `qr-canvas-${p.id}`);
     }
 
-    window.downloadQR = function() {
-        const canvas = document.querySelector('#qr-code-zone canvas');
-        if (canvas) {
-            const link = document.createElement('a');
-            link.download = `SehatPoint_QR_${currentPatient.fullName}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-    };
+    function renderPatientRegistry() {
+        const body = $('patients-list');
+        if (!body) return;
 
-    async function renderPatientsList(patients) {
-        const list = $('patients-list');
-        if (!list) return;
-
-        if (patients.length === 0) {
-            list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">No Profiles Found</div>`;
-            return;
-        }
-
-        list.innerHTML = patients.map(p => `
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center transition-all active:scale-95" onclick="window.switchToProfile('${p.id || p.patientId}')">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black">
-                        ${p.fullName.charAt(0)}
+        body.innerHTML = _patients.map(p => `
+            <tr class="hover:bg-slate-800/30 transition-colors group">
+                <td class="px-6 py-5 font-bold text-slate-500 text-[11px] mono">#ID-${p.id.substring(0,4)}</td>
+                <td class="px-6 py-5">
+                    <p class="text-sm font-black text-white group-hover:text-blue-400 transition-colors">${p.fullName}</p>
+                </td>
+                <td class="px-6 py-5">
+                    <span class="bg-slate-900 border border-slate-700 text-blue-400 px-2 py-1 rounded-md text-[11px] font-black">${p.bloodGroup || '--'}</span>
+                </td>
+                <td class="px-6 py-5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full" style="width: 100%"></div>
+                        </div>
+                        <span class="text-[9px] font-black text-emerald-500 uppercase">Operational</span>
                     </div>
-                    <div>
-                        <p class="text-sm font-black text-slate-900">${p.fullName}</p>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${p.bloodGroup || 'Blood Type --'}</p>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <a href="register.html?edit=${p.id || p.patientId}" class="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900" onclick="event.stopPropagation()">
-                        <i data-lucide="edit-3" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            </div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                    <button onclick="window.confirm('Delete this record?') && (window.Storage.deletePatient('${p.id}'), location.reload())" 
+                            class="text-slate-500 hover:text-red-500 transition-colors px-3 py-1">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
         `).join('');
         if (window.lucide) lucide.createIcons();
     }
 
-    window.switchToProfile = async function(id) {
-        localStorage.setItem('current_patient_id', id);
-        await renderAll();
-        if (window.switchTab) window.switchTab('tab-overview');
-    };
-
-    async function renderRecentActivity() {
-        const list = $('activity-list');
-        if (!list) return;
+    async function renderActivityLog() {
+        const container = $('activity-list');
+        if (!container) return;
 
         const scans = await window.Storage.getScanHistory();
-        if (scans.length === 0) {
-            list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">Quiet Protocol Active</div>`;
-            return;
-        }
+        if (scans.length === 0) return;
 
-        list.innerHTML = scans.map(s => {
-            const isEmergency = s.type === 'emergency_scan' || s.is_emergency;
+        container.innerHTML = scans.map(s => {
             const time = new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
             return `
-                <div class="bg-white p-4 rounded-2xl border ${isEmergency ? 'border-red-100 bg-red-50/20' : 'border-slate-100'} shadow-sm flex items-start gap-3">
-                    <div class="w-8 h-8 ${isEmergency ? 'bg-red-600 font-bold pulse-red' : 'bg-slate-200'} text-white rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="${isEmergency ? 'alert-triangle' : 'scan'}" class="w-4 h-4"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[10px] font-black uppercase tracking-widest ${isEmergency ? 'text-red-600' : 'text-slate-400'}">Scan Detected</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">${time}</span>
+                <div class="bg-slate-800/20 border-l-4 border-dispatch-blue rounded-r-2xl p-4 shadow-xl mb-3">
+                    <div class="flex items-start gap-3">
+                        <div class="bg-slate-900 p-2 rounded-xl mt-1">
+                            <i data-lucide="scan" class="w-4 h-4 text-dispatch-blue"></i>
                         </div>
-                        <p class="text-xs font-black text-slate-900 truncate">${s.location || 'Location Not Synced'}</p>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="text-[10px] font-black text-white uppercase tracking-widest leading-none">SYSTEM SCAN DETECTED</h4>
+                                <span class="text-[9px] font-bold text-slate-500 italic">${time}</span>
+                            </div>
+                            <p class="text-xs font-bold text-slate-300">Identity: ${s.patient_name || 'Family Member'}</p>
+                            <div class="flex items-center gap-1.5 mt-2 text-[9px] font-black text-emerald-500 uppercase tracking-tighter">
+                                <i data-lucide="check" class="w-3 h-3"></i> Cloud Authenticated
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -199,53 +186,44 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    function setupRealtime() {
-        const client = window.Storage.db();
-        if (!client) return;
+    // ─── Utilities ───
+    async function generateQR(id, canvasId) {
+        try {
+            const url = `${window.location.protocol}//${window.location.host}/emergency.html?sid=${id}`;
+            await QRCode.toCanvas($(canvasId), url, {
+                width: 160,
+                margin: 0,
+                color: { dark: '#0F172A', light: '#FFFFFF' }
+            });
+        } catch (err) { console.error('[PersonalCommand] QR Gen Failure:', err); }
+    }
 
-        client.channel('dashboard-updates')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'scans' }, () => renderAll())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_alerts' }, () => renderAll())
-            .subscribe();
+    async function refreshScanCount() {
+        const count = await window.Storage.getScanCount();
+        txt('stat-scans', count || 0);
     }
 
     function setupGPS() {
-        // Initial state
-        if (navigator.geolocation) {
-            // Can optionally check permission state here
-        }
-    }
-
-    async function requestLocation() {
-        const text = $('gps-text');
-        const stat = $('stat-gps');
-        const dot = $('gps-dot');
-
-        if (!navigator.geolocation) return;
-
-        txt('gps-text', 'SYNCING...');
+        const stat = $('gps-status');
+        if (!$('gps-stat-card')) return;
         
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                txt('gps-text', 'ACTIVE');
-                txt('stat-gps', 'Enabled');
-                if (dot) {
-                    dot.classList.remove('bg-slate-500');
-                    dot.classList.add('bg-emerald-500', 'animate-pulse');
-                }
-                window.Storage.last_lat = pos.coords.latitude;
-                window.Storage.last_lng = pos.coords.longitude;
-            },
-            () => {
-                txt('gps-text', 'DENIED');
-                txt('stat-gps', 'Disabled');
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-        );
+        $('gps-stat-card').addEventListener('click', () => {
+            txt('stat-gps', 'SYNCING...');
+            navigator.geolocation.getCurrentPosition(pos => {
+                txt('stat-gps', `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`);
+                console.log('[PersonalCommand] Tactical GPS Lock Acquired.');
+            }, () => txt('stat-gps', 'LOCATION DENIED'));
+        });
     }
-    window.requestLocation = requestLocation;
 
-    // Start
-    init();
+    window.downloadQR = function() {
+        const canvas = document.querySelector('canvas');
+        if(!canvas) return;
+        const link = document.createElement('a');
+        link.download = `medical-id-${_activePatient?.fullName.replace(' ', '-')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+    };
 
+    document.addEventListener('DOMContentLoaded', init);
 })();
