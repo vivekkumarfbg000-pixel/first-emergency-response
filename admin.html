@@ -1,283 +1,252 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Command Center | Sehat Point Admin</title>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Leaflet Map CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            slate: {
-              850: '#151e2e',
-              900: '#0F172A',
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛰️ COMMAND CENTER | Sehat Point Admin</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0B1120',
+                        },
+                        dispatch: {
+                            red: '#ef4444',
+                            amber: '#f59e0b',
+                            green: '#22c55e',
+                            blue: '#3b82f6'
+                        }
+                    }
+                }
             }
-          },
-          animation: {
-            'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-          }
         }
-      }
-    }
-  </script>
-
-  <style>
-    /* Custom Scrollbar for Alert Feed */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0F172A; 
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155; 
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569; 
-    }
-
-    /* Map Customization */
-    .leaflet-container {
-      background: #0F172A !important;
-      font-family: 'Inter', sans-serif;
-    }
-    .leaflet-control-zoom a {
-      background-color: #1E293B !important;
-      color: #F8FAFC !important;
-      border-color: #334155 !important;
-    }
-
-    /* Pulsing Red Map Marker */
-    .emergency-pulse-ring {
-      width: 60px;
-      height: 60px;
-      background: rgba(239, 68, 68, 0.2);
-      border: 2px solid #ef4444;
-      border-radius: 50%;
-      animation: emergencyPulse 1.5s infinite ease-out;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-    .emergency-core {
-      width: 12px;
-      height: 12px;
-      background: #ef4444;
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 10px #ef4444;
-    }
-
-    @keyframes emergencyPulse {
-      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
-    }
-  </style>
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #F8FAFC; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0B1120; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 10px; }
+        .leaflet-container { background: #0B1120 !important; }
+        .emergency-pulse-ring {
+            width: 60px;
+            height: 60px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            border-radius: 50%;
+            animation: emergencyPulse 1.5s infinite ease-out;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .emergency-core {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #ef4444;
+        }
+        @keyframes emergencyPulse {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+        }
+        .animate-blink { animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-50 min-h-screen flex flex-col font-sans selection:bg-blue-500/30">
+<body class="min-h-screen flex flex-col selection:bg-blue-500/30">
 
-  <!-- TOP HEADER -->
-  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-    <div class="flex items-center gap-4">
-      <div class="bg-blue-600 p-2 rounded-lg">
-        <i data-lucide="shield-plus" class="w-6 h-6 text-white"></i>
-      </div>
-      <div>
-        <h1 class="text-lg font-bold tracking-tight text-white leading-tight">SEHAT POINT</h1>
-        <div class="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          SYSTEM ONLINE
+    <!-- ─── TOP HEADER (REFINED AS PER IMAGE 1) ─── -->
+    <header class="bg-[#0F172A] border-b border-slate-800/60 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20">
+                <i data-lucide="shield-plus" class="text-white w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black tracking-tight text-white leading-none">SEHAT POINT</h1>
+                <div class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 mt-1">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    SYSTEM ONLINE
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <div class="flex items-center gap-6">
-      <div class="relative cursor-pointer">
-        <i data-lucide="bell" class="w-6 h-6 text-slate-300 hover:text-white transition-colors"></i>
-        <span class="absolute -top-1 -right-1 flex h-3 w-3">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-slate-900"></span>
-        </span>
-      </div>
-      
-      <div class="h-8 w-px bg-slate-800"></div>
+        <div class="flex items-center gap-6">
+            <div class="relative cursor-pointer group">
+                <i data-lucide="bell" class="w-6 h-6 text-slate-400 group-hover:text-white transition-colors"></i>
+                <span class="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-[#0F172A]"></span>
+                </span>
+            </div>
+            <div class="h-8 w-px bg-slate-800"></div>
+            <div class="flex items-center gap-3 cursor-pointer">
+                <div class="text-right hidden md:block">
+                    <p class="text-sm font-bold text-white">Master Admin</p>
+                    <p class="text-[10px] font-bold text-slate-400 tracking-wider" id="admin-time">00:00:00 UTC</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-[#1E293B] border border-slate-700/50 flex items-center justify-center shadow-lg">
+                    <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
+                </div>
+            </div>
+        </div>
+    </header>
 
-      <div class="flex items-center gap-3 cursor-pointer">
-        <div class="text-right hidden md:block">
-          <div class="text-sm font-bold text-white">Master Admin</div>
-          <div class="text-xs text-slate-400" id="admin-time">Operations Control</div>
-        </div>
-        <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
-          <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- MAIN DASHBOARD CONTENT -->
-  <main class="flex-1 p-6 flex flex-col gap-6 max-w-[1600px] w-full mx-auto">
-    
-    <!-- METRICS BAR -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-slate-850 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Active Users</p>
-          <h3 class="text-2xl font-bold text-white" id="metric-users">0</h3>
-        </div>
-        <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-          <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
-        </div>
-      </div>
-
-      <div class="bg-slate-850 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Scans (24h)</p>
-          <h3 class="text-2xl font-bold text-white" id="metric-scans">0</h3>
-        </div>
-        <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-          <i data-lucide="scan" class="w-6 h-6 text-emerald-500"></i>
-        </div>
-      </div>
-
-      <div class="bg-slate-850 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Active Emergencies</p>
-          <h3 class="text-2xl font-bold text-red-500">Live</h3>
-        </div>
-        <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
-          <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500"></i>
-        </div>
-      </div>
-
-      <div class="bg-slate-850 border border-slate-800 rounded-xl p-5 flex flex-col justify-center gap-2">
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cloud Connection</p>
-        <div class="flex items-center gap-2">
-          <i data-lucide="database" class="w-4 h-4 text-emerald-500"></i>
-          <span class="text-sm font-semibold text-white">Supabase Real-time Active</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- SPLIT VIEW: MAP & ALERTS -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px]">
-      
-      <!-- Live Map (Left - 66%) -->
-      <div class="lg:col-span-8 bg-slate-850 border border-slate-800 rounded-xl overflow-hidden flex flex-col relative">
-        <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur border border-slate-700 px-4 py-2 rounded-lg pointer-events-none">
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            <i data-lucide="crosshair" class="w-4 h-4 text-red-500"></i>
-            Live Emergency Tracking
-          </h2>
-        </div>
-        <div id="admin-live-map" class="w-full h-full z-0"></div>
-      </div>
-
-      <!-- Real-Time Alert Feed (Right - 33%) -->
-      <div class="lg:col-span-4 bg-slate-850 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-          <h2 class="text-sm font-bold text-white uppercase tracking-wide">Live Alert Feed</h2>
-          <span class="bg-slate-800 text-xs font-bold px-2 py-1 rounded text-slate-300">AUTO-SCROLLING</span>
-        </div>
+    <main class="flex-1 p-6 flex flex-col gap-6 max-w-[1600px] w-full mx-auto">
         
-        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="admin-alert-feed">
-          <!-- Real-time Alerts will be injected here by admin.js -->
-          <div class="flex flex-col items-center justify-center py-20 opacity-30">
-            <i data-lucide="radar" class="w-10 h-10 mb-4 animate-pulse"></i>
-            <p class="text-xs font-bold uppercase tracking-widest text-center">Monitoring Frequency...<br>Waiting for active scans</p>
-          </div>
+        <!-- ─── METRICS BAR (AS PER IMAGE 1) ─── -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Active Users</p>
+                    <h3 class="text-3xl font-black text-white" id="metric-users">24,592</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                    <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Scans (24h)</p>
+                    <h3 class="text-3xl font-black text-white" id="metric-scans">143</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                    <i data-lucide="scan" class="w-6 h-6 text-emerald-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg ring-1 ring-red-500/10">
+                <div>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Active Emergencies</p>
+                    <h3 class="text-3xl font-black text-red-500 animate-blink">2</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div class="flex flex-col gap-1.5">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest tracking-widest">Cloud Connection</p>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-emerald-500"></i>
+                        <span class="text-sm font-bold text-white tracking-tight leading-none">Supabase Real-time Active</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <!-- GLOBAL USER DATABASE TABLE -->
-    <div class="bg-slate-850 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-        <h2 class="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
-          <i data-lucide="database" class="w-4 h-4"></i>
-          Global User Database
-        </h2>
-        <div class="relative">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-          <input type="text" id="db-search" placeholder="Search ID, Name, Blood..." class="bg-slate-900 border border-slate-700 text-sm text-white rounded-lg pl-9 pr-4 py-1.5 focus:outline-none focus:border-blue-500 transition-colors w-64">
+        <!-- ─── THE PIT: MONITORING (SPLIT VIEW) (AS PER IMAGE 2) ─── -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[560px]">
+            <!-- Left: Live Map Monitoring -->
+            <div class="lg:col-span-8 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden relative shadow-2xl">
+                <div class="absolute top-4 left-4 z-[400] px-4 py-2 bg-[#0F172A]/90 backdrop-blur rounded-xl border border-slate-700/50 shadow-2xl">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-red-500 "></i>
+                        <span class="text-[11px] font-black uppercase tracking-widest text-white">Live Emergency Tracking</span>
+                    </div>
+                </div>
+                <div id="admin-live-map" class="w-full h-full grayscale opacity-40"></div>
+                <!-- Map Crosshair Overlay -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                    <div class="w-32 h-32 border border-blue-500 rounded-full flex items-center justify-center">
+                        <div class="w-1 h-1 bg-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Real-Time Alert Feed (AS PER IMAGE 2 & 3) -->
+            <div class="lg:col-span-4 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+                <div class="p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40 backdrop-blur">
+                    <h2 class="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+                        <i data-lucide="radio" class="w-4 h-4 text-dispatch-red animate-pulse"></i>
+                        Live Alert Feed
+                    </h2>
+                    <span class="px-2 py-0.5 bg-[#0F172A] text-[9px] font-black text-slate-400 rounded-md border border-slate-800">AUTO-SCROLLING</span>
+                </div>
+                <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-5 space-y-4">
+                    <!-- Dynamic Alert Cards Refined (Templates match images exactly) -->
+                    <div class="flex flex-col items-center justify-center py-20 opacity-20">
+                        <i data-lucide="radar" class="w-12 h-12 mb-4 animate-pulse"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>Waiting for active scans</p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-900/50 text-xs uppercase text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="px-6 py-4 font-semibold">User ID</th>
-              <th class="px-6 py-4 font-semibold">Patient Name</th>
-              <th class="px-6 py-4 font-semibold">Blood Group</th>
-              <th class="px-6 py-4 font-semibold">Status / Risk</th>
-              <th class="px-6 py-4 font-semibold">Last Onboarded</th>
-              <th class="px-6 py-4 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800" id="admin-table-body">
-            <!-- Dynamic Users will be injected here by admin.js -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
 
-  <!-- Leaflet Map JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/admin.js"></script>
-  <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+        <!-- ─── GLOBAL PATIENT DATABASE (AS PER IMAGE 4) ─── -->
+        <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col mb-10">
+            <div class="p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40">
+                <h2 class="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
+                    <i data-lucide="database" class="w-4 h-4 text-blue-500"></i>
+                    Global User Database
+                </h2>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                    <input type="text" id="db-search" placeholder="Search ID, Name, Blood..." 
+                           class="bg-[#0F172A] border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500 transition-all w-72">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-[13px] border-collapse">
+                    <thead class="bg-[#0B1120]/60 text-[10px] font-black uppercase text-slate-500 border-b border-slate-800/60">
+                        <tr>
+                            <th class="px-6 py-4 tracking-widest">User ID</th>
+                            <th class="px-6 py-4 tracking-widest text-white">Patient Name</th>
+                            <th class="px-6 py-4 tracking-widest">Blood Group</th>
+                            <th class="px-6 py-4 tracking-widest">Status / Risk</th>
+                            <th class="px-6 py-4 tracking-widest">Last Scan</th>
+                            <th class="px-6 py-4 tracking-widest text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/40" id="admin-table-body">
+                        <!-- Populated dynamic rows as per image #4 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 
-    // Initialize Mapbox/Leaflet Map centered on Patna, Bihar (NH-31 Area)
-    document.addEventListener("DOMContentLoaded", function() {
-      // Setup Map
-      const map = L.map('admin-live-map', {
-        zoomControl: false // Move zoom control to bottom right
-      }).setView([25.5941, 85.1376], 12); 
+    <!-- Leaflet & Database Logic -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Precise Map Initialization
+            const map = L.map('admin-live-map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([25.5941, 85.1376], 12); 
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // Use a Dark Mode CartoDB Tile Layer for the Command Center look
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-      }).addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
+            }).addTo(map);
 
-      window.adminMap = map; // Export for admin.js use
-    });
-  </script>
+            window.adminMap = map;
+            lucide.createIcons();
+        });
+    </script>
 </body>
 </html>
