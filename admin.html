@@ -59,6 +59,20 @@
 
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         .animate-tactical-reveal { animation: fadeInScale 0.5s ease-out forwards; }
+
+        /* Iron-Clad Grid Overrides */
+        #section-overview {
+            display: grid !important;
+            grid-template-columns: repeat(12, 1fr) !important;
+            grid-template-rows: repeat(6, 160px) !important;
+            min-height: 1000px !important;
+            width: 100% !important;
+        }
+        #admin-live-map {
+            height: 100% !important;
+            min-height: 400px !important;
+            background: #0a0e17;
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
