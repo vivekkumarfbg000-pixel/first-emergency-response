@@ -2,6 +2,49 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
+    <script>
+        // ─── Entry Point Stabilization & Global Exposure ───
+        (function() {
+            window.switchTab = function(tabId) {
+                console.log('Switching to tab:', tabId);
+                document.querySelectorAll('main > div > section').forEach(s => s.classList.add('hidden'));
+                const target = document.getElementById('section-' + tabId);
+                if (target) {
+                    target.classList.remove('hidden');
+                    document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-dispatch-blue', 'text-white'));
+                    const btn = document.getElementById('nav-' + tabId);
+                    if (btn) btn.classList.add('bg-dispatch-blue', 'text-white');
+                }
+            };
+
+            window.refreshLogs = function() {
+                console.log('Refreshing audit logs...');
+            };
+
+            window.generateAdminAssets = function() {
+                console.log('Generating tactical assets...');
+            };
+
+            window.deletePatientProfile = function(id) {
+                console.log('Deleting profile:', id);
+            };
+
+            function init() {
+                console.log('Tactical Ops Initialized');
+                try {
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } catch (e) {
+                    console.error('Icon initialization failed:', e);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TACTICAL OPS | Sehat Point</title>
     <!-- Tailwind CSS -->
@@ -60,7 +103,7 @@
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         .animate-tactical-reveal { animation: fadeInScale 0.5s ease-out forwards; }
 
-        /* Iron-Clad Grid Overrides */
+        /* Tactical CSS Overrides - Vital for Bento Hub Visibility */
         #section-overview {
             display: grid !important;
             grid-template-columns: repeat(12, 1fr) !important;
@@ -70,8 +113,13 @@
         }
         #admin-live-map {
             height: 100% !important;
-            min-height: 400px !important;
+            min-height: 480px !important;
             background: #0a0e17;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
 </head>

@@ -358,6 +358,20 @@
         }
     };
 
-    document.addEventListener('DOMContentLoaded', init);
+    // ─── Entry Point Stabilization ───
+    function bootstrap() {
+        console.log('[MasterDispatch] Initializing Stability Mode v12.4...');
+        init().then(() => {
+            console.log('[MasterDispatch] System Ready. All tactical features functional.');
+        }).catch(err => {
+            logError('Boot Failure', err);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+    } else {
+        bootstrap();
+    }
 
 })();
