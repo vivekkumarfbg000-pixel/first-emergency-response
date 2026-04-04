@@ -167,9 +167,9 @@
         const isAdmin = _cachedIsAdmin !== null ? _cachedIsAdmin : await window.Auth.isAdmin();
         const firstName = (p.fullName || 'User').split(' ')[0];
         if (isAdmin) {
-            txt('welcome-msg', `Master Admin Panel | ${p.fullName}`);
+            txt('welcome-msg', `Admin: ${p.fullName}`);
         } else {
-            txt('welcome-msg', `Medical Records for ${firstName}`);
+            txt('welcome-msg', `Records: ${firstName}`);
         }
 
         // Stats — use cached patients list when possible
@@ -237,8 +237,8 @@
         }
 
         // ─── Render Contextual Tab Summary Cards ───
-        txt('sum-conditions', p.conditions || 'Stable');
-        txt('sum-medications', p.medications || 'None');
+        txt('sum-conditions', p.conditions || 'None Found');
+        txt('sum-medications', p.medications || 'None Active');
 
         const allergyEl = $('sum-allergies');
         if (allergyEl) {

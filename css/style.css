@@ -153,7 +153,7 @@
 }
 
 html {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 body {
@@ -272,7 +272,16 @@ h1, h2, h3, h4, h5, h6 {
 .header-left { display: flex; align-items: center; gap: 1.5rem; }
 .header-breadcrumb { display: flex; flex-direction: column; }
 .breadcrumb-item { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-.header-title { font-size: 1.125rem; font-weight: 800; color: white; margin: 0; }
+.header-title { 
+  font-size: 1rem; 
+  font-weight: 800; 
+  color: white; 
+  margin: 0; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  max-width: 200px;
+}
 
 .header-right { display: flex; align-items: center; gap: 1.5rem; }
 
@@ -1195,6 +1204,53 @@ textarea {
   font-size: 1rem;
 }
 
+/* ──────── PROFESSIONAL ACTIONS ──────── */
+.premium-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.p-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md);
+  color: white;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn-family { background: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); } /* Amber */
+.btn-ambulance { background: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); } /* Red */
+.btn-clinic { background: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); } /* Blue */
+
+.p-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+}
+
+.p-btn i { width: 14px; height: 14px; }
+
+#p-premium-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
 /* ────── ACTIVITY LOG ITEMS ────── */
 .activity-item,
 .activity-full-item {
@@ -1448,9 +1504,13 @@ textarea {
   .grid-3 { grid-template-columns: 1fr; }
   .grid-4 { grid-template-columns: 1fr; }
   .content-grid { grid-template-columns: 1fr; }
-  .id-name { font-size: 1.75rem; }
-  .premium-body { padding: 1.5rem; }
-  .premium-actions { flex-direction: column; }
+  .premium-body { padding: 1.25rem; }
+  .premium-actions { 
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .id-name { font-size: 1.5rem; }
   .mgmt-grid { grid-template-columns: 1fr; }
   .container { padding: 0 1rem; }
   .modal-content { padding: 1.5rem; }
