@@ -37,7 +37,8 @@
 
     // ─── Initialization ───
     async function init() {
-        console.log('[MasterDispatch] v12.1 Tactical Console Stability Mode...');
+        console.log('[MasterDispatch] v12.1 Stability Mode: Starting Sequence...');
+        logError('INFO', 'Initialization sequence started.');
         
         // 1. Dependency Waiter
         let retries = 0;
@@ -67,15 +68,16 @@
             await renderMasterTable();
             await refreshLogs();
             await renderAnalytics();
+            logError('INFO', 'Data loading phase complete.');
         } catch (e) {
-            console.error('[MasterDispatch] Data Load Failure:', e);
+            logError('Data Load Failure', e);
         }
         
         // 3. Initialize Tactical Map (Wrapped in Safety)
         try {
             initMap();
         } catch (e) {
-            console.error('[MasterDispatch] Map Initialization Failure:', e);
+            logError('Map Init Failure', e);
         }
         
         setupRealtime();
@@ -91,11 +93,14 @@
 
     function initMap() {
         const container = $('admin-live-map');
-        if (!container) return;
+        if (!container) { logError('UI Error', 'Map container missing'); return; }
+        
+        logError('INFO', `Map container size: ${container.offsetWidth}x${container.offsetHeight}`);
         
         // Ensure container has height
         if (container.offsetHeight === 0) {
             container.style.height = '400px';
+            logError('WARNING', 'Zero-height map container detected. Forcing 400px.');
         }
 
         try {
@@ -103,11 +108,11 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap'
             }).addTo(window.adminMap);
-            console.log('[MasterDispatch] Tactical Map Synchronized.');
+            logError('INFO', 'Tactical Map Initialized.');
         } catch (err) {
-            console.error('[MasterDispatch] Leaflet Init Error:', err);
+            logError('Leaflet Crash', err);
             container.innerHTML = `<div class="h-full flex items-center justify-center text-slate-500 text-[10px] uppercase font-black tracking-widest gap-2 bg-slate-900/50">
-                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i> Local Grid Map Offline (Check Internet)
+                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i> Local Grid Map Offline
             </div>`;
             if (window.lucide) lucide.createIcons();
         }
