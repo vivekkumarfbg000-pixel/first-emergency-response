@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Command Center | Sehat Point</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #0F172A;
+            --bg-card: #1E293B;
+            --border: rgba(255,255,255,0.06);
+            --primary: #3b82f6;
+            --status-red: #ef4444;
+            --status-amber: #f59e0b;
+            --status-green: #22c55e;
+            --text-main: #F8FAFC;
+            --text-dim: #94A3B8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .admin-sidebar {
+            width: 240px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .brand-zone {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--status-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--status-green);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: 0.2s;
+        }
+
+        .nav-link.active { background: var(--bg-card); color: white; }
+
+        /* ── Main Layout ── */
+        .command-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* ── Metrics Bar ── */
+        .metrics-bar {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-val { font-size: 1.5rem; font-weight: 800; display: block; }
+        .metric-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .sync-active {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .sync-pulse {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        /* ── Split Monitoring View ── */
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: 60% 40%;
+            gap: 1.5rem;
+            height: 450px;
+            margin-bottom: 1.5rem;
+        }
+
+        #admin-live-map {
+            width: 100%;
+            background: #0B1120;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-placeholder-text { color: #1E293B; font-weight: 800; font-size: 3rem; text-transform: uppercase; }
+
+        .alert-feed {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .feed-items { flex: 1; overflow-y: auto; padding: 1rem; }
+
+        .alert-card {
+            background: rgba(15, 23, 42, 0.4);
+            border-left: 4px solid var(--status-red);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+        .alert-card.urgent { animation: border-pulse 2s infinite; }
+
+        .alert-meta { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 0.5rem; }
+        .alert-name { font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem; display: block; }
+        .alert-coords { font-family: monospace; font-size: 0.75rem; color: var(--text-dim); }
+
+        .ack-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+            transition: 0.2s;
+        }
+
+        .ack-btn:hover { background: var(--status-red); border-color: var(--status-red); }
+
+        /* ── Global User Table ── */
+        .database-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            flex: 1;
+            padding: 1.5rem;
+            min-height: 400px;
+        }
+
+        .table-scroll { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; white-space: nowrap; }
+        th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .btn-view-pill {
+            color: var(--primary);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 4px 10px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+        }
+
+        /* ── Animations ── */
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        @keyframes border-pulse { 0% { border-color: #ef4444; } 50% { border-color: #7f1d1d; } 100% { border-color: #ef4444; } }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <aside class="admin-sidebar">
+        <div class="brand-zone">
+            <div class="online-dot"></div>
+            <h2 style="font-size: 1rem; letter-spacing: 1px; color: white;">SEHAT CENTER</h2>
+        </div>
+        <nav>
+            <a href="admin.html" class="nav-link active"><i data-lucide="layout-dashboard"></i> Deployment</a>
+            <a href="#" class="nav-link"><i data-lucide="map"></i> Live Map</a>
+            <a href="#" class="nav-link"><i data-lucide="users"></i> Master Table</a>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="arrow-left-circle"></i> Exit Center</a>
+        </nav>
+    </aside>
+
+    <main class="command-wrapper">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="font-size: 1.5rem; color: white;">Admin Command Center</h1>
+                <p style="color: var(--text-dim); font-size: 0.8rem;">Real-time Emergency Dispatch Monitoring Hub</p>
+            </div>
+            <div style="text-align: right;">
+                <span id="admin-time" style="font-family: monospace; font-size: 1rem; color: var(--primary);">--:--:--</span>
+                <p style="font-size: 0.7rem; color: var(--text-dim);">SYSTEM_LOCAL_TIME</p>
+            </div>
+        </header>
+
+        <!-- Top Metrics -->
+        <div class="metrics-bar">
+            <div class="metric-card">
+                <div>
+                    <span class="metric-label">Active Users</span>
+                    <span class="metric-val" id="metric-users">--</span>
+                </div>
+                <i data-lucide="users" style="color:var(--primary)"></i>
+            </div>
+            <div class="metric-card">
+                <div>
+                    <span class="metric-label">Scans Today</span>
+                    <span class="metric-val" id="metric-scans">--</span>
+                </div>
+                <i data-lucide="scan" style="color:var(--status-red)"></i>
+            </div>
+            <div class="metric-card">
+                <div>
+                    <span class="metric-label">Hub Status</span>
+                    <div class="sync-active">
+                        <div class="sync-pulse"></div>
+                        DATA_SYC_OK
+                    </div>
+                </div>
+                <i data-lucide="activity" style="color:var(--status-green)"></i>
+            </div>
+        </div>
+
+        <!-- Monitoring Zone -->
+        <div class="monitoring-grid">
+            <div id="admin-live-map">
+                <span class="map-placeholder-text">PATNA HUB</span>
+            </div>
+
+            <div class="alert-feed">
+                <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">Live Emergency Feed</h3>
+                </div>
+                <div class="feed-items" id="admin-alert-feed">
+                    <div style="padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+                        Waiting for active scans...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Database -->
+        <div class="database-section">
+            <h3 style="margin-bottom: 1.5rem; text-transform: uppercase; font-size: 0.85rem; color: var(--text-dim);">Global Clinical Database</h3>
+            <div class="table-scroll">
+                <table id="admin-user-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Patient Name</th>
+                            <th>Blood Group</th>
+                            <th>Reg Date</th>
+                            <th>Medical Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
