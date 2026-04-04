@@ -41,6 +41,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+    }
+    
+    .logo-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .nav-links-main { display: flex; gap: 0.5rem; align-items: center; }
@@ -353,9 +360,10 @@
     </a>
     <div class="nav-links-main" id="nav-actions">
       <a href="#how" class="btn btn-ghost btn-sm">How It Works</a>
-      <a href="register.html" class="btn btn-primary btn-sm">Create Free Profile</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Create Profile</a>
       <div class="nav-divider" style="width:1px; height:20px; background:rgba(255,255,255,0.1); margin:0 0.5rem;"></div>
-      <a href="login.html" class="btn btn-ghost btn-sm" id="nav-login">Admin Login</a>
+      <a href="login.html" class="btn btn-ghost btn-sm" style="color: #60a5fa;">User Login</a>
+      <a href="admin-login.html" class="btn btn-ghost btn-sm" style="color: #ef4444;">Admin Login</a>
     </div>
   </nav>
 
@@ -381,13 +389,13 @@
     <p>Empower first responders with instant access to your medical history, allergies, and emergency contacts — via a single QR code scan.</p>
 
     <div class="hero-actions">
-      <a href="register.html" class="btn btn-primary btn-lg">
-        <i data-lucide="plus" style="width:18px;"></i>
-        Create Your Profile
+      <a href="login.html" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);">
+        <i data-lucide="user" style="width:18px;"></i>
+        User Profile
       </a>
-      <a href="dashboard.html" class="btn btn-outline btn-lg">
-        <i data-lucide="layout-dashboard" style="width:18px;"></i>
-        View Demo Dashboard
+      <a href="admin-login.html" class="btn btn-outline btn-lg" style="border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+        <i data-lucide="shield" style="width:18px;"></i>
+        Admin Dashboard
       </a>
     </div>
   </section>

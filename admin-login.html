@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Login — Sehat Point</title>
+  <title>Admin Login — Master Dispatch Central</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/auth.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
     /* Inline Auth Specific Styles */
     :root {
       --auth-bg: #060910;
-      --auth-accent: #3b82f6;
+      --auth-accent: #ef4444;
     }
 
     body {
@@ -184,7 +184,7 @@
             <img src="assets/logo.png" alt="Logo">
         </div>
         <h1 class="auth-title font-black italic tracking-tighter text-2xl uppercase" style="font-style: italic; letter-spacing: -1px; text-transform: uppercase;">SEHAT POINT</h1>
-        <p class="auth-subtitle text-[9px] uppercase tracking-[0.2em] font-black text-slate-500" style="font-size: 10px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">PATIENT ACCESS PORTAL</p>
+        <p class="auth-subtitle text-[9px] uppercase tracking-[0.2em] font-black text-slate-500" style="font-size: 10px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">MASTER DISPATCH CONSOLE</p>
       </div>
 
       <form class="auth-form" id="loginForm">
@@ -210,7 +210,7 @@
       </div>
 
       <div class="auth-footer">
-        Don't have an account? <a href="signup.html">Create One</a>
+        <span style="opacity: 0.5;">Restricted Access Protocol Active</span>
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
 
       try {
         await Auth.signIn(email.trim(), password);
-        window.location.href = 'dashboard.html';
+        window.location.href = 'admin.html';
       } catch (err) {
         alert('SignIn Failed: ' + (err.message || 'Check your credentials and try again'));
         if (err.message.includes('confirm your email')) {
