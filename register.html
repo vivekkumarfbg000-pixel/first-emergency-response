@@ -850,9 +850,21 @@
             lucide.createIcons();
 
             try {
-                const result = await window.Storage.savePatient(patientData);
+                let result;
+                const urlParams = new URLSearchParams(window.location.search);
+                const editId = urlParams.get('edit');
 
-                if (result && result.id) {
+                if (editId) {
+                    await window.Storage.updatePatient(editId, patientData);
+                    result = {
+                        patient: { ...patientData, patientId: editId, id: editId },
+                        cloudSynced: window.Storage.db() !== null
+                    };
+                } else {
+                    result = await window.Storage.savePatient(patientData);
+                }
+
+                if (result && result.patient) {
                     generatedPatientData = result.patient;
                     if (result.supabaseId) generatedPatientData.id = result.supabaseId;
 
@@ -951,6 +963,36 @@
             toast.textContent = msg;
             document.body.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // ─── EDIT MODE INITIALIZATION ───
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+            document.getElementById('submitBtn').innerHTML = '<i data-lucide="save" style="width:16px;"></i> Update Profile';
+            setTimeout(async () => {
+                const patient = await Storage.getPatientById(editId);
+                if (patient) {
+                    document.getElementById('fullName').value = patient.fullName || '';
+                    document.getElementById('bloodGroup').value = patient.bloodGroup || '';
+                    document.getElementById('age').value = patient.age || '';
+                    document.getElementById('gender').value = patient.gender || '';
+                    document.getElementById('userEmail').value = patient.email || '';
+                    document.getElementById('contact1_Name').value = patient.contact1_Name || '';
+                    document.getElementById('contact1_Relation').value = patient.contact1_Relation || '';
+                    document.getElementById('contact1_Phone').value = patient.contact1_Phone || '';
+                    document.getElementById('contact1_Email').value = patient.contact1_Email || '';
+                    document.getElementById('contact2_Name').value = patient.contact2_Name || '';
+                    document.getElementById('contact2_Relation').value = patient.contact2_Relation || '';
+                    document.getElementById('contact2_Phone').value = patient.contact2_Phone || '';
+                    document.getElementById('conditions').value = patient.conditions || '';
+                    document.getElementById('allergies').value = patient.allergies || '';
+                    document.getElementById('medications').value = patient.medications || '';
+                    document.getElementById('medicalNotes').value = patient.medicalNotes || '';
+                    document.getElementById('organDonor').checked = !!patient.organDonor;
+                    updatePreview();
+                }
+            }, 600);
         }
     </script>
 </body>

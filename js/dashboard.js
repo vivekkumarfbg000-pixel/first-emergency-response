@@ -216,13 +216,18 @@
         });
     }
 
-    window.downloadQR = function() {
-        const canvas = document.querySelector('canvas');
-        if(!canvas) return;
-        const link = document.createElement('a');
-        link.download = `medical-id-${_activePatient?.fullName.replace(' ', '-')}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
+    window.downloadQR = async function() {
+        if (!_activePatient) return;
+        
+        const btn = document.querySelector('button[onclick="window.downloadQR()"]');
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Generating Graphic...';
+        if (window.lucide) lucide.createIcons();
+        
+        await window.CardGenerator.generateBrandedQR(_activePatient);
+        
+        btn.innerHTML = origHtml;
+        if (window.lucide) lucide.createIcons();
     };
 
     document.addEventListener('DOMContentLoaded', init);

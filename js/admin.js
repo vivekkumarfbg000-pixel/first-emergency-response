@@ -163,9 +163,16 @@
                     </td>
                     <td class="px-6 py-5">
                         <div class="flex items-center justify-end gap-4">
+                            <button onclick="window.generateAdminAssets('${p.id || p.patientId}')" class="text-emerald-500 hover:text-emerald-400 font-black text-[11px] uppercase tracking-widest transition-colors flex items-center gap-1" title="Generate Physical ID and Wristband">
+                                <i data-lucide="printer" class="w-3 h-3"></i> Assets
+                            </button>
                             <a href="emergency.html?sid=${p.id || p.patientId}" target="_blank" 
                                class="text-blue-500 hover:text-blue-400 font-black text-[11px] uppercase tracking-widest transition-colors">
-                               View Record
+                               View
+                            </a>
+                            <a href="register.html?edit=${p.id || p.patientId}" target="_blank" 
+                               class="text-amber-500 hover:text-amber-400 font-black text-[11px] uppercase tracking-widest transition-colors">
+                               Edit
                             </a>
                             <button onclick="window.deletePatientProfile('${p.id || p.patientId}')" class="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors border border-transparent hover:border-red-500/20" title="Delete Profile globally">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -204,6 +211,21 @@
         }
     };
 
+    window.generateAdminAssets = async function(id) {
+        const patient = await window.Storage.getPatientById(id);
+        if (!patient) {
+            alert('Patient not found in local cache. Try refreshing.');
+            return;
+        }
+        
+        // Use the newly overhauled HTML5 generator
+        await window.CardGenerator.generateMedicalCard(patient);
+        
+        // Stagger to prevent browser from blocking multiple rapid downloads
+        setTimeout(async () => {
+            await window.CardGenerator.generateWristband(patient);
+        }, 1000);
+    };
 
     function dropMapMarker(alert) {
         if (!window.adminMap || !alert.gps_lat) return;
