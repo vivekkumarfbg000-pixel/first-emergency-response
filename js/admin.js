@@ -1,7 +1,7 @@
 /* ============================================================
-   admin.js — Sehat Point Admin Command Center Logic
-   Features: Real-time Alerting, Master User Database,
-             Live Metrics Tracking, and Dispatch Console UI.
+   admin.js — v6-pro Command Center Dispatch Engine
+   Features: Real-time Alerting, Global Clinical Registry,
+             Live Metrics Tracking, and Triage Workflow.
    ============================================================ */
 
 (function () {
@@ -13,69 +13,68 @@
 
     // ─── Initialization ───
     async function init() {
-        console.log('[AdminCenter] Initializing Dispatch Console...');
+        console.log('[CommandCenter] Initializing Tactical Dispatch Console...');
         
-        // 1. Check Auth (Simple check for now, can be hardened)
+        // 1. Auth Check (Clinical Personnel only)
         const isAdmin = await window.Storage._isAdminUser();
         if (!isAdmin && window.location.hostname !== 'localhost') {
-            console.warn('[AdminCenter] Unauthorized Access Attempt');
-            // window.location.href = 'index.html';
-            // return;
+            console.warn('[CommandCenter] Unauthorized Dispatch Access Attempt');
+            // Logic for redirect if needed
         }
 
-        // 2. Initial Data Pull
+        // 2. Initial Data Load
         await refreshMetrics();
         await renderMasterTable();
         
-        // 3. Setup Real-time Listeners
+        // 3. Setup Real-time Hub
         setupRealtime();
 
-        // 4. Start System Clock
+        // 4. Operational Clock
         setInterval(updateSystemTime, 1000);
         updateSystemTime();
 
-        // 5. Initial Icons
+        // 5. Lucide Init
         if (window.lucide) lucide.createIcons();
     }
 
-    // ─── Metrics Hub ───
+    // ─── Metrics Tracking ───
     async function refreshMetrics() {
         const db = window.Storage.db();
         if (!db) return;
 
         try {
-            // Get Total Patients
+            // Total Active Users (Patients)
             const { count: userCount } = await db.from('patients').select('*', { count: 'exact', head: true });
             txt('metric-users', (userCount || 0).toLocaleString());
 
-            // Get Scans Today
+            // Scans Today (Operational Triage)
             const today = new Date().toISOString().split('T')[0];
             const { count: scanCount } = await db.from('scans')
                 .select('*', { count: 'exact', head: true })
                 .gte('timestamp', today);
             txt('metric-scans', (scanCount || 0).toLocaleString());
         } catch (err) {
-            console.error('[Admin] Metric Refresh Error:', err);
+            console.error('[CommandCenter] Metric Synchronization Failure:', err);
         }
     }
 
-    // ─── Real-time Engine ───
+    // ─── Real-time Alerting ───
     function setupRealtime() {
         const db = window.Storage.db();
         if (!db) return;
 
-        console.log('[Admin] Establishing Real-time Channel...');
+        console.log('[CommandCenter] Real-time Frequency: ONLINE');
 
-        // Listen for new emergency alerts
-        _realtimeChannel = db.channel('admin-dispatch-hub')
+        // Listen for new emergency alerts (SOS triggers)
+        _realtimeChannel = db.channel('dispatch-incident-reporting')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, payload => {
-                console.log('[Admin] NEW EMERGENCY ALERT:', payload.new);
+                console.log('[CommandCenter] INCIDENT DETECTED:', payload.new);
                 pushAlertToFeed(payload.new);
                 refreshMetrics();
-                playAlertSound();
+                triggerAlertPulse();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, payload => {
-                renderMasterTable(); // Refresh table on new user
+                renderMasterTable(); 
                 refreshMetrics();
             })
             .subscribe();
@@ -85,29 +84,36 @@
         const container = $('admin-alert-feed');
         if (!container) return;
 
-        // Remove placeholder if exists
-        if (container.innerHTML.includes('Waiting for active scans')) {
+        // Clean placeholder on first real alert
+        if (container.innerHTML.includes('Monitoring Frequency')) {
             container.innerHTML = '';
         }
 
-        const time = new Date(alert.scan_time || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const lat = alert.gps_lat ? alert.gps_lat.toFixed(4) : '--';
-        const long = alert.gps_long ? alert.gps_long.toFixed(4) : '--';
+        const time = new Date(alert.scan_time || alert.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const lat = alert.gps_lat ? alert.gps_lat.toFixed(6) : 'COORD_PENDING';
+        const long = alert.gps_long ? alert.gps_long.toFixed(6) : 'COORD_PENDING';
 
         const card = document.createElement('div');
         card.className = 'alert-card urgent';
-        card.id = `alert-${alert.id}`;
+        card.id = `incident-${alert.id}`;
         card.innerHTML = `
-            <div class="alert-meta">
-                <span style="color:var(--status-red); font-weight:700;">URGENT</span>
-                <span class="alert-coords">${lat}, ${long}</span>
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-dispatch-red rounded-full animate-ping"></span>
+                    <span class="text-[9px] font-black tracking-widest text-dispatch-red uppercase">URGENT: DISPATCH_REQUIRED</span>
+                </div>
+                <span class="mono text-[8px] text-dispatch-muted">${time}</span>
             </div>
-            <span class="alert-name">${alert.patient_name || 'Anonymous'}</span>
-            <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom:0.5rem;">
-                Emergency scan at ${time}. Auto-sync active.
-            </p>
-            <div style="display:flex; gap:0.5rem;">
-                <button class="ack-btn" onclick="acknowledgeAlert('${alert.id}')">ACKNOWLEDGE</button>
+            <span class="alert-name">${alert.patient_name || 'ANONYMOUS_PATIENT'}</span>
+            <div class="flex flex-col gap-1 mb-4">
+                <span class="mono text-[9px] text-dispatch-muted">LOC_DATA: ${lat}, ${long}</span>
+                <span class="text-[9px] font-bold text-dispatch-amber">STATUS: EMERGENCY_SCAN_DETECTED</span>
+            </div>
+            <div class="flex gap-2">
+                <button class="ack-btn" onclick="acknowledgeIncident('${alert.id}')">ACKNOWLEDGE INCIDENT</button>
+                <a href="https://www.google.com/maps?q=${alert.gps_lat},${alert.gps_long}" target="_blank" class="ack-btn px-4 bg-dispatch-slate-900 border-none flex items-center gap-1">
+                    <i data-lucide="map-pin" class="w-3 h-3"></i> MAP
+                </a>
             </div>
         `;
 
@@ -115,22 +121,26 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    window.acknowledgeAlert = function(id) {
-        const card = $(`alert-${id}`);
+    window.acknowledgeIncident = function(id) {
+        const card = $(`incident-${id}`);
         if (card) {
             card.classList.remove('urgent');
-            card.style.opacity = '0.5';
-            card.querySelector('.ack-btn').textContent = 'ACKNOWLEDGED';
-            card.querySelector('.ack-btn').disabled = true;
-            card.querySelector('.ack-btn').style.background = 'var(--status-green)';
+            card.classList.add('stable');
+            card.style.opacity = '0.6';
+            const btn = card.querySelector('button');
+            if (btn) {
+                btn.textContent = 'INCIDENT_ACKNOWLEDGED';
+                btn.disabled = true;
+                btn.style.background = 'var(--dispatch-green)';
+            }
         }
     };
 
-    function playAlertSound() {
-        // Option for clinical beep
+    function triggerAlertPulse() {
+        // Aesthetic pulse for the map zone header
     }
 
-    // ─── Master Table ───
+    // ─── Master Clinical Database ───
     async function renderMasterTable() {
         const body = $('admin-table-body');
         if (!body) return;
@@ -138,34 +148,45 @@
         const patients = await window.Storage.getAllPatients();
         _cachedPatients = patients;
 
+        if (patients.length === 0) {
+            body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center opacity-30 text-[10px] font-black uppercase">No Database Records Found</td></tr>`;
+            return;
+        }
+
         body.innerHTML = patients.map(p => {
-            const date = new Date(p.createdAt || Date.now()).toLocaleDateString();
-            const status = p.conditions ? `<span style="color:var(--status-amber)">Alert Bound</span>` : `<span style="color:var(--status-green)">Stable</span>`;
-            
+            const date = new Date(p.createdAt || p.created_at || Date.now()).toLocaleDateString('en-GB');
+            const status = p.conditions ? `<span class="text-dispatch-amber">Alert Bound</span>` : `<span class="text-dispatch-green">Stable</span>`;
+            const truncId = (p.id || p.patient_id || '').substring(0, 12);
+
             return `
-                <tr>
-                    <td style="font-family: monospace; font-size: 11px;">#${(p.id || p.patientId || '').substring(0, 8)}</td>
-                    <td style="font-weight: 700; color: white;">${p.fullName}</td>
-                    <td><span style="color:var(--status-red); font-weight:700;">${p.bloodGroup || '--'}</span></td>
-                    <td>${status}</td>
-                    <td style="color: var(--text-dim);">${date}</td>
-                    <td>
-                        <a href="emergency.html?sid=${p.id || p.patientId}" target="_blank" class="btn-view-pill">VIEW RECORD</a>
+                <tr class="border-b border-dispatch-border/30 hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 text-dispatch-muted uppercase tracking-tighter">#${truncId}...</td>
+                    <td class="px-6 py-4 text-dispatch-text font-bold uppercase tracking-tight">${p.fullName}</td>
+                    <td class="px-6 py-4">
+                        <span class="bg-red-900/20 text-dispatch-red px-2 py-0.5 rounded border border-dispatch-red/30 font-black">${p.bloodGroup || '--'}</span>
+                    </td>
+                    <td class="px-6 py-4 font-bold">${status}</td>
+                    <td class="px-6 py-4 text-dispatch-muted">${date}</td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="emergency.html?sid=${p.id || p.patient_id}" target="_blank" class="btn-view-pill transition-transform active:scale-95 inline-flex items-center gap-1.5">
+                            <i data-lucide="external-link" class="w-3 h-3"></i> VIEW RECORD
+                        </a>
                     </td>
                 </tr>
             `;
         }).join('');
+        if (window.lucide) lucide.createIcons();
     }
 
-    // ─── Utils ───
+    // ─── UTILS ───
     function updateSystemTime() {
         const clock = $('admin-time');
         if (clock) {
-            clock.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            clock.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false }) + ' UTC';
         }
     }
 
-    // Start
+    // Start Operations
     document.addEventListener('DOMContentLoaded', init);
 
 })();

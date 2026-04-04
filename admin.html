@@ -3,318 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Command Center | Sehat Point</title>
+    <title>🛰️ COMMAND CENTER | Sehat Point Admin</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dispatch: {
+                            bg: '#0F172A',
+                            card: '#1E293B',
+                            border: '#334155',
+                            text: '#F8FAFC',
+                            muted: '#94A3B8',
+                            red: '#EF4444',
+                            amber: '#F59E0B',
+                            green: '#10B981',
+                            blue: '#3B82F6'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blink': 'blink 1.5s infinite',
+                    },
+                    keyframes: {
+                        blink: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.3 },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-base: #0F172A;
-            --bg-card: #1E293B;
-            --border: rgba(255,255,255,0.06);
-            --primary: #3b82f6;
-            --status-red: #ef4444;
-            --status-amber: #f59e0b;
-            --status-green: #22c55e;
-            --text-main: #F8FAFC;
-            --text-dim: #94A3B8;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--bg-base);
-            color: var(--text-main);
-            font-family: 'Inter', -apple-system, sans-serif;
-            overflow-x: hidden;
-            display: flex;
-            height: 100vh;
-        }
-
-        /* ── Sidebar ── */
-        .admin-sidebar {
-            width: 240px;
-            background: rgba(15, 23, 42, 0.95);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-        }
-
-        .brand-zone {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--status-green);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--status-green);
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            color: var(--text-dim);
-            text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            transition: 0.2s;
-        }
-
-        .nav-link.active { background: var(--bg-card); color: white; }
-
-        /* ── Main Layout ── */
-        .command-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        /* ── Metrics Bar ── */
-        .metrics-bar {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .metric-card {
-            flex: 1;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 1.25rem;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .metric-val { font-size: 1.5rem; font-weight: 800; display: block; }
-        .metric-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
-
-        .sync-active {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--primary);
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .sync-pulse {
-            width: 6px;
-            height: 6px;
-            background: var(--primary);
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
-
-        /* ── Split Monitoring View ── */
-        .monitoring-grid {
-            display: grid;
-            grid-template-columns: 60% 40%;
-            gap: 1.5rem;
-            height: 450px;
-            margin-bottom: 1.5rem;
-        }
-
-        #admin-live-map {
-            width: 100%;
-            background: #0B1120;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .map-placeholder-text { color: #1E293B; font-weight: 800; font-size: 3rem; text-transform: uppercase; }
-
-        .alert-feed {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .feed-items { flex: 1; overflow-y: auto; padding: 1rem; }
-
-        .alert-card {
-            background: rgba(15, 23, 42, 0.4);
-            border-left: 4px solid var(--status-red);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-radius: 4px;
-            transition: 0.2s;
-        }
-
-        .alert-card.urgent { animation: border-pulse 2s infinite; }
-
-        .alert-meta { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 0.5rem; }
-        .alert-name { font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem; display: block; }
-        .alert-coords { font-family: monospace; font-size: 0.75rem; color: var(--text-dim); }
-
-        .ack-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 1rem;
-            width: 100%;
-            transition: 0.2s;
-        }
-
-        .ack-btn:hover { background: var(--status-red); border-color: var(--status-red); }
-
-        /* ── Global User Table ── */
-        .database-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            flex: 1;
-            padding: 1.5rem;
-            min-height: 400px;
-        }
-
-        .table-scroll { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; white-space: nowrap; }
-        th { text-align: left; padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; }
-        td { padding: 1rem; border-bottom: 1px solid var(--border); }
-        tr:hover td { background: rgba(255,255,255,0.02); }
-
-        .btn-view-pill {
-            color: var(--primary);
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            padding: 4px 10px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 4px;
-        }
-
-        /* ── Animations ── */
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-        @keyframes border-pulse { 0% { border-color: #ef4444; } 50% { border-color: #7f1d1d; } 100% { border-color: #ef4444; } }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #F8FAFC; overflow-x: hidden; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F172A; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .blink-red { animation: blink-red 1s infinite; }
+        @keyframes blink-red { 0% { border-color: #EF4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); } 50% { border-color: transparent; box-shadow: none; } 100% { border-color: #EF4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); } }
     </style>
 </head>
-<body>
-    <aside class="admin-sidebar">
-        <div class="brand-zone">
-            <div class="online-dot"></div>
-            <h2 style="font-size: 1rem; letter-spacing: 1px; color: white;">SEHAT CENTER</h2>
-        </div>
-        <nav>
-            <a href="admin.html" class="nav-link active"><i data-lucide="layout-dashboard"></i> Deployment</a>
-            <a href="#" class="nav-link"><i data-lucide="map"></i> Live Map</a>
-            <a href="#" class="nav-link"><i data-lucide="users"></i> Master Table</a>
-            <a href="dashboard.html" class="nav-link"><i data-lucide="arrow-left-circle"></i> Exit Center</a>
-        </nav>
-    </aside>
+<body class="min-h-screen flex flex-col">
 
-    <main class="command-wrapper">
-        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="font-size: 1.5rem; color: white;">Admin Command Center</h1>
-                <p style="color: var(--text-dim); font-size: 0.8rem;">Real-time Emergency Dispatch Monitoring Hub</p>
-            </div>
-            <div style="text-align: right;">
-                <span id="admin-time" style="font-family: monospace; font-size: 1rem; color: var(--primary);">--:--:--</span>
-                <p style="font-size: 0.7rem; color: var(--text-dim);">SYSTEM_LOCAL_TIME</p>
-            </div>
-        </header>
-
-        <!-- Top Metrics -->
-        <div class="metrics-bar">
-            <div class="metric-card">
-                <div>
-                    <span class="metric-label">Active Users</span>
-                    <span class="metric-val" id="metric-users">--</span>
+    <!-- ─── TOP METRICS BAR ─── -->
+    <header class="bg-dispatch-card border-b border-dispatch-border px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-dispatch-blue rounded flex items-center justify-center">
+                    <i data-lucide="shield-plus" class="text-white w-5 h-5"></i>
                 </div>
-                <i data-lucide="users" style="color:var(--primary)"></i>
+                <h1 class="text-xl font-extrabold tracking-tighter uppercase italic">Sehat Point <span class="text-dispatch-blue">Admin</span></h1>
             </div>
-            <div class="metric-card">
-                <div>
-                    <span class="metric-label">Scans Today</span>
-                    <span class="metric-val" id="metric-scans">--</span>
-                </div>
-                <i data-lucide="scan" style="color:var(--status-red)"></i>
-            </div>
-            <div class="metric-card">
-                <div>
-                    <span class="metric-label">Hub Status</span>
-                    <div class="sync-active">
-                        <div class="sync-pulse"></div>
-                        DATA_SYC_OK
-                    </div>
-                </div>
-                <i data-lucide="activity" style="color:var(--status-green)"></i>
+            <div class="px-3 py-1 bg-dispatch-bg rounded-full border border-dispatch-border flex items-center gap-2">
+                <div class="w-2 h-2 bg-dispatch-green rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-bold tracking-widest text-dispatch-green uppercase">System Online • Live Data Sync</span>
             </div>
         </div>
 
-        <!-- Monitoring Zone -->
-        <div class="monitoring-grid">
-            <div id="admin-live-map">
-                <span class="map-placeholder-text">PATNA HUB</span>
-            </div>
-
-            <div class="alert-feed">
-                <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">Live Emergency Feed</h3>
+        <div class="flex gap-8 items-center">
+            <div class="flex gap-6 border-r border-dispatch-border pr-8">
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-dispatch-muted uppercase tracking-widest">Active Users</p>
+                    <p class="text-xl font-black italic mono tracking-tighter" id="metric-users">0</p>
                 </div>
-                <div class="feed-items" id="admin-alert-feed">
-                    <div style="padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
-                        Waiting for active scans...
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-dispatch-muted uppercase tracking-widest">Scans Today</p>
+                    <p class="text-xl font-black italic mono tracking-tighter text-dispatch-amber" id="metric-scans">0</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-dispatch-text uppercase" id="admin-name">Controller Alpha</p>
+                    <p class="text-[9px] font-bold text-dispatch-muted uppercase tracking-widest" id="admin-time">00:00:00 UTC</p>
+                </div>
+                <div class="w-10 h-10 bg-dispatch-border rounded-full flex items-center justify-center relative">
+                    <i data-lucide="user-cog" class="w-5 h-5"></i>
+                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-dispatch-red rounded-full flex items-center justify-center border-2 border-dispatch-card">
+                        <span class="text-[8px] font-black">!</span>
                     </div>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Global Database -->
-        <div class="database-section">
-            <h3 style="margin-bottom: 1.5rem; text-transform: uppercase; font-size: 0.85rem; color: var(--text-dim);">Global Clinical Database</h3>
-            <div class="table-scroll">
-                <table id="admin-user-table">
-                    <thead>
-                        <tr>
-                            <th>User ID</th>
-                            <th>Patient Name</th>
-                            <th>Blood Group</th>
-                            <th>Reg Date</th>
-                            <th>Medical Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+    <!-- ─── THE PIT: LIVE MONITORING (SPLIT VIEW) ─── -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left: Live Map Monitoring (60%) -->
+        <section class="w-3/5 relative border-r border-dispatch-border bg-slate-900 shadow-inner">
+            <div id="admin-live-map" class="w-full h-full grayscale opacity-40"></div>
+            <!-- Map HUD Overlay -->
+            <div class="absolute top-6 left-6 z-10 space-y-3">
+                <div class="bg-dispatch-bg/80 backdrop-blur p-4 rounded-lg border border-dispatch-border shadow-2xl">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="map" class="text-dispatch-blue w-4 h-4"></i>
+                        <span class="text-xs font-black uppercase tracking-widest">Operational Zone: Patna Center</span>
+                    </div>
+                    <p class="text-[10px] text-dispatch-muted font-bold tracking-wider leading-relaxed">
+                        Radius: 25.4km • Active Pins: <span class="text-dispatch-green">Stable</span>
+                    </p>
+                </div>
             </div>
-        </div>
+            <!-- Aesthetic Center Crosshair -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div class="w-16 h-16 border border-dispatch-blue/20 rounded-full flex items-center justify-center">
+                    <div class="w-2 h-2 bg-dispatch-blue/40 rounded-full"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Real-Time Alert Feed (40%) -->
+        <section class="w-2/5 flex flex-col bg-dispatch-bg">
+            <div class="px-6 py-4 bg-dispatch-card border-b border-dispatch-border flex justify-between items-center">
+                <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="bell-ring" class="w-4 h-4 text-dispatch-red animate-pulse"></i>
+                    Incident Dispatch Feed
+                </h2>
+                <span class="text-[9px] font-bold text-dispatch-slate-400 bg-slate-800 px-2 py-1 rounded uppercase tracking-tighter">Auto-Email Enabled</span>
+            </div>
+            <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Alerts populated by admin.js -->
+                <div class="flex flex-col items-center justify-center py-20 opacity-30">
+                    <i data-lucide="radar" class="w-10 h-10 mb-4 animate-pulse"></i>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>Waiting for active scans</p>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Scripts -->
+    <!-- ─── GLOBAL USER DATABASE ─── -->
+    <footer class="h-1/3 min-h-[300px] border-t-4 border-dispatch-card bg-dispatch-card flex flex-col overflow-hidden">
+        <div class="px-6 py-3 border-b border-dispatch-border flex justify-between items-center bg-slate-900/50">
+            <h2 class="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-dispatch-blue"></i>
+                Global Patient Registry • System Database
+            </h2>
+            <div class="flex gap-4">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 w-3 h-3 text-dispatch-muted"></i>
+                    <input type="text" placeholder="QUERY DATABASE..." class="bg-dispatch-bg border border-dispatch-border rounded-md pl-8 pr-4 py-2 text-[10px] font-bold mono focus:border-dispatch-blue focus:outline-none w-64 text-dispatch-text">
+                </div>
+                <button class="bg-dispatch-border hover:bg-slate-700 text-dispatch-text px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-colors">Export .CSV</button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-dispatch-card z-10">
+                    <tr class="border-b border-dispatch-border text-dispatch-muted uppercase text-[9px] font-black tracking-widest">
+                        <th class="px-6 py-3">Patient Record ID</th>
+                        <th class="px-6 py-3 text-dispatch-text">Full Name</th>
+                        <th class="px-6 py-3">Blood Group</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3">Onboarded</th>
+                        <th class="px-6 py-3 text-right">Operational Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-table-body" class="mono text-[11px] font-medium leading-relaxed">
+                    <!-- Data populated by admin.js -->
+                </tbody>
+            </table>
+        </div>
+    </footer>
+
+    <!-- STYLES FOR DYNAMIC ELEMENTS -->
+    <style>
+        .alert-card {
+            background: #1E293B;
+            border: 1px solid #334155;
+            padding: 1rem;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .alert-card.urgent { border-left: 4px solid #EF4444; animation: blink-red 2s infinite; }
+        .alert-card.stable { border-left: 4px solid #10B981; }
+        .alert-meta { display: flex; justify-between: items-center; margin-bottom: 0.5rem; }
+        .alert-coords { font-size: 9px; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
+        .alert-name { font-size: 14px; font-weight: 800; color: #F8FAFC; text-transform: uppercase; display: block; margin-bottom: 0.25rem; }
+        .ack-btn { 
+            background: #0F172A; 
+            border: 1px solid #334155; 
+            color: #F8FAFC; 
+            font-size: 9px; 
+            font-weight: 900; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s;
+        }
+        .ack-btn:hover { background: #334155; }
+        .btn-view-pill {
+            background: #3B82F6;
+            color: white;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+
+    <!-- Supabase + Storage -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/admin.js"></script>
-    <script>
-        lucide.createIcons();
-    </script>
 </body>
 </html>
