@@ -23,9 +23,13 @@
             return;
         }
 
+        // Update real-time connection status UI
+        updateConnectionStatus('connecting');
+
         // 2. Initial Data Pull
         await refreshMetrics();
         await renderMasterTable();
+        await refreshLogs();
         
         // 3. Setup Real-time SOS Engine
         setupRealtime();
@@ -38,6 +42,32 @@
 
         // Support global UI listeners if needed
         window.currentSection = 'monitoring';
+        setInterval(updateServerTime, 1000);
+    }
+
+    function updateServerTime() {
+        const el = $('admin-time');
+        if (el) el.textContent = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    }
+
+    function updateConnectionStatus(status) {
+        const ind = $('connection-indicator');
+        const txt = $('connection-status');
+        if (!ind || !txt) return;
+
+        if (status === 'connected') {
+            ind.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]';
+            txt.textContent = 'Operational';
+            txt.className = 'text-[9px] font-black tracking-widest text-emerald-400 uppercase';
+        } else if (status === 'connecting') {
+            ind.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+            txt.textContent = 'Syncing...';
+            txt.className = 'text-[9px] font-black tracking-widest text-amber-400 uppercase';
+        } else {
+            ind.className = 'w-2 h-2 rounded-full bg-red-500 animate-ping';
+            txt.textContent = 'Offline';
+            txt.className = 'text-[9px] font-black tracking-widest text-red-500 uppercase';
+        }
     }
 
     // ─── Metrics ───
@@ -57,22 +87,51 @@
     // ─── Real-time SOS Alerting ───
     function setupRealtime() {
         const db = window.Storage.db();
-        if (!db) return;
+        if (!db) {
+            updateConnectionStatus('error');
+            return;
+        }
 
         _realtimeChannel = db.channel('dispatch-incident-reporting')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, payload => {
                 console.log('[MasterDispatch] INCIDENT REPORTED:', payload.new);
                 pushAlertToFeed(payload.new);
                 refreshMetrics();
+                refreshLogs();
                 dropMapMarker(payload.new);
-                
-                // Visual cue or sound can be triggered here if needed
+                playAlertSound();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, () => {
+                refreshMetrics();
+                refreshLogs();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
                 renderMasterTable();
                 refreshMetrics();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[MasterDispatch] Real-time Status:', status);
+                if (status === 'SUBSCRIBED') updateConnectionStatus('connected');
+                else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') updateConnectionStatus('error');
+            });
+    }
+
+    function playAlertSound() {
+        // Simple synth beep for emergency
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } catch (e) {}
     }
 
     function pushAlertToFeed(alert) {
@@ -237,6 +296,94 @@
         L.marker([alert.gps_lat, alert.gps_long], { icon }).addTo(window.adminMap).bindPopup(`<b>${alert.patient_name}</b>`).openPopup();
         window.adminMap.setView([alert.gps_lat, alert.gps_long], 15);
     }
+
+    window.refreshLogs = async function() {
+        const body = $('admin-log-body');
+        if (!body) return;
+
+        try {
+            const scans = await window.Storage.getScanHistory();
+            if (!scans || scans.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" class="px-8 py-10 text-center text-slate-600 font-bold uppercase text-[10px] tracking-widest italic opacity-40">No activity recorded yet</td></tr>';
+                return;
+            }
+
+            body.innerHTML = scans.map(s => {
+                const time = new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const date = new Date(s.timestamp).toLocaleDateString();
+                const isEmergency = s.type === 'emergency_scan';
+                
+                return `
+                    <tr class="border-b border-white/5 tactical-row transition-all">
+                        <td class="px-8 py-4">
+                            <div class="text-[11px] font-black text-slate-300 italic">${time}</div>
+                            <div class="text-[9px] font-bold text-slate-600 uppercase tracking-tighter">${date}</div>
+                        </td>
+                        <td class="px-8 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full ${isEmergency ? 'bg-red-500 animate-pulse' : 'bg-blue-400'}"></span>
+                                <span class="text-[10px] font-black uppercase tracking-widest ${isEmergency ? 'text-red-400' : 'text-blue-300'}">
+                                    ${s.type.replace('_', ' ')}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-8 py-4">
+                             <div class="text-[11px] font-black text-white italic">#PT-${(s.patient_id || '----').substring(0,6)}</div>
+                             <div class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">${s.device || 'Unknwon Device'}</div>
+                        </td>
+                        <td class="px-8 py-4">
+                            <div class="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
+                                <i data-lucide="map-pin" class="w-3 h-3 text-slate-500"></i>
+                                ${s.location || 'Unknown'}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            console.error('[MasterDispatch] Log Sync Failure:', e);
+        }
+    };
+
+    window.switchTab = function(tab) {
+        _activeSection = tab;
+        
+        // UI Sections
+        const sections = {
+            'monitoring': $('section-operations'),
+            'registry': $('section-registry'),
+            'logs': $('section-logs')
+        };
+        
+        // Tab Buttons
+        const tabs = {
+            'monitoring': $('tab-monitoring'),
+            'registry': $('tab-registry'),
+            'logs': $('tab-logs')
+        };
+
+        Object.keys(sections).forEach(key => {
+            const s = sections[key];
+            const t = tabs[key];
+            if (!s || !t) return;
+
+            if (key === tab) {
+                s.classList.remove('hidden');
+                t.classList.add('active', 'border-blue-500', 'text-blue-400');
+                t.classList.remove('border-transparent', 'text-slate-500');
+            } else {
+                s.classList.add('hidden');
+                t.classList.remove('active', 'border-blue-500', 'text-blue-400');
+                t.classList.add('border-transparent', 'text-slate-500');
+            }
+        });
+
+        if (tab === 'monitoring' && window.adminMap) {
+            setTimeout(() => window.adminMap.invalidateSize(), 100);
+        }
+        if (window.lucide) lucide.createIcons();
+    };
 
     document.addEventListener('DOMContentLoaded', init);
 

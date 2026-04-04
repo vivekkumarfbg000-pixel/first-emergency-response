@@ -262,35 +262,47 @@
             renderData(patientData);
         } else {
             txt('val-name', 'No Profile Found');
+            return;
         }
 
         if (patientData) {
             // Trigger SOS for Admin Map
+            const ping = document.getElementById('nav-status-indicator-ping');
+            const ind = document.getElementById('nav-status-indicator');
+
             if (navigator.geolocation) {
-                txt('nav-status', 'Acquiring GPS...');
-                const ping = document.getElementById('nav-status-indicator-ping');
-                const ind = document.getElementById('nav-status-indicator');
+                txt('nav-status', 'Acquiring GPS Signal...');
                 if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
                 if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-500';
                 
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        window.Storage.triggerSOSAlert(patientData, position.coords.latitude, position.coords.longitude);
-                        txt('nav-status', 'Location Acquired - SOS');
-                        if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
-                        if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
-                    },
-                    (error) => {
-                        console.warn('Geolocation denied or failed. Sending SOS without GPS.');
-                        window.Storage.triggerSOSAlert(patientData, null, null);
-                        txt('nav-status', 'SOS Active (No GPS)');
-                        if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
-                        if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
+                // Use a promise-based timeout for geolocation to be more robust
+                const getGeo = () => new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                        enableHighAccuracy: true, 
+                        timeout: 15000, 
+                        maximumAge: 0 
+                    });
+                });
+
+                try {
+                    const position = await getGeo();
+                    console.log('Location Acquired:', position.coords.latitude, position.coords.longitude);
+                    await window.Storage.triggerSOSAlert(patientData, position.coords.latitude, position.coords.longitude);
+                    
+                    txt('nav-status', 'SOS Transmitted (GPS)');
+                    if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                    if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
+                } catch (err) {
+                    console.warn('Geolocation failed:', err.message);
+                    await window.Storage.triggerSOSAlert(patientData, null, null);
+                    
+                    txt('nav-status', 'SOS Sent (No GPS)');
+                    if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
+                    if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-red-500';
+                }
             } else {
-                window.Storage.triggerSOSAlert(patientData, null, null);
+                await window.Storage.triggerSOSAlert(patientData, null, null);
+                txt('nav-status', 'SOS Sent (Browser No GPS)');
             }
         }
     }

@@ -330,19 +330,28 @@ END:VCARD`;
     },
 
     logScan: async function (patientId, type, device, location, lat, long) {
+        const timestamp = new Date().toISOString();
         const scans = this.getScanHistoryLocal();
-        scans.unshift({ patientId, type, device, location, latitude: lat, longitude: long, timestamp: new Date().toISOString() });
+        scans.unshift({ patientId, type, device, location, latitude: lat, longitude: long, timestamp });
         localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
+
+        console.log(`[Storage] Logging event: ${type} for ${patientId}`);
 
         if (this.db()) {
             try {
-                const logData = { patient_id: patientId, type: type || 'qr_scan', device: device || 'Unknown', 
-                                  location: lat && long ? `${location || 'GPS'} (${lat.toFixed(4)}, ${long.toFixed(4)})` : (location || 'Unknown'),
-                                  latitude: lat || null, longitude: long || null, timestamp: new Date().toISOString() };
-                const userId = await this._getUserId();
-                if (userId) logData.user_id = userId;
-                await this.db().from('scans').insert([logData]);
-            } catch (err) { }
+                const logData = { 
+                    patient_id: patientId, 
+                    type: type || 'qr_scan', 
+                    device: device || 'Unknown', 
+                    location: lat && long ? `${location || 'GPS'} (${lat.toFixed(4)}, ${long.toFixed(4)})` : (location || 'Global Search'),
+                    latitude: lat || null, 
+                    longitude: long || null, 
+                    timestamp: timestamp 
+                };
+                
+                const { error } = await this.db().from('scans').insert([logData]);
+                if (error) console.error('[Storage] Scan Log DB Error:', error.message);
+            } catch (err) { console.error('[Storage] Scan Log Exception:', err); }
         }
     },
 
@@ -367,27 +376,43 @@ END:VCARD`;
     },
 
     triggerSOSAlert: async function(patient, lat, long) {
-        const patientId = typeof patient === 'string' ? patient : (patient.patientId || patient.id);
+        const patientId = typeof patient === 'string' ? patient : (patient.id || patient.patientId);
         const safeLat = typeof lat === 'number' ? lat : null;
         const safeLong = typeof long === 'number' ? long : null;
         
-        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Unknown', safeLat, safeLong);
+        console.log(`[Storage] Triggering SOS for ${patientId} at`, lat, long);
+
+        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Restricted', safeLat, safeLong);
+        
         if (this.db() && typeof patient === 'object') {
             try {
                 const alertData = {
-                    patient_id: patientId, patient_name: patient.fullName, patient_blood: patient.bloodGroup,
-                    family_email: patient.contact1_Email || patient.contact1_email, family_name: patient.contact1_Name,
-                    gps_lat: safeLat, gps_long: safeLong, google_maps_link: safeLat ? `https://www.google.com/maps?q=${safeLat},${safeLong}` : '', email_sent: false
+                    patient_id: patientId, 
+                    patient_name: patient.fullName || 'Unknown', 
+                    patient_blood: patient.bloodGroup || 'N/A',
+                    family_email: patient.contact1_Email || patient.contact1_email || '', 
+                    family_name: patient.contact1_Name || 'Next of Kin',
+                    gps_lat: safeLat, 
+                    gps_long: safeLong, 
+                    google_maps_link: safeLat ? `https://www.google.com/maps?q=${safeLat},${safeLong}` : '', 
+                    email_sent: false
                 };
-                const { error } = await this.db().from('emergency_alerts').insert([alertData]);
-                if (!error) {
+
+                const { error: insertError } = await this.db().from('emergency_alerts').insert([alertData]);
+                
+                if (insertError) {
+                    console.error('[Storage] Emergency Alert Insert Failed:', insertError.message);
+                } else {
+                    console.log('[Storage] Emergency Alert Registered in DB (Real-time trigger fired)');
                     try {
-                        await this.db().functions.invoke('send-sos-email', { body: alertData });
+                        const { data, error: funcError } = await this.db().functions.invoke('send-sos-email', { body: alertData });
+                        if (funcError) throw funcError;
+                        console.log('[Storage] Edge Function email success:', data);
                     } catch (e) {
-                         // silently handle missing EDGE function in development
+                         console.warn('[Storage] Email Service Unavailable. (Requires Supabase Edge Function "send-sos-email" to be deployed)');
                     }
                 }
-            } catch (err) { console.error('[Storage] SOS Alert Error', err); }
+            } catch (err) { console.error('[Storage] SOS Alert Exception:', err); }
         }
         return true;
     },

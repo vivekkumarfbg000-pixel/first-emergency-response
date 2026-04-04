@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DISPATCH HUB | Sehat Point</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,26 +11,15 @@
             theme: {
                 extend: {
                     colors: {
-                        slate: {
-                            850: '#151e2e',
-                            900: '#0F172A',
-                            950: '#0B1120'
-                        },
-                        dispatch: {
-                            red: '#EF4444',
-                            amber: '#F59E0B',
-                            green: '#22C55E',
-                            blue: '#3B82F6'
-                        }
+                        slate: { 850: '#151e2e', 900: '#0F172A', 950: '#0B1120' },
+                        dispatch: { red: '#EF4444', amber: '#F59E0B', green: '#22C55E', blue: '#3B82F6' }
                     }
                 }
             }
         }
     </script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #F8FAFC; overflow-x: hidden; }
@@ -58,22 +46,15 @@
             0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
-        .animate-blink { animation: blink 1.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); } 50% { opacity: 0.8; border-color: rgba(239, 68, 68, 0.2); box-shadow: none; } }
-        
-        /* Tactical Card Reset from JS innerHTML overwrites */
-        .tactical-row { background: transparent; }
-        .tactical-row:hover { background: rgba(255,255,255,0.03); }
+        .tab-btn.active { border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-dispatch-blue/30 overflow-y-auto relative">
+<body class="min-h-screen flex flex-col selection:bg-dispatch-blue/30 relative">
 
-    <div class="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.03),transparent_50%)] pointer-events-none z-[-1]"></div>
-
-    <!-- ─── TOP HEADER (Tactical) ─── -->
-    <header class="bg-[#0B1120]/90 backdrop-blur-md border-b border-white/5 px-6 py-3 flex justify-between items-center sticky top-0 z-[1000] shadow-2xl">
+    <!-- Header -->
+    <header class="bg-[#0B1120]/95 backdrop-blur-xl border-b border-white/5 px-6 py-3 flex justify-between items-center sticky top-0 z-[1000] shadow-2xl">
         <div class="flex items-center gap-4">
-            <div class="bg-slate-900 rounded-lg border border-white/10 shadow-inner w-10 h-10 flex items-center justify-center flex-shrink-0">
+            <div class="bg-slate-900 rounded-lg border border-white/10 shadow-inner w-10 h-10 flex items-center justify-center">
                 <i data-lucide="satellite" class="w-5 h-5 text-dispatch-blue"></i>
             </div>
             <div>
@@ -83,159 +64,146 @@
         </div>
 
         <div class="flex items-center gap-6">
-            <!-- Pulsing Live Sync Active -->
-             <div class="hidden md:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 rounded-full" id="status-badge">
-                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                 <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live Sync Active</span>
-             </div>
-             
              <p class="text-[11px] font-bold text-slate-400 tracking-widest hidden md:block mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-white/5" id="admin-time">00:00:00 UTC</p>
              
-             <button class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center border border-red-500/30 transition-colors group" onclick="window.Auth.signOut()" title="Secure Logout">
-                <i data-lucide="power" class="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform"></i>
+             <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-full border border-white/10">
+                 <div id="connection-indicator" class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></div>
+                 <span id="connection-status" class="text-[9px] font-black tracking-widest text-slate-400 uppercase">Connecting...</span>
+             </div>
+
+             <button class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center border border-red-500/30 transition-colors" onclick="window.Auth.signOut()">
+                <i data-lucide="power" class="w-4 h-4 text-red-500"></i>
              </button>
         </div>
     </header>
 
-    <main class="flex-1 p-6 flex flex-col gap-6 max-w-[1800px] w-full mx-auto pb-10">
-        
-        <!-- ─── TOP METRICS BAR ─── -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 flex items-center justify-between shadow-lg relative overflow-hidden backdrop-blur-sm">
-                <div class="absolute right-0 top-0 w-32 h-32 bg-dispatch-blue/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                <div class="relative z-10">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Active Users</p>
-                    <h3 class="text-2xl md:text-3xl font-black text-white" id="metric-users">0</h3>
-                </div>
-            </div>
-            
-            <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 flex items-center justify-between shadow-lg relative overflow-hidden backdrop-blur-sm">
-                <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                <div class="relative z-10">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Scans Today</p>
-                    <h3 class="text-2xl md:text-3xl font-black text-white" id="metric-scans">0</h3>
-                </div>
-            </div>
-            
-            <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 flex flex-col justify-center shadow-lg relative backdrop-blur-sm">
-                <div class="absolute left-0 top-0 h-full w-1 bg-dispatch-blue rounded-l-2xl"></div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">System Status</p>
-                <div class="flex items-center gap-2 text-dispatch-blue font-black text-[11px] uppercase tracking-wider">
-                    <i data-lucide="shield-check" class="w-4 h-4"></i> Network Secure
-                </div>
-            </div>
+    <!-- Sub-Header: Navigation Tabs -->
+    <div class="bg-[#0B1120] border-b border-white/5 sticky top-[65px] z-[999] px-6">
+        <div class="flex gap-1 overflow-x-auto no-scrollbar">
+            <button onclick="switchTab('monitoring')" id="tab-monitoring" class="tab-btn active flex items-center gap-2 px-6 py-4 text-[11px] font-black uppercase tracking-widest border-b-2 border-blue-500 text-blue-400 transition-all whitespace-nowrap">
+                <i data-lucide="activity" class="w-4 h-4"></i> Emergency Ops
+            </button>
+            <button onclick="switchTab('registry')" id="tab-registry" class="tab-btn flex items-center gap-2 px-6 py-4 text-[11px] font-black uppercase tracking-widest border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-all whitespace-nowrap">
+                <i data-lucide="users" class="w-4 h-4"></i> Patient Registry
+            </button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn flex items-center gap-2 px-6 py-4 text-[11px] font-black uppercase tracking-widest border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-all whitespace-nowrap">
+                <i data-lucide="scroll-text" class="w-4 h-4"></i> Activity Logs
+            </button>
+        </div>
+    </div>
 
-            <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 flex flex-col justify-center shadow-lg relative backdrop-blur-sm">
-                 <div class="absolute left-0 top-0 h-full w-1 bg-red-500 rounded-l-2xl"></div>
-                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Master Access</p>
-                 <div class="flex items-center gap-2 text-red-500 font-bold text-[11px] uppercase tracking-wider">
-                    <i data-lucide="lock" class="w-4 h-4"></i> Admin Hub Enabled
-                 </div>
+    <main class="flex-1 p-6 max-w-[1800px] w-full mx-auto pb-20">
+        
+        <!-- Metrics (Visible on all tabs) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl p-5 shadow-lg relative overflow-hidden backdrop-blur-sm">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Active Registry</p>
+                <h3 class="text-3xl font-black text-white" id="metric-users">0</h3>
+            </div>
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl p-5 shadow-lg relative overflow-hidden backdrop-blur-sm">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Signals</p>
+                <h3 class="text-3xl font-black text-white" id="metric-scans">0</h3>
+            </div>
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
+                <div class="flex items-center gap-2 text-emerald-500 font-black text-[10px] uppercase tracking-wider">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Link Secure
+                </div>
+            </div>
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
+                <div class="flex items-center gap-2 text-blue-500 font-bold text-[10px] uppercase tracking-wider">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Real-time Feed Active
+                </div>
             </div>
         </div>
 
-        <!-- ─── LIVE EMERGENCY TRACKING (SPLIT VIEW) ─── -->
-        <div class="flex flex-col xl:flex-row gap-6 h-[600px]">
-            
-            <!-- Left: Map (60%) -->
-            <div class="xl:w-[60%] w-full rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden bg-[#0B1120]">
-                <div class="absolute top-4 left-4 z-[400] px-3 py-1.5 bg-[#0B1120]/80 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-2">
-                    <i data-lucide="crosshair" class="w-3.5 h-3.5 text-dispatch-blue animate-pulse"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-white">Live Operations Grid</span>
+        <!-- ─── TAB 1: OPERATIONS SECTOR ─── -->
+        <div id="section-operations" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="flex flex-col xl:flex-row gap-6 h-[700px]">
+                <div class="xl:w-[65%] w-full rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden bg-black/20">
+                    <div id="admin-live-map" class="w-full h-full opacity-90 mix-blend-screen"></div>
+                    <div class="absolute top-4 left-4 z-[400] px-3 py-1.5 bg-[#0B1120]/80 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-2">
+                        <i data-lucide="crosshair" class="w-3.5 h-3.5 text-blue-500 animate-pulse"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white">Grid Telemetry</span>
+                    </div>
                 </div>
-                <div id="admin-live-map" class="w-full h-full opacity-80 mix-blend-screen"></div>
-            </div>
-
-            <!-- Right: Alert Feed (40%) -->
-            <div class="xl:w-[40%] w-full bg-slate-900/80 border border-white/5 rounded-2xl flex flex-col shadow-2xl overflow-hidden relative backdrop-blur-sm">
-                <!-- Header -->
-                <div class="p-5 border-b border-white/5 flex justify-between items-center bg-[#0B1120]/80">
-                    <h2 class="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
-                        <i data-lucide="radio" class="w-4 h-4 text-red-500 animate-pulse"></i>
-                        Real-Time Alert Feed
-                    </h2>
-                    <span class="px-2 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] font-black rounded uppercase tracking-widest">Active Watch</span>
-                </div>
-                
-                <!-- Feed -->
-                <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <!-- Standard Empty State, removed when alerts drop via JS -->
-                    <div class="flex flex-col items-center justify-center py-20 opacity-30 text-slate-400">
-                        <i data-lucide="radar" class="w-12 h-12 mb-4 animate-pulse"></i>
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-center leading-relaxed">
-                            Monitoring Global Frequency...<br>No active incidents
-                        </p>
+                <div class="xl:w-[35%] w-full bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col shadow-2xl overflow-hidden relative backdrop-blur-sm">
+                    <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                        <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <i data-lucide="radio" class="w-4 h-4 text-red-500"></i> Active Alerts
+                        </h2>
+                        <span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded uppercase tracking-widest">Live Watch</span>
+                    </div>
+                    <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                        <div class="flex flex-col items-center justify-center py-20 opacity-20 text-slate-400">
+                            <i data-lucide="radar" class="w-12 h-12 mb-4 animate-pulse"></i>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-center">Monitoring Frequencies...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ─── GLOBAL USER DATABASE ─── -->
-        <div class="bg-slate-900/80 border border-white/5 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-10 backdrop-blur-sm">
-            <div class="p-5 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0B1120]/80">
-                <h2 class="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
-                    <i data-lucide="database" class="w-4 h-4 text-dispatch-blue"></i>
-                    Global Clinical Registry
-                </h2>
-                <div class="relative w-full sm:w-80">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input type="text" id="db-search" placeholder="Query Master Database..." 
-                           class="bg-[#0B1120] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-dispatch-blue transition-all w-full shadow-inner tracking-wide">
+        <!-- ─── TAB 2: PATIENT REGISTRY ─── -->
+        <div id="section-registry" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
+                <div class="p-6 border-b border-white/5 flex flex-col sm:row justify-between sm:items-center gap-4 bg-white/[0.02]">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-blue-500"></i> Master Registry
+                    </h2>
+                    <div class="relative w-full sm:w-80">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="db-search" placeholder="Filter Registry..." class="bg-[#0B1120] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500 w-full">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="bg-white/[0.01] text-[10px] font-black uppercase text-slate-500 border-b border-white/5">
+                            <tr>
+                                <th class="px-8 py-4 tracking-widest">ID</th>
+                                <th class="px-8 py-4 tracking-widest text-white">Full Name</th>
+                                <th class="px-8 py-4 tracking-widest">Blood</th>
+                                <th class="px-8 py-4 tracking-widest">Status</th>
+                                <th class="px-8 py-4 tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5" id="admin-table-body"></tbody>
+                    </table>
                 </div>
             </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm border-collapse min-w-[800px]">
-                    <thead class="bg-[#0B1120] text-[10px] font-black uppercase text-slate-500 border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4 tracking-widest pl-6">Identifier</th>
-                            <th class="px-6 py-4 tracking-widest text-white">Full Name</th>
-                            <th class="px-6 py-4 tracking-widest">Blood Type</th>
-                            <th class="px-6 py-4 tracking-widest">Risk Factor</th>
-                            <th class="px-6 py-4 tracking-widest text-right pr-6">Operational Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5" id="admin-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+        </div>
+
+        <!-- ─── TAB 3: ACTIVITY LOGS ─── -->
+        <div id="section-logs" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-slate-900/40 border border-white/5 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
+                <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
+                        <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i> Activity Telemetry
+                    </h2>
+                    <button onclick="refreshLogs()" class="p-2 hover:bg-white/5 rounded-lg transition-colors"><i data-lucide="refresh-cw" class="w-4 h-4 text-slate-500"></i></button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-white/[0.01] border-b border-white/5 text-[9px] font-black uppercase text-slate-500">
+                                <th class="px-8 py-4 tracking-widest">Time (UTC)</th>
+                                <th class="px-8 py-4 tracking-widest">Event Type</th>
+                                <th class="px-8 py-4 tracking-widest">Identifier</th>
+                                <th class="px-8 py-4 tracking-widest">Context / Geo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-log-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
     </main>
 
-    <!-- Global CSS fixes for Admin innerHTML JS injections -->
-    <style>
-        /* Force DataTable elements injected by admin.js to fit dark mode better */
-        #admin-table-body td {
-            color: #94A3B8;
-        }
-        #admin-table-body .text-slate-500 {
-            color: #64748B !important; 
-        }
-        #admin-table-body .bg-slate-900 {
-            background-color: #0F172A !important;
-            border-color: #1E293B !important;
-        }
-    </style>
-
-    <!-- Project Logic -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/admin.js"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Re-init map manually on load to ensure bounds are correct for xl layouts
-            setTimeout(() => {
-                if(window.adminMap) {
-                    window.adminMap.invalidateSize();
-                }
-            }, 500);
-        });
-    </script>
 </body>
 </html>

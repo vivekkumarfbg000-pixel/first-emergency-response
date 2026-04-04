@@ -64,12 +64,15 @@ const Auth = {
         if (error) {
             console.error('[Auth] SignIn error:', error);
             if (error.message.includes('Email not confirmed')) {
-                throw new Error('Please confirm your email address before signing in.');
+                throw new Error('Email verification required. Please check your inbox OR click the "Resend Link" button below to try again.');
+            }
+            if (error.status === 429) {
+                throw new Error('Too many attempts. Please wait a few minutes before trying again.');
             }
             if (error.message.includes('Invalid login credentials')) {
-                throw new Error('Invalid email or password. Please try again.');
+                throw new Error('Invalid email or password. Please verify your credentials.');
             }
-            throw error;
+            throw new Error(error.message || 'Unable to sign in. Please try again.');
         }
 
         console.log('[Auth] SignIn success, user:', data?.user?.email);
@@ -139,6 +142,8 @@ const Auth = {
     // ────── RESEND CONFIRMATION ──────
     async resendConfirmation(email) {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
+        console.log('[Auth] Attempting to resend confirmation to:', email);
+        
         const { error } = await window.supabaseClient.auth.resend({
             type: 'signup',
             email: email,
@@ -146,7 +151,17 @@ const Auth = {
                 emailRedirectTo: window.location.origin + '/dashboard.html'
             }
         });
-        if (error) throw error;
+
+        if (error) {
+            console.error('[Auth] Resend Error:', error);
+            if (error.status === 429) {
+                throw new Error('Too many requests. Please wait a few minutes before requesting another link.');
+            }
+            if (error.message.includes('not found')) {
+                throw new Error('User account not found for this email address.');
+            }
+            throw new Error(error.message || 'Error sending confirmation email. Please check your Supabase SMTP settings.');
+        }
         return true;
     }
 };
