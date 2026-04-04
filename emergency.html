@@ -1,919 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚕ CLINICAL PATIENT REPORT | Sehat Point</title>
-    <meta name="description" content="Official Electronic Emergency Medical Record.">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-paper: #f8fafc;
-            --clinical-red: #f43f5e;
-            --clinical-blue: #2563eb;
-            --clinical-slate: #0f172a;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --warning-amber: #f59e0b;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Rescuer View | Sehat Point</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-        /* ─── Language Toggle ─── */
-        .lang-switch {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(8px);
-            padding: 4px;
-            border-radius: 99px;
-            display: flex;
-            gap: 4px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .lang-btn {
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 0.6875rem;
-            font-weight: 800;
-            cursor: pointer;
-            color: white;
-            transition: all 0.2s;
-            border: none;
-            background: transparent;
-        }
-
-        .lang-btn.active {
-            background: var(--clinical-red);
-            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
-        }
-
-        body {
-            background: #e2e8f0;
-            margin: 0;
-            padding: 2rem 1rem;
-            font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-        }
-
-        /* ─── Clinical Toast Notification ─── */
-        .clinical-toast-wrapper {
-            position: fixed;
-            top: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            width: 100%;
-            max-width: 400px;
-            pointer-events: none;
-        }
-
-        .clinical-toast {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.1);
-            animation: toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: auto;
-        }
-
-        .clinical-toast.success { border-left: 4px solid #10b981; }
-        .clinical-toast.error { border-left: 4px solid #f43f5e; }
-        .clinical-toast.info { border-left: 4px solid #3b82f6; }
-
-        @keyframes toastSlideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .clinical-toast.fade-out {
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.4s ease;
-        }
-
-        /* ─── Case File Aesthetics (Elite) ─── */
-        .emergency-card {
-            background: #ffffff;
-            width: 100%;
-            max-width: 800px;
-            min-height: 90vh;
-            padding: 4rem;
-            border: 1px solid #cbd5e1;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.15);
-            border-radius: 8px;
-        }
-
-        /* Paper Texture Effect */
-        .emergency-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
-            opacity: 0.1;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        /* Auth Grid Overlay */
-        .emergency-card::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
-                linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
-            background-size: 30px 30px;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        /* "Verified" Digital Stamp */
-        .clinical-stamp {
-            position: absolute;
-            top: 50px;
-            right: 50px;
-            width: 110px;
-            height: 110px;
-            border: 3px solid var(--clinical-red);
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(15deg);
-            opacity: 0.15;
-            z-index: 20;
-            pointer-events: none;
-            font-weight: 900;
-            color: var(--clinical-red);
-            text-transform: uppercase;
-            text-align: center;
-            line-height: 1.1;
-        }
-        .clinical-stamp span { font-size: 0.625rem; }
-        .clinical-stamp b { font-size: 0.875rem; margin: 2px 0; }
-
-        /* ─── Header ─── */
-        .report-header {
-            position: relative;
-            z-index: 10;
-            margin-bottom: 3rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-
-        .header-bar {
-            width: 5px;
-            background: var(--clinical-red);
-            height: 60px;
-            border-radius: 99px;
-        }
-
-        .patient-name {
-            font-size: 2.75rem;
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            color: var(--clinical-slate);
-            margin: 0;
-            line-height: 1.1;
-        }
-
-        .patient-id-sub {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .p-mono { font-family: 'JetBrains Mono', monospace; color: var(--clinical-slate); }
-
-        /* ─── Vitals Banner ─── */
-        .vitals-banner {
-            position: relative;
-            z-index: 10;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #f1f5f9;
-            border: 2px solid var(--clinical-slate);
-            margin-bottom: 3rem;
-        }
-
-        .vital-item { display: flex; flex-direction: column; }
-        .vital-label { font-size: 0.625rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem; }
-        .vital-value { font-size: 1.125rem; font-weight: 900; color: var(--clinical-slate); font-family: 'JetBrains Mono', monospace; }
-
-        /* ─── Clinical Data Section ─── */
-        .data-section {
-            position: relative;
-            z-index: 10;
-            margin-bottom: 2.5rem;
-        }
-
-        .section-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .clinical-box {
-            background: rgba(15, 23, 42, 0.035);
-            border-left: 6px solid var(--clinical-slate);
-            padding: 1.5rem 2rem;
-            border-radius: 0 16px 16px 0;
-            font-size: 1rem;
-            line-height: 1.7;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-            letter-spacing: -0.01em;
-        }
-
-        /* Elite Categorical Themes (Responder Sync) */
-        .theme-conditions { background: rgba(244, 63, 94, 0.04) !important; border-left-color: #f43f5e !important; color: #991b1b; }
-        .theme-allergies { background: rgba(245, 158, 11, 0.04) !important; border-left-color: #f59e0b !important; color: #92400e; }
-        .theme-medications { background: rgba(34, 197, 94, 0.04) !important; border-left-color: #22c55e !important; color: #065f46; }
-
-        .btn-medical {
-            padding: 1.25rem;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            border-radius: 12px;
-            color: white;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .btn-call { background: #059669; }
-        .btn-ems { background: var(--clinical-red); }
-
-        .btn-medical:hover { filter: brightness(1.1); transform: translateY(-2px); }
-
-        .footer-watermark {
-            position: relative;
-            z-index: 10;
-            margin-top: 4rem;
-            padding-top: 2rem;
-            border-top: 1px dashed #cbd5e1;
-            text-align: center;
-            font-size: 0.625rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        /* Loading State */
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: white;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-        }
-
-        /* ─── First Aid Situational Guides ─── */
-        .first-aid-section {
-            margin-bottom: 2.5rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .first-aid-header {
-            background: #f1f5f9;
-            padding: 1rem 1.5rem;
-            font-weight: 800;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            color: var(--clinical-slate);
-        }
-
-        .guide-grid {
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .guide-card {
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .guide-card:hover { background: #f8fafc; border-color: #e2e8f0; }
-
-        .guide-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.25rem;
-        }
-
-        .guide-name { font-weight: 800; font-size: 0.9375rem; color: var(--clinical-slate); letter-spacing: -0.02em; }
-        .guide-content { font-size: 0.875rem; color: var(--text-muted); display: none; line-height: 1.6; margin-top: 1rem; }
-        .guide-card.open .guide-content { display: block; }
-
-        .guide-action-item {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-        .guide-num {
-            width: 18px; height: 18px;
-            background: var(--clinical-slate);
-            color: white;
-            border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.625rem; font-weight: 800; flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .highlight-guide { border: 2px solid var(--warning-amber) !important; background: #fffcf0; }
-        .highlight-guide .guide-name { color: #92400e; }
-
-        /* ─── Legal Notice ─── */
-        .legal-notice {
-            background: #f0fdf4;
-            border: 1px solid #dcfce7;
-            padding: 1.25rem;
-            border-radius: 12px;
-            margin-top: 2rem;
-        }
-
-        .legal-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 800;
-            font-size: 0.75rem;
-            color: #166534;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-
-        .legal-text { font-size: 0.75rem; line-height: 1.4; color: #166534; opacity: 0.9; }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 0.5rem;
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            clinical: {
+                red: '#ef4444',
+                amber: '#f59e0b',
+                slate: '#0f172a',
+                emerald: '#10b981'
             }
-            .emergency-card {
-                padding: 1.25rem;
-                border: none;
-                border-radius: 0;
-                min-height: 100vh;
-            }
-            .vitals-banner {
-                grid-template-columns: 1fr 1fr;
-                gap: 0.75rem;
-                padding: 1rem;
-                margin-bottom: 2rem;
-            }
-            .action-row {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-            .action-row > a[style*="span 2"] {
-                grid-column: span 1 !important;
-            }
-            .report-header {
-                flex-direction: row;
-                gap: 0.75rem;
-                align-items: flex-start;
-                margin-bottom: 1.5rem;
-            }
-            .header-bar {
-                height: 50px;
-                width: 4px;
-                flex-shrink: 0;
-            }
-            .patient-name {
-                font-size: 1.5rem;
-                word-break: break-word;
-            }
-            .patient-id-sub {
-                flex-wrap: wrap;
-                font-size: 0.625rem;
-                gap: 0.25rem;
-            }
-            .clinical-stamp {
-                display: none;
-            }
-            .vital-value {
-                font-size: 0.9375rem;
-            }
-            .vital-label {
-                font-size: 0.5625rem;
-            }
-            .clinical-box {
-                padding: 1rem;
-                font-size: 0.875rem;
-            }
-            .lang-switch {
-                top: 0.5rem;
-                right: 0.5rem;
-            }
-            .btn-medical {
-                padding: 0.875rem;
-                font-size: 0.75rem;
-            }
-            .first-aid-header {
-                font-size: 0.6875rem;
-            }
+          }
         }
+      }
+    }
+  </script>
 
-        @media (max-width: 380px) {
-            .patient-name {
-                font-size: 1.25rem;
-            }
-            .action-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <style>
+    /* Hide scrollbar for a seamless app-like experience */
+    ::-webkit-scrollbar { display: none; }
+    body { background-color: #e2e8f0; } /* Outer background to frame the mobile view */
+  </style>
 </head>
-<body>
+<body class="font-sans text-slate-900 antialiased flex justify-center min-h-screen py-0 md:py-8">
 
-    <!-- Language Switch -->
-    <div class="lang-switch">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" onclick="setLang('hi')">हिं</button>
-    </div>
-
-    <!-- Elite Loading Screen -->
-    <div id="loader">
-        <div class="loader-icon" style="color: var(--clinical-red);">
-            <i data-lucide="shield-plus" style="width: 48px; height: 48px;"></i>
+  <!-- Mobile App Container (Simulates phone screen on desktop) -->
+  <main class="w-full max-w-[400px] bg-[#f8fafc] min-h-screen relative shadow-2xl md:rounded-[2.5rem] overflow-hidden border-[6px] border-slate-800 md:h-[850px] flex flex-col">
+    
+    <!-- App Content (Scrollable) -->
+    <div class="flex-1 overflow-y-auto pb-48">
+      
+      <!-- Top Navigation & Status -->
+      <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center sticky top-0 z-40 shadow-md">
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <span class="text-[10px] font-bold tracking-widest text-emerald-400 uppercase" id="nav-status">Active Emergency</span>
         </div>
-        <p style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--clinical-slate);">
-            Synchronizing Clinical Database...
+        
+        <!-- Language Toggle -->
+        <div class="flex bg-slate-800 rounded-full p-1 border border-slate-700">
+          <button onclick="setLang('en')" id="btn-en" class="text-[10px] font-bold px-3 py-1 bg-white text-slate-900 rounded-full shadow-sm transition-all">EN</button>
+          <button onclick="setLang('hi')" id="btn-hi" class="text-[10px] font-bold px-3 py-1 text-slate-400 hover:text-white transition-all">हिन्दी</button>
+        </div>
+      </div>
+
+      <!-- Identity Hero Section -->
+      <div class="bg-white px-5 pt-8 pb-6 border-b border-slate-200">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1" id="lbl-identity-title">
+          <i data-lucide="user" class="w-3 h-3"></i> Patient Identity
         </p>
+        <h1 class="text-3xl font-black tracking-tight text-slate-900 uppercase leading-none mb-1" id="val-name">Loading...</h1>
+        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-6" id="val-id">ID: --</p>
+        
+        <!-- Massive Blood Group Display -->
+        <div class="flex items-stretch gap-3">
+          <div class="flex-1 bg-red-50 rounded-2xl border-2 border-red-100 p-4 flex flex-col items-center justify-center relative overflow-hidden">
+            <i data-lucide="droplet" class="w-16 h-16 text-red-500/10 absolute -right-2 -bottom-2"></i>
+            <span class="text-[10px] font-extrabold text-red-600 uppercase tracking-widest mb-1" id="lbl-blood">Blood Group</span>
+            <span class="text-5xl font-black text-red-600 tracking-tighter" id="val-blood">--</span>
+          </div>
+          
+          <div class="flex-1 flex flex-col gap-3">
+            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3 flex-1 flex flex-col justify-center">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="lbl-age">Age</span>
+              <span class="text-xl font-black text-slate-800" id="val-age-display">--<span class="text-sm text-slate-500 font-bold ml-1" id="lbl-yrs">YRS</span></span>
+            </div>
+            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-3 flex-1 flex flex-col justify-center">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="lbl-gender">Gender</span>
+              <span class="text-xl font-black text-slate-800" id="val-gender">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medical History Tags -->
+      <div class="px-5 py-6 space-y-5">
+        
+        <!-- Critical Allergies (Red) -->
+        <div id="section-allergies" class="bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm relative overflow-hidden hidden">
+          <div class="absolute top-0 left-0 w-1.5 h-full bg-red-500"></div>
+          <h2 class="text-[11px] font-black text-red-800 uppercase tracking-widest mb-3 flex items-center gap-1.5" id="lbl-allergies">
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-red-600"></i> Critical Allergies
+          </h2>
+          <div id="list-allergies" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Chronic Conditions (Amber) -->
+        <div id="section-conditions" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm relative overflow-hidden hidden">
+          <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
+          <h2 class="text-[11px] font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-1.5" id="lbl-conditions">
+            <i data-lucide="activity" class="w-4 h-4 text-amber-600"></i> Chronic Conditions
+          </h2>
+          <div id="list-conditions" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Active Medications (Slate/Neutral) -->
+        <div id="section-meds" class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden hidden">
+          <div class="absolute top-0 left-0 w-1.5 h-full bg-slate-400"></div>
+          <h2 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5" id="lbl-meds">
+            <i data-lucide="pill" class="w-4 h-4 text-slate-400"></i> Active Medications
+          </h2>
+          <p class="text-sm font-semibold text-slate-700 leading-relaxed" id="val-meds">--</p>
+        </div>
+
+      </div>
+
+      <!-- Legal Protection Reassurance -->
+      <div class="px-5 mb-6">
+        <div class="bg-[#ecfdf5] border border-emerald-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="bg-emerald-100 p-1.5 rounded-full">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            </div>
+            <h3 class="text-xs font-black text-emerald-800 uppercase tracking-widest" id="sam-title">Legally Protected</h3>
+          </div>
+          <p class="text-[11px] text-emerald-700 font-medium leading-relaxed" id="sam-text">
+            Under the Indian Good Samaritan Law, bystanders assisting accident victims are legally protected from civil and criminal liability.
+          </p>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Clinical Toast Container -->
-    <div id="toast-container" class="clinical-toast-wrapper"></div>
-
-    <!-- Main Report Container -->
-    <div class="emergency-card" id="main-card" style="display: none;">
-        <!-- Clinical Stamp -->
-        <div class="clinical-stamp">
-            <span>Official</span>
-            <b>VERIFIED</b>
-            <span>Clinical Record</span>
-        </div>
-
-        <header class="report-header">
-            <div class="header-bar"></div>
-            <div>
-                <h1 class="patient-name" id="p-name">--</h1>
-                <div class="patient-id-sub">
-                    STATUS: <span style="color: #059669;">ACTIVE</span> 
-                    <span style="opacity: 0.3;">|</span> 
-                    ID: <span id="p-id" class="p-mono">--</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Dynamic Vitals -->
-        <div class="vitals-banner">
-            <div class="vital-item">
-                <div class="vital-label">Blood Group</div>
-                <div class="vital-value" id="p-blood" style="color: var(--clinical-red);">--</div>
-            </div>
-            <div class="vital-item">
-                <div class="vital-label">Age</div>
-                <div class="vital-value" id="p-age">--</div>
-            </div>
-            <div class="vital-item">
-                <div class="vital-label">Gender</div>
-                <div class="vital-value" id="p-gender">--</div>
-            </div>
-            <div class="vital-item">
-                <div class="vital-label">Organ Donor</div>
-                <div class="vital-value" id="p-donor">--</div>
-            </div>
-        </div>
-
-        <!-- Comprehensive Diagnostic Health Summary -->
-        <div class="data-section">
-            <div class="section-label"><i data-lucide="clipboard-list" style="width: 14px;"></i> Diagnostic Health Summary</div>
-            <div class="clinical-box" id="p-summary">--</div>
-        </div>
-
-        <div class="data-section">
-            <div class="section-label"><i data-lucide="activity" style="width: 14px;"></i> Clinical Conditions</div>
-            <div class="clinical-box" id="p-conditions">--</div>
-        </div>
-
-        <div class="data-section">
-            <div class="section-label"><i data-lucide="alert-octagon" style="width: 14px;"></i> Critical Allergies</div>
-            <div class="clinical-box alert-box" id="p-allergies">--</div>
-        </div>
-
-        <div class="data-section">
-            <div class="section-label"><i data-lucide="pill" style="width: 14px;"></i> <span data-i18n="meds">Active Medications</span></div>
-            <div class="clinical-box" id="p-medications">--</div>
-        </div>
-
-        <!-- Situational First Aid Guides -->
-        <div class="first-aid-section">
-            <div class="first-aid-header">
-                <i data-lucide="heart-pulse"></i>
-                <span data-i18n="fa-guide">Situational First Aid Guide</span>
-            </div>
-            <div class="guide-grid" id="guide-container">
-                <!-- Heart Attack -->
-                <div class="guide-card" id="guide-heart" onclick="toggleGuide(this)">
-                    <div class="guide-top">
-                        <span class="guide-name" data-i18n="fa-heart">Heart Attack / Chest Pain</span>
-                        <i data-lucide="chevron-down" style="width: 14px;"></i>
-                    </div>
-                    <div class="guide-content">
-                        <div class="guide-action-item"><div class="guide-num">1</div><p data-i18n="fa-heart-1">Call 112 immediately. Do not delay.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">2</div><p data-i18n="fa-heart-2">Keep patient seated, lean them back slightly if possible.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">3</div><p data-i18n="fa-heart-3">Loosen tight clothing and keep them calm.</p></div>
-                    </div>
-                </div>
-                <!-- CPR -->
-                <div class="guide-card" onclick="toggleGuide(this)">
-                    <div class="guide-top">
-                        <span class="guide-name" data-i18n="fa-cpr">Unconscious / Not Breathing (CPR)</span>
-                        <i data-lucide="chevron-down" style="width: 14px;"></i>
-                    </div>
-                    <div class="guide-content">
-                        <div class="guide-action-item"><div class="guide-num">1</div><p data-i18n="fa-cpr-1">Start chest compressions: Push HARD and FAST in center of chest.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">2</div><p data-i18n="fa-cpr-2">Rate: 100-120 per minute (Stayin' Alive beat).</p></div>
-                        <div class="guide-action-item"><div class="guide-num">3</div><p data-i18n="fa-cpr-3">Depth: At least 2 inches. Allow full chest recoil.</p></div>
-                    </div>
-                </div>
-                <!-- Diabetic -->
-                <div class="guide-card" id="guide-diabetes" onclick="toggleGuide(this)">
-                    <div class="guide-top">
-                        <span class="guide-name" data-i18n="fa-diabetes">Diabetic Emergency (Sugar Low)</span>
-                        <i data-lucide="chevron-down" style="width: 14px;"></i>
-                    </div>
-                    <div class="guide-content">
-                        <div class="guide-action-item"><div class="guide-num">1</div><p data-i18n="fa-diabetes-1">If conscious: Give sugar, juice, or candy immediately.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">2</div><p data-i18n="fa-diabetes-2">If unconscious: Do NOT give food or drink. Call 112.</p></div>
-                    </div>
-                </div>
-                <!-- Seizure -->
-                <div class="guide-card" id="guide-seizure" onclick="toggleGuide(this)">
-                    <div class="guide-top">
-                        <span class="guide-name" data-i18n="fa-seizure">Seizure / Epilepsy</span>
-                        <i data-lucide="chevron-down" style="width: 14px;"></i>
-                    </div>
-                    <div class="guide-content">
-                        <div class="guide-action-item"><div class="guide-num">1</div><p data-i18n="fa-seizure-1">Clear area of sharp objects. Cushion patient's head.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">2</div><p data-i18n="fa-seizure-2">Turn them gently on their side once shaking stops.</p></div>
-                        <div class="guide-action-item"><div class="guide-num">3</div><p data-i18n="fa-seizure-3">Stay with them until they regain consciousness.</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Emergency Actions -->
-        <div class="action-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-            <a href="#" id="p-call-kin" class="btn-medical btn-call">
-                <i data-lucide="phone"></i> <span data-i18n="call-family">Call Family</span>
-            </a>
-            <a href="tel:112" class="btn-medical btn-ems">
-                <i data-lucide="truck"></i> <span data-i18n="ambulance">Ambulance (112)</span>
-            </a>
-            <a href="https://www.google.com/maps/search/hospital+near+me/" target="_blank" class="btn-medical" style="background: var(--clinical-blue); grid-column: span 2;">
-                <i data-lucide="map-pin"></i> <span data-i18n="near-hospital">Navigate to Nearest Hospital</span>
-            </a>
-        </div>
-
-        <!-- Good Samaritan Notice -->
-        <div class="legal-notice">
-            <div class="legal-title">
-                <i data-lucide="shield-check"></i>
-                <span data-i18n="gs-title">You are Legally Protected</span>
-            </div>
-            <p class="legal-text" data-i18n="gs-text">
-                Under the <b>Good Samaritan Law (India)</b>, bystanders who assist accident victims are protected from any civil or criminal liability. You are not required to disclose your name or personal details.
-            </p>
-        </div>
-
-        <div class="footer-watermark">
-            E-MEDICAL REPORT ID: <span id="p-id-footer" class="p-mono">--</span> <br>
-            GENERATED BY SEHAT POINT EMERGENCY NETWORK • DO NOT TAMPER
-        </div>
+    <!-- STICKY BOTTOM ACTION BAR -->
+    <div class="absolute bottom-0 left-0 right-0 z-50 p-4 bg-white/90 backdrop-blur-xl border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <a href="tel:112" class="flex flex-col items-center justify-center gap-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white py-3.5 px-2 rounded-2xl font-bold transition-all shadow-lg shadow-red-500/30">
+          <i data-lucide="ambulance" class="w-6 h-6"></i>
+          <span class="text-[10px] tracking-widest uppercase" id="btn-112">Call 112</span>
+        </a>
+        <a href="#" id="btn-call-family" class="flex flex-col items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white py-3.5 px-2 rounded-2xl font-bold transition-all shadow-lg shadow-slate-900/20">
+          <i data-lucide="phone-call" class="w-6 h-6"></i>
+          <span class="text-[10px] tracking-widest uppercase" id="btn-family">Call Family</span>
+        </a>
+      </div>
+      <button onclick="navigateHospital()" class="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 py-3.5 rounded-xl font-bold transition-colors hover:bg-blue-100 active:scale-95">
+        <i data-lucide="map-pin" class="w-4 h-4"></i>
+        <span class="text-xs tracking-wider uppercase" id="btn-hospital">Navigate to Hospital</span>
+      </button>
     </div>
+  </main>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/storage.js"></script>
-    <script>
-        // i18n Dictionary
-        const i18n = {
-            en: {
-                "welcome": "Synchronizing Clinical Database...",
-                "active": "ACTIVE",
-                "bg": "Blood Group",
-                "age": "Age",
-                "gen": "Gender",
-                "donor": "Organ Donor",
-                "diag": "Diagnostic Health Summary",
-                "cond": "Clinical Conditions",
-                "allergy": "Critical Allergies",
-                "meds": "Active Medications",
-                "fa-guide": "Situational First Aid Guide",
-                "fa-heart": "Heart Attack / Chest Pain",
-                "fa-heart-1": "Call 112 immediately. Do not delay.",
-                "fa-heart-2": "Keep patient seated, lean them back slightly if possible.",
-                "fa-heart-3": "Loosen tight clothing and keep them calm.",
-                "fa-cpr": "Unconscious / Not Breathing (CPR)",
-                "fa-cpr-1": "Start chest compressions: Push HARD and FAST in center of chest.",
-                "fa-cpr-2": "Rate: 100-120 per minute (Stayin' Alive beat).",
-                "fa-cpr-3": "Depth: At least 2 inches. Allow full chest recoil.",
-                "fa-diabetes": "Diabetic Emergency (Sugar Low)",
-                "fa-diabetes-1": "If conscious: Give sugar, juice, or candy immediately.",
-                "fa-diabetes-2": "If unconscious: Do NOT give food or drink. Call 112.",
-                "fa-seizure": "Seizure / Epilepsy",
-                "fa-seizure-1": "Clear area of sharp objects. Cushion patient's head.",
-                "fa-seizure-2": "Turn them gently on their side once shaking stops.",
-                "fa-seizure-3": "Stay with them until they regain consciousness.",
-                "call-family": "Call Family",
-                "ambulance": "Ambulance (112)",
-                "near-hospital": "Navigate to Nearest Hospital",
-                "gs-title": "You are Legally Protected",
-                "gs-text": "Under the Good Samaritan Law (India), bystanders who assist accident victims are protected from any civil or criminal liability. You are not required to disclose your name or personal details.",
-                "sos-msg": "NOTIFYING EMERGENCY CONTACTS...",
-                "sos-done": "CONTACTS NOTIFIED VIA GPS",
-                "stable": "Stable clinical history",
-                "no-allergy": "No known hazards (Allergies)",
-                "no-meds": "No active medication cycle"
-            },
-            hi: {
-                "welcome": "कोशिश करें... क्लिनिकल डेटा लोड हो रहा है...",
-                "active": "सक्रिय",
-                "bg": "ब्लड ग्रुप",
-                "age": "आयु",
-                "gen": "लिंग",
-                "donor": "अंग दाता",
-                "diag": "नैदानिक स्वास्थ्य सारांश",
-                "cond": "चिकित्सा स्थितियाँ",
-                "allergy": "गंभीर एलर्जी",
-                "meds": "सक्रिय दवाएं",
-                "fa-guide": "प्राथमिक चिकित्सा मार्गदर्शिका",
-                "fa-heart": "दिल का दौरा / सीने में दर्द",
-                "fa-heart-1": "तुरंत 112 पर कॉल करें। देरी न करें।",
-                "fa-heart-2": "मरीज को बैठाकर रखें, यदि संभव हो तो उन्हें थोड़ा पीछे झुकाएं।",
-                "fa-heart-3": "तंग कपड़े ढीले करें और उन्हें शांत रखें।",
-                "fa-cpr": "बेहोश / सांस नहीं लेना (CPR)",
-                "fa-cpr-1": "छाती को दबाना शुरू करें: छाती के बीच में जोर से और तेजी से दबाएं।",
-                "fa-cpr-2": "दर: 100-120 प्रति मिनट (Stayin' Alive की लय)।",
-                "fa-cpr-3": "गहराई: कम से कम 2 इंच। छाती को पूरी तरह वापस आने दें।",
-                "fa-diabetes": "मधुमेह आपातकाल (शुगर कम)",
-                "fa-diabetes-1": "यदि होश में है: तुरंत चीनी, रस या कैंडी दें।",
-                "fa-diabetes-2": "यदि बेहोश है: कोई भोजन या पेय न दें। 112 पर कॉल करें।",
-                "fa-seizure": "मिर्गी / दौरे",
-                "fa-seizure-1": "नुकीली वस्तुओं को क्षेत्र से हटा दें। मरीज के सिर के नीचे तकिया रखें।",
-                "fa-seizure-2": "दौड़ा रुकने के बाद उन्हें धीरे से करवट दिलाएं।",
-                "fa-seizure-3": "होश आने तक उनके साथ रहें।",
-                "call-family": "परिवार को कॉल करें",
-                "ambulance": "एम्बुलेंस (112)",
-                "near-hospital": "निकटतम अस्पताल खोजें",
-                "gs-title": "आप कानूनी रूप से सुरक्षित हैं",
-                "gs-text": "गुड सेमेरिटन कानून (भारत) के तहत, दुर्घटना पीड़ितों की मदद करने वाले लोगों को किसी भी नागरिक या आपराधिक दायित्व से बचाया जाता है। आपको अपना नाम बताने की आवश्यकता नहीं है।",
-                "sos-msg": "आपातकालीन संपर्कों को सूचित किया जा रहा है...",
-                "sos-done": "GPS द्वारा संपर्कों को सूचित किया गया",
-                "stable": "स्थिर नैदानिक इतिहास",
-                "no-allergy": "कोई ज्ञात एलर्जी नहीं",
-                "no-meds": "कोई सक्रिय दवा चक्र नहीं"
-            }
-        };
+  <!-- Supabase + Storage -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script>
+    const TRANSLATIONS = {
+        en: {
+            nav_status: 'Active Emergency',
+            lbl_identity: 'Patient Identity',
+            lbl_blood: 'Blood Group',
+            lbl_age: 'Age',
+            lbl_yrs: 'YRS',
+            lbl_gender: 'Gender',
+            lbl_allergies: 'Critical Allergies',
+            lbl_conditions: 'Chronic Conditions',
+            lbl_meds: 'Active Medications',
+            sam_title: 'Legally Protected',
+            sam_text: 'Under the Indian Good Samaritan Law, bystanders assisting accident victims are legally protected from civil and criminal liability. You are not required to disclose your identity.',
+            btn_112: 'Call 112',
+            btn_family: 'Call Family',
+            btn_hospital: 'Navigate to Hospital'
+        },
+        hi: {
+            nav_status: 'सक्रिय आपातकाल',
+            lbl_identity: 'मरीज की पहचान',
+            lbl_blood: 'रक्त समूह',
+            lbl_age: 'आयु',
+            lbl_yrs: 'वर्ष',
+            lbl_gender: 'लिंग',
+            lbl_allergies: 'गंभीर एलर्जी',
+            lbl_conditions: 'पुरानी बीमारियां',
+            lbl_meds: 'सक्रिय दवाएं',
+            sam_title: 'कानूनी रूप से सुरक्षित',
+            sam_text: 'भारतीय नेक मददगार कानून के तहत, दुर्घटना पीड़ितों की सहायता करने वाले राहगीरों को नागरिक और आपराधिक दायित्व से कानूनी रूप से सुरक्षित रखा गया है।',
+            btn_112: '112 पर कॉल करें',
+            btn_family: 'परिवार को कॉल करें',
+            btn_hospital: 'अस्पताल नेविगेट करें'
+        }
+    };
 
-        function setLang(lang) {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (i18n[lang][key]) el.textContent = i18n[lang][key];
-            });
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(lang));
-            });
-            localStorage.setItem('sehat_lang', lang);
+    let currentLang = 'en';
+    let patientData = null;
+
+    function setLang(lang) {
+        currentLang = lang;
+        const btnEn = document.getElementById('btn-en');
+        const btnHi = document.getElementById('btn-hi');
+        
+        if (lang === 'en') {
+            btnEn.className = 'text-[10px] font-bold px-3 py-1 bg-white text-slate-900 rounded-full shadow-sm';
+            btnHi.className = 'text-[10px] font-bold px-3 py-1 text-slate-400 hover:text-white transition-all';
+        } else {
+            btnHi.className = 'text-[10px] font-bold px-3 py-1 bg-white text-slate-900 rounded-full shadow-sm';
+            btnEn.className = 'text-[10px] font-bold px-3 py-1 text-slate-400 hover:text-white transition-all';
         }
 
-        function toggleGuide(el) {
-            el.classList.toggle('open');
-            const icon = el.querySelector('i');
-            if (el.classList.contains('open')) {
-                icon.setAttribute('data-lucide', 'chevron-up');
-            } else {
-                icon.setAttribute('data-lucide', 'chevron-down');
-            }
-            lucide.createIcons();
+        const t = TRANSLATIONS[lang];
+        txt('nav-status', t.nav_status);
+        txt('lbl-identity-title', t.lbl_identity);
+        txt('lbl-blood', t.lbl_blood);
+        txt('lbl-age', t.lbl_age);
+        txt('lbl-yrs', t.lbl_yrs);
+        txt('lbl-gender', t.lbl_gender);
+        txt('lbl-allergies', t.lbl_allergies);
+        txt('lbl-conditions', t.lbl_conditions);
+        txt('lbl-meds', t.lbl_meds);
+        txt('sam-title', t.sam_title);
+        txt('sam-text', t.sam_text);
+        txt('btn-112', t.btn_112);
+        txt('btn-family', t.btn_family);
+        txt('btn-hospital', t.btn_hospital);
+
+        if (patientData) renderData(patientData);
+    }
+
+    const txt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    async function init() {
+        lucide.createIcons();
+        setLang('en');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedData = urlParams.get('d');
+        const supabaseId = urlParams.get('sid');
+
+        if (encodedData) {
+            patientData = window.Storage.decodeFromURL(encodedData);
+            renderData(patientData);
+        } else if (supabaseId) {
+            patientData = await window.Storage.getPatientById(supabaseId);
+            renderData(patientData);
+        } else {
+            txt('val-name', 'No Profile Found');
         }
 
-        function showClinicalToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `clinical-toast ${type}`;
-            
-            const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
-            toast.innerHTML = `
-                <i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>
-                <span>${message}</span>
-            `;
-            
-            container.appendChild(toast);
-            lucide.createIcons();
-            
-            setTimeout(() => {
-                toast.classList.add('fade-out');
-                setTimeout(() => toast.remove(), 400);
-            }, 5000);
+        if (patientData) {
+            // Trigger SOS for Admin Map
+            window.Storage.triggerSOSAlert(patientData, 0, 0); 
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const savedLang = localStorage.getItem('sehat_lang') || 'en';
-            setLang(savedLang);
-            
-            // Show background processing status
-            showClinicalToast("Initializing secure profile synchronization...", "info");
-            
-            const params = new URLSearchParams(window.location.search);
-            let patient = null;
+    function renderData(p) {
+        if (!p) return;
+        txt('val-name', p.fullName || 'Unknown Patient');
+        txt('val-id', `ID: ${p.patientId || p.id || 'EMS-REF'}`);
+        txt('val-blood', p.bloodGroup || '--');
+        txt('val-age-display', p.age || '--');
+        txt('val-gender', p.gender || 'Other');
 
-            // Priority 1: Cloud UUID (sid) from new QR format
-            const sid = params.get('sid');
-            if (sid) {
-                try {
-                    patient = await window.Storage.getPatientById(sid);
-                    if (patient) console.log('[Emergency] Loaded from cloud by UUID:', sid);
-                } catch (e) { console.warn('[Emergency] Cloud lookup failed for sid:', sid); }
-            }
+        // Allergies
+        const algSec = document.getElementById('section-allergies');
+        const algList = document.getElementById('list-allergies');
+        if (p.allergies) {
+            algSec.classList.remove('hidden');
+            algList.innerHTML = p.allergies.split(',').map(a => `
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-red-700 border border-red-100 shadow-sm">${a.trim()}</span>
+            `).join('');
+        } else { algSec.classList.add('hidden'); }
 
-            // Priority 2: Encoded data blob in URL (offline QR)
-            const data = params.get('d') || params.get('data');
-            if (!patient && data) {
-                try {
-                    patient = window.Storage.decodeFromURL(data);
-                    if (patient) console.log('[Emergency] Decoded from QR blob, name:', patient.fullName);
-                } catch (e) {}
-            }
+        // Conditions
+        const conSec = document.getElementById('section-conditions');
+        const conList = document.getElementById('list-conditions');
+        if (p.conditions) {
+            conSec.classList.remove('hidden');
+            conList.innerHTML = p.conditions.split(',').map(c => `
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold bg-white text-amber-800 border border-amber-100 shadow-sm">${c.trim()}</span>
+            `).join('');
+        } else { conSec.classList.add('hidden'); }
 
-            // Priority 3: EMS-XXXXXX patient ID
-            const id = params.get('id');
-            if (!patient && id) {
-                try {
-                    patient = await window.Storage.getPatientById(id);
-                } catch (e) {}
-            }
+        // Medications
+        const medSec = document.getElementById('section-meds');
+        if (p.medications) {
+            medSec.classList.remove('hidden');
+            txt('val-meds', p.medications);
+        } else { medSec.classList.add('hidden'); }
 
-            if (!patient) {
-                document.getElementById('loader').innerHTML = `
-                    <p style="color: var(--clinical-red); font-weight:900;">RECORD NOT FOUND</p>
-                    <a href="index.html" style="font-size:0.75rem; color: var(--text-muted);">Return Home</a>
-                `;
-                return;
-            }
+        // Action Buttons
+        const famCall = document.getElementById('btn-call-family');
+        famCall.href = `tel:${p.contact1_Phone || p.contact1_phone || ''}`;
 
-            // Background SOS Triggering
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    try {
-                        await window.Storage.triggerSOSAlert(patient, latitude, longitude);
-                        const hasEmail = patient.contact1_Email || '';
-                        if (hasEmail) {
-                            showClinicalToast(`✅ SOS CONTACT NOTIFIED: ${hasEmail.split('@')[0].toUpperCase()}`, 'success');
-                        } else {
-                            showClinicalToast("✅ EMERGENCY PROTOCOL ACTIVATED", 'success');
-                        }
-                    } catch (e) {
-                        console.error('[SOS] Alert trigger failed:', e);
-                    }
-                }, (err) => {
-                    window.Storage.triggerSOSAlert(patient, null, null);
-                    showClinicalToast("⚠️ GPS UNAVAILABLE: Alert sent without location", 'info');
-                });
-            } else {
-                window.Storage.triggerSOSAlert(patient, null, null);
-            }
+        lucide.createIcons();
+    }
 
-            // Populate Fields
-            document.getElementById('p-name').textContent = patient.fullName.toUpperCase();
-            document.getElementById('p-id').textContent = patient.patientId || 'EMS-OFFLINE';
-            document.getElementById('p-id-footer').textContent = patient.id || patient.patientId;
-            document.getElementById('p-blood').textContent = patient.bloodGroup;
-            document.getElementById('p-age').textContent = (patient.age ? patient.age + "Y" : "N/A");
-            document.getElementById('p-gender').textContent = patient.gender || "N/A";
-            document.getElementById('p-donor').textContent = patient.organDonor ? "YES" : "NO";
-            
-            // Highlight relevant guides
-            const conditions = (patient.conditions || '').toLowerCase();
-            if (conditions.includes('diabet')) document.getElementById('guide-diabetes').classList.add('highlight-guide');
-            if (conditions.includes('heart') || conditions.includes('bp') || conditions.includes('tension')) document.getElementById('guide-heart').classList.add('highlight-guide');
-            if (conditions.includes('epilep') || conditions.includes('seizure')) document.getElementById('guide-seizure').classList.add('highlight-guide');
+    function navigateHospital() {
+        window.open('https://www.google.com/maps/search/nearest+hospital', '_blank');
+    }
 
-            // Categorical Rendering
-            const condEl = document.getElementById('p-conditions');
-            const algEl = document.getElementById('p-allergies');
-            const medEl = document.getElementById('p-medications');
-
-            if (patient.conditions && patient.conditions.toLowerCase() !== 'none') {
-                condEl.textContent = patient.conditions;
-                condEl.classList.add('theme-conditions');
-            } else {
-                condEl.setAttribute('data-i18n', 'stable');
-            }
-
-            if (patient.allergies && patient.allergies.toLowerCase() !== 'none') {
-                algEl.textContent = patient.allergies;
-                algEl.classList.add('theme-allergies');
-            } else {
-                algEl.setAttribute('data-i18n', 'no-allergy');
-            }
-
-            if (patient.medications && patient.medications.toLowerCase() !== 'none') {
-                medEl.textContent = patient.medications;
-                medEl.classList.add('theme-medications');
-            } else {
-                medEl.setAttribute('data-i18n', 'no-meds');
-            }
-            
-            const summary = `
-                Patient <b>${patient.fullName}</b> is a ${patient.age ? patient.age + " year old" : ""} ${patient.gender || "patient"}. 
-                Clinical history indicates <b>${patient.conditions || "no chronic illness"}</b>. 
-                ${patient.allergies ? `CRITICAL ALERT: Patient has known allergies to <b>${patient.allergies}</b>. ` : "No drug or food allergies reported."}
-                ${patient.medications ? `Current medication cycle: <b>${patient.medications}</b>.` : "No active medication cycle detected."}
-            `;
-            document.getElementById('p-summary').innerHTML = summary;
-
-            if (patient.contact1_Phone) {
-                document.getElementById('p-call-kin').href = `tel:${patient.contact1_Phone}`;
-            }
-
-            setLang(localStorage.getItem('sehat_lang') || 'en');
-
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('main-card').style.display = 'block';
-                lucide.createIcons();
-            }, 800);
-        });
-    </script>
+    init();
+  </script>
 </body>
 </html>
