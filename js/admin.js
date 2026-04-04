@@ -12,33 +12,15 @@
     let _realtimeChannel = null;
     let _errorLogs = [];
 
-    // ─── Diagnostic HUD ───
-    function logError(msg, err) {
-        const errorMsg = `[Tactical Error] ${msg}: ${err?.message || err}`;
-        console.error(errorMsg);
-        _errorLogs.push(errorMsg);
-        const hud = $('admin-debug-log');
-        if (hud) {
-            hud.innerHTML += `<div class="mb-1 text-red-400"># ${errorMsg}</div>`;
-        }
-    }
-
-    window.onerror = function(msg, url, line) {
-        logError(`Runtime Error at ${line}`, msg);
-        return false;
-    };
-
     document.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'd') {
-            const hud = $('admin-debug-log');
-            if (hud) hud.classList.toggle('hidden');
+            console.log('[MasterDispatch] Diagnostic dump requested.');
         }
     });
 
     // ─── Initialization ───
     async function init() {
-        console.log('[MasterDispatch] v12.1 Stability Mode: Starting Sequence...');
-        logError('INFO', 'Initialization sequence started.');
+        console.log('[MasterDispatch] v12.2 Stability Mode: Global Ready...');
         
         // 1. Dependency Waiter
         let retries = 0;
@@ -74,11 +56,13 @@
         }
         
         // 3. Initialize Tactical Map (Wrapped in Safety)
-        try {
-            initMap();
-        } catch (e) {
-            logError('Map Init Failure', e);
-        }
+        setTimeout(() => {
+            try {
+                initMap();
+            } catch (e) {
+                console.error('[MasterDispatch] Map initialization deferred/failed:', e);
+            }
+        }, 500);
         
         setupRealtime();
 
