@@ -105,6 +105,23 @@ const Storage = {
         }
     },
 
+    buildQRPayload: function (patient) {
+        if (!patient) return '';
+        const url = this.buildEmergencyUrl(patient);
+        const name = patient.fullName || 'Emergency Profile';
+        const phone = patient.contact1_Phone || patient.contact1_phone || '';
+        const note = `Blood: ${patient.bloodGroup || 'Unspecified'}\\nAllergies: ${patient.allergies || 'None listed'}`;
+        
+        return `BEGIN:VCARD
+VERSION:3.0
+N:${name};;;
+FN:${name} (Medical Emergency)
+TEL;TYPE=CELL,VOICE:${phone}
+URL:${url}
+NOTE:${note}
+END:VCARD`;
+    },
+
     seed: function () {
         // Initial setup if needed
     },
@@ -351,17 +368,26 @@ const Storage = {
 
     triggerSOSAlert: async function(patient, lat, long) {
         const patientId = typeof patient === 'string' ? patient : (patient.patientId || patient.id);
-        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', 'GPS', lat, long);
+        const safeLat = typeof lat === 'number' ? lat : null;
+        const safeLong = typeof long === 'number' ? long : null;
+        
+        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Unknown', safeLat, safeLong);
         if (this.db() && typeof patient === 'object') {
             try {
                 const alertData = {
                     patient_id: patientId, patient_name: patient.fullName, patient_blood: patient.bloodGroup,
                     family_email: patient.contact1_Email || patient.contact1_email, family_name: patient.contact1_Name,
-                    gps_lat: lat, gps_long: long, google_maps_link: lat ? `https://www.google.com/maps?q=${lat},${long}` : '', email_sent: false
+                    gps_lat: safeLat, gps_long: safeLong, google_maps_link: safeLat ? `https://www.google.com/maps?q=${safeLat},${safeLong}` : '', email_sent: false
                 };
                 const { error } = await this.db().from('emergency_alerts').insert([alertData]);
-                if (!error) await this.db().functions.invoke('send-sos-email', { body: alertData });
-            } catch (err) { }
+                if (!error) {
+                    try {
+                        await this.db().functions.invoke('send-sos-email', { body: alertData });
+                    } catch (e) {
+                         // silently handle missing EDGE function in development
+                    }
+                }
+            } catch (err) { console.error('[Storage] SOS Alert Error', err); }
         }
         return true;
     },

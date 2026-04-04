@@ -158,9 +158,9 @@ window.CardGenerator = {
         ctx.closePath();
 
         try {
-            // Use the shared buildEmergencyUrl for consistent QR links
+            // Use the shared buildQRPayload for robust offline vCard QR
             const qrPayload = window.Storage
-                ? window.Storage.buildEmergencyUrl(p)
+                ? window.Storage.buildQRPayload(p)
                 : (window.SITE_BASE_URL || window.location.origin + '/') + 'emergency.html?id=' + (p.patientId || p.id);
             
             const qrcLib = window.QRCode || (typeof QRCode !== 'undefined' ? QRCode : null);

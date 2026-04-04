@@ -36,7 +36,7 @@
             $('db-search').addEventListener('input', (e) => renderMasterTable(e.target.value.toLowerCase()));
         }
 
-        // Support Mobile Section Switching via global hook
+        // Support global UI listeners if needed
         window.currentSection = 'monitoring';
     }
 
@@ -66,11 +66,7 @@
                 refreshMetrics();
                 dropMapMarker(payload.new);
                 
-                // Pulse Mobile Nav if on another screen
-                if (window.innerWidth < 768 && window.currentSection !== 'alerts') {
-                    const dot = $('nav-alert-dot');
-                    if (dot) dot.style.display = 'block';
-                }
+                // Visual cue or sound can be triggered here if needed
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
                 renderMasterTable();
@@ -145,8 +141,8 @@
             const truncId = (p.id || p.patientId || '').substring(0, 4);
 
             return `
-                <tr class="hover:bg-slate-800/20 transition-colors group">
-                    <td class="px-6 py-5 font-bold text-slate-500 text-[11px] leading-tight italic">#ID-<br>${truncId}</td>
+                <tr class="tactical-row transition-colors group border-b border-white/5">
+                    <td class="px-6 py-5 font-bold text-slate-500 text-[11px] leading-tight italic border-none">#ID-<br>${truncId}</td>
                     <td class="px-6 py-5">
                         <p class="text-[14px] font-black text-white group-hover:text-blue-400 transition-colors">${p.fullName}</p>
                     </td>
@@ -165,11 +161,16 @@
                             `}
                         </div>
                     </td>
-                    <td class="px-6 py-5 text-right">
-                        <a href="emergency.html?sid=${p.id || p.patientId}" target="_blank" 
-                           class="text-blue-500 hover:text-blue-400 font-black text-[11px] uppercase tracking-widest transition-colors">
-                           View Record
-                        </a>
+                    <td class="px-6 py-5">
+                        <div class="flex items-center justify-end gap-4">
+                            <a href="emergency.html?sid=${p.id || p.patientId}" target="_blank" 
+                               class="text-blue-500 hover:text-blue-400 font-black text-[11px] uppercase tracking-widest transition-colors">
+                               View Record
+                            </a>
+                            <button onclick="window.deletePatientProfile('${p.id || p.patientId}')" class="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors border border-transparent hover:border-red-500/20" title="Delete Profile globally">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -179,6 +180,7 @@
 
     window.acknowledgeAlert = function(id) {
         const el = $(`sos-${id}`);
+        console.log(el);
         if (el) {
             el.className = "bg-slate-800/40 border-l-4 border-slate-600 rounded-r-2xl p-4 opacity-60 transition-all duration-500 shadow-xl";
             el.innerHTML = `
@@ -190,9 +192,18 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
     };
+
+    window.deletePatientProfile = async function(id) {
+        if(confirm('CRITICAL ACTION: Are you sure you want to permanently delete this patient record? This cannot be undone.')) {
+            await window.Storage.deletePatient(id);
+            renderMasterTable();
+            refreshMetrics();
+        }
+    };
+
 
     function dropMapMarker(alert) {
         if (!window.adminMap || !alert.gps_lat) return;

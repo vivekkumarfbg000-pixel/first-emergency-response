@@ -728,7 +728,7 @@
                                 </a>
                                 <a href="dashboard.html" class="btn btn-outline" style="font-size:0.8125rem; color:var(--secondary); border-color:rgba(59,130,246,0.3);">
                                     <i data-lucide="layout-dashboard" style="width:14px;"></i>
-                                    Open Admin Dashboard
+                                    Go to My Dashboard
                                 </a>
                             </div>
                         </div>
@@ -885,7 +885,7 @@
             const canvas = document.getElementById('qrCanvas');
             if (!canvas || !window.Storage) return;
 
-            let qrContent = window.Storage.buildEmergencyUrl(patient);
+            let qrContent = window.Storage.buildQRPayload(patient);
 
             console.log('[QR] Generating QR for:', qrContent.substring(0, 80) + '...');
 

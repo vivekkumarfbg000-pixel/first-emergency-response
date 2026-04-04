@@ -57,8 +57,8 @@
           <div class="flex flex-col">
             <div class="flex items-center gap-1.5">
                 <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <span id="nav-status-indicator-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span id="nav-status-indicator" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span class="text-[10px] font-black tracking-widest text-emerald-400 uppercase" id="nav-status">Emergency Active</span>
             </div>
@@ -266,7 +266,32 @@
 
         if (patientData) {
             // Trigger SOS for Admin Map
-            window.Storage.triggerSOSAlert(patientData, 0, 0); 
+            if (navigator.geolocation) {
+                txt('nav-status', 'Acquiring GPS...');
+                const ping = document.getElementById('nav-status-indicator-ping');
+                const ind = document.getElementById('nav-status-indicator');
+                if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
+                if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-500';
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        window.Storage.triggerSOSAlert(patientData, position.coords.latitude, position.coords.longitude);
+                        txt('nav-status', 'Location Acquired - SOS');
+                        if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                        if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
+                    },
+                    (error) => {
+                        console.warn('Geolocation denied or failed. Sending SOS without GPS.');
+                        window.Storage.triggerSOSAlert(patientData, null, null);
+                        txt('nav-status', 'SOS Active (No GPS)');
+                        if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                        if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                window.Storage.triggerSOSAlert(patientData, null, null);
+            }
         }
     }
 
