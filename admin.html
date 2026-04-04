@@ -39,27 +39,18 @@
         ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 10px; }
         .leaflet-container { background: #0B1120 !important; }
         
-        /* Tactical Marker Styles */
         .emergency-pulse-ring {
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             background: rgba(239, 68, 68, 0.2);
-            border: 2px solid #ef4444;
-            border-radius: 50%;
+            border: 2px solid #ef4444; border-radius: 50%;
             animation: emergencyPulse 1.5s infinite ease-out;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
+            transform: translate(-50%, -50%); pointer-events: none;
         }
         .emergency-core {
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px #ef4444;
+            width: 12px; height: 12px;
+            background: #ef4444; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); box-shadow: 0 0 10px #ef4444;
         }
         @keyframes emergencyPulse {
             0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
@@ -67,25 +58,26 @@
         }
         .animate-blink { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            .mobile-stack-card { min-height: auto; }
-            .map-container { height: 350px !important; }
+
+        /* TACTICAL BOTTOM NAV STYLES */
+        .bottom-nav-item.active .nav-icon-bg {
+            background-color: #1a3a30; /* Green Pill Look from image */
+            color: #4ade80;
         }
+        .bottom-nav-item.active span { color: #F8FAFC; font-weight: 800; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-blue-500/30">
 
-    <!-- ─── TOP HEADER (v10-pro Mobile-Responsive) ─── -->
+    <!-- ─── TOP HEADER (v11-pro Tactical) ─── -->
     <header class="bg-[#0F172A] border-b border-slate-800/60 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-[1000] shadow-sm">
-        <div class="flex items-center gap-3 md:gap-4">
-            <div class="bg-blue-600 p-2 md:p-2.5 rounded-xl shadow-lg shadow-blue-900/20">
-                <i data-lucide="shield-plus" class="text-white w-5 h-5 md:w-6 md:h-6"></i>
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+                <img src="assets/logo.png" alt="Sehat Point Logo" class="w-8 h-8 md:w-10 md:h-10 object-cover">
             </div>
             <div>
                 <h1 class="text-base md:text-xl font-black tracking-tight text-white leading-none">SEHAT POINT</h1>
-                <div class="flex items-center gap-1.5 text-[9px] md:text-[10px] font-bold text-emerald-400 mt-1">
+                <div class="flex items-center gap-1.5 text-[9px] font-bold text-emerald-400 mt-1">
                     <span class="relative flex h-1.5 w-1.5">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -94,136 +86,143 @@
                 </div>
             </div>
         </div>
-
-        <div class="flex items-center gap-4 md:gap-6">
-            <div class="relative cursor-pointer group">
-                <i data-lucide="bell" class="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-white"></i>
-                <span class="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-[#0F172A]"></span>
-                </span>
-            </div>
-            <div class="h-8 w-px bg-slate-800 hidden md:block"></div>
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='dashboard.html'">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-bold text-white">Master Admin</p>
-                    <p class="text-[10px] font-bold text-slate-400 tracking-wider" id="admin-time">00:00:00 UTC</p>
-                </div>
-                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#1E293B] border border-slate-700/50 flex items-center justify-center shadow-lg">
-                    <i data-lucide="user" class="w-4 h-4 md:w-5 md:h-5 text-slate-300"></i>
-                </div>
-            </div>
+        <div class="flex items-center gap-4">
+             <p class="text-[10px] font-bold text-slate-400 tracking-wider hidden md:block" id="admin-time">00:00:00 UTC</p>
+             <div class="w-8 h-8 rounded-full bg-[#1E293B] flex items-center justify-center border border-slate-800">
+                <i data-lucide="user" class="w-4 h-4 text-slate-300"></i>
+             </div>
         </div>
     </header>
 
-    <main class="flex-1 p-3 md:p-6 flex flex-col gap-4 md:gap-6 max-w-[1700px] w-full mx-auto">
+    <main class="flex-1 p-3 md:p-6 flex flex-col gap-4 md:gap-6 max-w-[1700px] w-full mx-auto pb-24 md:pb-6">
         
-        <!-- ─── METRICS BAR (Stacked on Mobile) ─── -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
-                <div>
-                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Users</p>
-                    <h3 class="text-xl md:text-3xl font-black text-white" id="metric-users">24,592</h3>
-                </div>
-                <i data-lucide="users" class="w-4 h-4 md:w-6 md:h-6 text-blue-500 opacity-40"></i>
-            </div>
-
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
-                <div>
-                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Scans (24h)</p>
-                    <h3 class="text-xl md:text-3xl font-black text-white" id="metric-scans">143</h3>
-                </div>
-                <i data-lucide="scan" class="w-4 h-4 md:w-6 md:h-6 text-emerald-500 opacity-40"></i>
-            </div>
-
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg ring-1 ring-red-500/10">
-                <div>
-                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Emergency</p>
-                    <h3 class="text-xl md:text-3xl font-black text-red-500 animate-blink">Live</h3>
-                </div>
-                <i data-lucide="alert-triangle" class="w-4 h-4 md:w-6 md:h-6 text-red-500 opacity-40"></i>
-            </div>
-
-            <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-lg">
-                <div class="flex flex-col gap-1.5">
-                    <p class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">Connect</p>
-                    <div class="flex items-center gap-1">
-                        <span class="text-[10px] md:text-sm font-bold text-white leading-none">Supabase Link</span>
+        <!-- ─── SECTION 1: MONITORING (Default Home) ─── -->
+        <div id="section-monitoring" class="admin-section space-y-4 md:space-y-6">
+            <!-- Metrics Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Active Users</p>
+                        <h3 class="text-xl md:text-3xl font-black text-white" id="metric-users">24,592</h3>
                     </div>
                 </div>
-                <i data-lucide="database" class="w-4 h-4 text-emerald-500 opacity-40"></i>
+                <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Scans Today</p>
+                        <h3 class="text-xl md:text-3xl font-black text-white" id="metric-scans">143</h3>
+                    </div>
+                </div>
+                <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 flex flex-col justify-center shadow-lg ring-1 ring-red-500/10">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Emergencies</p>
+                    <h3 class="text-xl md:text-3xl font-black text-red-500 animate-blink">LIVE</h3>
+                </div>
+                <div class="bg-[#1E293B]/40 border border-slate-800/60 rounded-2xl p-4 flex flex-col justify-center shadow-lg">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connect</p>
+                    <div class="flex items-center gap-1 mt-1 text-emerald-500">
+                        <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-tighter">Sync Active</span>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- ─── THE PIT: MONITORING (60/40 Split or Stacked) ─── -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 h-auto lg:h-[500px]">
-            <!-- Left: Live Map Monitoring (Stacks on top on mobile) -->
-            <div class="lg:col-span-7 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden relative shadow-2xl map-container min-h-[300px]">
-                <div class="absolute top-4 left-4 z-[400] px-4 py-2 bg-[#0F172A]/90 backdrop-blur rounded-xl border border-slate-700/50 shadow-2xl">
+            <!-- Monitoring HUB (Map) -->
+            <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden relative shadow-2xl h-[400px] md:h-[500px]">
+                <div class="absolute top-4 left-4 z-[400] px-4 py-2 bg-[#0F172A]/90 backdrop-blur rounded-xl border border-slate-700/50">
                     <div class="flex items-center gap-2">
                         <i data-lucide="crosshair" class="w-4 h-4 text-red-500 "></i>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-white">Live Tracking</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-white">Live Tracking Hub</span>
                     </div>
                 </div>
                 <div id="admin-live-map" class="w-full h-full opacity-60"></div>
-                <!-- Tactical Scan Grid Overlay (Visible on Desktop) -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10 hidden md:flex">
-                    <div class="w-32 h-32 border border-blue-500 rounded-full flex items-center justify-center">
-                        <div class="w-1 h-1 bg-blue-500 rounded-full"></div>
-                    </div>
-                </div>
             </div>
+        </div>
 
-            <!-- Right: Real-Time Alert Feed (Stacks below map on mobile) -->
-            <div class="lg:col-span-5 bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl h-[500px] lg:h-full">
+        <!-- ─── SECTION 2: ALERTS (Right panel on Desktop, Screen on Mobile) ─── -->
+        <div id="section-alerts" class="admin-section hidden md:block mt-6 md:mt-0">
+            <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl h-[500px] md:h-full">
                 <div class="p-4 md:p-5 border-b border-slate-800/60 flex justify-between items-center bg-[#0F172A]/40 backdrop-blur">
-                    <h2 class="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
+                    <h2 class="text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-2">
                         <i data-lucide="radio" class="w-4 h-4 text-dispatch-red animate-pulse"></i>
-                        Dispatch Feed
+                        Real-Time SOS Feed
                     </h2>
-                    <span class="px-2 py-0.5 bg-[#0F172A] text-[9px] font-black text-slate-400 rounded-md border border-slate-800 tracking-widest uppercase">Live Link</span>
+                    <span class="px-2 py-0.5 bg-red-500 text-[9px] font-black text-white rounded-md tracking-widest uppercase">Live Link</span>
                 </div>
                 <div id="admin-alert-feed" class="flex-1 overflow-y-auto p-3 md:p-5 space-y-4">
-                    <!-- Dynamic Alert Cards (Refined for touch) -->
                     <div class="flex flex-col items-center justify-center py-20 opacity-20">
                         <i data-lucide="radar" class="w-10 h-10 mb-4 animate-pulse"></i>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>No incidents reported</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center">Monitoring Frequency...<br>No active incidents</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ─── GLOBAL PATIENT DATABASE (Scrollable on Mobile) ─── -->
-        <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col mb-10 overflow-x-auto">
-            <div class="p-4 md:p-5 border-b border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#0F172A]/40">
-                <h2 class="text-[10px] md:text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
-                    <i data-lucide="database" class="w-4 h-4 text-blue-500"></i>
-                    Global Database
-                </h2>
-                <div class="relative w-full sm:w-72">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input type="text" id="db-search" placeholder="Search Patient..." 
-                           class="bg-[#0F172A] border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-[10px] md:text-xs font-bold text-white focus:outline-none focus:border-blue-500 transition-all w-full">
+        <!-- ─── SECTION 3: REGISTRY (Bottom on Desktop, Screen on Mobile) ─── -->
+        <div id="section-registry" class="admin-section hidden md:block mt-6">
+            <div class="bg-[#1B2537] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col overflow-x-auto">
+                <div class="p-5 border-b border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0F172A]/40">
+                    <h2 class="text-[11px] font-black uppercase tracking-widest flex items-center gap-2 text-white">
+                        <i data-lucide="database" class="w-4 h-4 text-dispatch-blue"></i>
+                        Global Clinical Registry
+                    </h2>
+                    <div class="relative w-full sm:w-72">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="db-search" placeholder="Query Patient Database..." 
+                               class="bg-[#0F172A] border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500 transition-all w-full">
+                    </div>
                 </div>
-            </div>
-            <div class="overflow-x-auto min-w-full">
-                <table class="w-full text-left text-[11px] md:text-[13px] border-collapse min-w-[700px]">
-                    <thead class="bg-[#0B1120]/60 text-[9px] md:text-[10px] font-black uppercase text-slate-500 border-b border-slate-800/60">
-                        <tr>
-                            <th class="px-4 md:px-6 py-4 tracking-widest">ID</th>
-                            <th class="px-4 md:px-6 py-4 tracking-widest text-white">Name</th>
-                            <th class="px-4 md:px-6 py-4 tracking-widest">Blood</th>
-                            <th class="px-4 md:px-6 py-4 tracking-widest">Risk Profile</th>
-                            <th class="px-4 md:px-6 py-4 tracking-widest">Last Activity</th>
-                            <th class="px-4 md:px-6 py-4 tracking-widest text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800/40" id="admin-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto min-w-full">
+                    <table class="w-full text-left text-[11px] md:text-[13px] border-collapse min-w-[800px]">
+                        <thead class="bg-[#0B1120]/60 text-[9px] md:text-[10px] font-black uppercase text-slate-500 border-b border-slate-800/60">
+                            <tr>
+                                <th class="px-6 py-4 tracking-widest">ID</th>
+                                <th class="px-6 py-4 tracking-widest text-white">Full Name</th>
+                                <th class="px-6 py-4 tracking-widest">Blood</th>
+                                <th class="px-6 py-4 tracking-widest">Status / Risk</th>
+                                <th class="px-6 py-4 tracking-widest text-right">Triage Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/40" id="admin-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
+
+    <!-- ─── TACTICAL BOTTOM NAVIGATION (v11-pro Mobile ONLY) ─── -->
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-[#0F172A] border-t border-slate-800 px-6 flex justify-between items-center z-[2000] md:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        
+        <button onclick="switchAdminSection('monitoring')" id="nav-monitoring" class="bottom-nav-item active flex flex-col items-center gap-1 flex-1 group">
+            <div class="nav-icon-bg px-5 py-1.5 rounded-full transition-all group-active:scale-95">
+                <i data-lucide="crosshair" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-500 transition-all">Center</span>
+        </button>
+
+        <button onclick="switchAdminSection('alerts')" id="nav-alerts" class="bottom-nav-item flex flex-col items-center gap-1 flex-1 group">
+            <div class="nav-icon-bg px-5 py-1.5 rounded-full transition-all group-active:scale-95 relative">
+                <i data-lucide="radio" class="w-5 h-5"></i>
+                <div class="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0F172A]" id="nav-alert-dot" style="display:none"></div>
+            </div>
+            <span class="text-[11px] font-bold text-slate-500 transition-all">Alerts</span>
+        </button>
+
+        <button onclick="switchAdminSection('registry')" id="nav-registry" class="bottom-nav-item flex flex-col items-center gap-1 flex-1 group">
+            <div class="nav-icon-bg px-5 py-1.5 rounded-full transition-all group-active:scale-95">
+                <i data-lucide="database" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-500 transition-all">Registry</span>
+        </button>
+
+        <button onclick="switchAdminSection('system')" id="nav-system" class="bottom-nav-item flex flex-col items-center gap-1 flex-1 group">
+            <div class="nav-icon-bg px-5 py-1.5 rounded-full transition-all group-active:scale-95">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[11px] font-bold text-slate-500 transition-all">System</span>
+        </button>
+
+    </nav>
 
     <!-- Leaflet & Database Logic -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -233,28 +232,36 @@
     <script src="js/admin.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Precise Map Initialization
-            const map = L.map('admin-live-map', {
-                zoomControl: false,
-                attributionControl: false
-            }).setView([25.5941, 85.1376], 12); 
-
+            const map = L.map('admin-live-map', { zoomControl: false, attributionControl: false }).setView([25.5941, 85.1376], 12); 
             L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 20
-            }).addTo(map);
-
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
             window.adminMap = map;
             lucide.createIcons();
             
-            // Auto-update clock
             setInterval(() => {
-                const now = new Date();
-                const clock = document.getElementById('admin-time');
-                if (clock) clock.textContent = now.toLocaleTimeString('en-GB') + ' UTC';
+                const el = document.getElementById('admin-time');
+                if (el) el.textContent = new Date().toLocaleTimeString('en-GB') + ' UTC';
             }, 1000);
         });
+
+        // Mobile Switcher Logic Exposed to v11-pro dispatch engine
+        window.switchAdminSection = function(sectionId) {
+            if (window.innerWidth >= 768) return; // Desktop uses split view
+
+            const sections = ['monitoring', 'alerts', 'registry'];
+            sections.forEach(s => {
+                const el = document.getElementById('section-' + s);
+                if (el) el.classList.toggle('hidden', s !== sectionId);
+                
+                const nav = document.getElementById('nav-' + s);
+                if (nav) nav.classList.toggle('active', s === sectionId);
+            });
+
+            // Rescale map if visible
+            if (sectionId === 'monitoring' && window.adminMap) {
+                setTimeout(() => window.adminMap.invalidateSize(), 100);
+            }
+        };
     </script>
 </body>
 </html>
