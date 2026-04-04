@@ -73,14 +73,14 @@
             logError('Data Load Failure', e);
         }
         
-        // 3. Initialize Tactical Map (Wrapped in Safety)
+        // 3. Initialize Tactical Map (Increase delay to ensure CSS hydration)
         setTimeout(() => {
             try {
                 initMap();
             } catch (e) {
                 console.error('[MasterDispatch] Map initialization deferred/failed:', e);
             }
-        }, 500);
+        }, 1000);
         
         setupRealtime();
 
