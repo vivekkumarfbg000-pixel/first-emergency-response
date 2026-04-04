@@ -965,9 +965,12 @@
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
-        // ─── EDIT MODE INITIALIZATION ───
+        // ─── EDIT MODE & PRE-FILL INITIALIZATION ───
         const urlParams = new URLSearchParams(window.location.search);
         const editId = urlParams.get('edit');
+        const prefillName = urlParams.get('name');
+        const prefillEmail = urlParams.get('email');
+
         if (editId) {
             document.getElementById('submitBtn').innerHTML = '<i data-lucide="save" style="width:16px;"></i> Update Profile';
             setTimeout(async () => {
@@ -993,6 +996,11 @@
                     updatePreview();
                 }
             }, 600);
+        } else if (prefillName || prefillEmail) {
+            // Apply pre-fills from signup/dashboard redirect
+            if (prefillName) document.getElementById('fullName').value = prefillName;
+            if (prefillEmail) document.getElementById('userEmail').value = prefillEmail;
+            updatePreview();
         }
     </script>
 </body>

@@ -33,13 +33,19 @@ const Auth = {
             email,
             password,
             options: {
-                data: { full_name: fullName },
+                data: { 
+                    full_name: fullName,
+                    display_name: fullName 
+                },
                 emailRedirectTo: window.location.origin + '/dashboard.html'
             }
         });
 
         if (error) {
             console.error('[Auth] SignUp error:', error);
+            if (error.message.includes('not configured')) {
+                throw new Error('Supabase Email Server (SMTP) is not yet configured. Please contact the administrator OR check your Supabase Dashboard Auth settings.');
+            }
             throw error;
         }
         

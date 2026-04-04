@@ -54,6 +54,14 @@
             // Set Initial Active
             const primary = _patients.find(p => p.isPrimary) || _patients[0];
             await switchPatient(primary.id);
+        } else if (_patients.length === 0) {
+            // NEW: Auto-Redirect to Registration for first-time users
+            console.log('[PersonalCommand] No clinical profiles detected. Redirecting to initialization...');
+            const user = await window.Auth.getUser();
+            const name = user?.user_metadata?.full_name || user?.user_metadata?.display_name || '';
+            const email = user?.email || '';
+            window.location.href = `register.html?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`;
+            return;
         }
 
         // Render Tables & Feeds

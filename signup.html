@@ -236,11 +236,21 @@
           alert('Welcome! Your account has been created successfully. Redirecting to dashboard...');
           window.location.href = 'dashboard.html';
         } else {
-          alert('Account created! Please check your email and click the confirmation link before signing in.');
-          window.location.href = 'login.html';
+          // Check if user was actually created despite email error
+          if (data.user) {
+             alert('IMPORTANT: Your account was created, but our email server is hitting its daily limit. \n\nPLEASE PROCEED: You can try to Sign In directly. If it fails with "Email not confirmed", please ask the administrator to disable "Confirm Email" in Supabase Auth settings.');
+             window.location.href = 'login.html?email=' + encodeURIComponent(email);
+          } else {
+             alert('Account created! Please check your email and click the confirmation link before signing in.');
+             window.location.href = 'login.html';
+          }
         }
       } catch (err) {
-        alert(err.message || 'Error creating account');
+        let msg = err.message || 'Error creating account';
+        if (msg.includes('rate limit') || msg.includes('confirmation email')) {
+            msg = 'ERROR: Email limit reached. Your account might have been created anyway. Please try to Sign In or ask the admin to disable email confirmation.';
+        }
+        alert(msg);
         btn.disabled = false;
         btn.innerHTML = 'Create Account <i data-lucide="arrow-right"></i>';
         lucide.createIcons();
