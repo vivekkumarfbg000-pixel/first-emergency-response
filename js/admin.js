@@ -12,15 +12,33 @@
     let _realtimeChannel = null;
     let _errorLogs = [];
 
+    // ─── Diagnostic HUD ───
+    function logError(msg, err) {
+        const errorMsg = `[Tactical Error] ${msg}: ${err?.message || err}`;
+        console.error(errorMsg);
+        _errorLogs.push(errorMsg);
+        const hud = $('admin-debug-log');
+        if (hud) {
+            hud.innerHTML += `<div class="mb-1 text-red-100"># ${errorMsg}</div>`;
+            hud.scrollTop = hud.scrollHeight;
+        }
+    }
+
+    window.onerror = function(msg, url, line) {
+        logError(`Runtime Error at ${line}`, msg);
+        return false;
+    };
+
     document.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'd') {
-            console.log('[MasterDispatch] Diagnostic dump requested.');
+            const hud = $('admin-debug-log');
+            if (hud) hud.classList.toggle('hidden');
         }
     });
 
     // ─── Initialization ───
     async function init() {
-        console.log('[MasterDispatch] v12.2 Stability Mode: Global Ready...');
+        console.log('[MasterDispatch] v12.3 Stability Mode: Recovering HUD...');
         
         // 1. Dependency Waiter
         let retries = 0;
