@@ -56,6 +56,9 @@
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .animate-tactical-reveal { animation: fadeInScale 0.5s ease-out forwards; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -114,7 +117,7 @@
         <div class="flex-1 p-6 relative overflow-hidden">
             
             <!-- OVERVIEW: BENTO GRID DASHBOARD -->
-            <section id="section-overview" class="h-full grid grid-cols-12 grid-rows-6 gap-6 animate-fade-in">
+            <section id="section-overview" class="h-full grid grid-cols-12 grid-rows-6 gap-6 animate-tactical-reveal opacity-100">
                 
                 <!-- Hero Operation: Live Dispatch Map -->
                 <div class="col-span-12 xl:col-span-8 row-span-4 glass-panel rounded-3xl overflow-hidden relative group">
@@ -239,7 +242,7 @@
             </section>
 
             <!-- LOGS SECTOR (Hidden by default) -->
-            <section id="section-logs" class="hidden h-full animate-fade-in flex flex-col gap-6">
+            <section id="section-logs" class="hidden h-full animate-tactical-reveal flex-col gap-6">
                 <!-- Log content... -->
             </section>
 

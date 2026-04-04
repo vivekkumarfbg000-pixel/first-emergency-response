@@ -22,10 +22,23 @@
         }
 
         updateConnectionStatus('connected');
-        await refreshMetrics();
-        await renderMasterTable();
-        await refreshLogs();
-        await renderAnalytics();
+        
+        try {
+            await refreshMetrics();
+            await renderMasterTable();
+            await refreshLogs();
+            await renderAnalytics();
+        } catch (e) {
+            console.error('[MasterDispatch] Data Load Failure:', e);
+        }
+        
+        // 3. Initialize Tactical Map (Wrapped in Safety)
+        try {
+            initMap();
+        } catch (e) {
+            console.error('[MasterDispatch] Map Initialization Failure:', e);
+        }
+        
         setupRealtime();
 
         if (window.lucide) lucide.createIcons();
@@ -35,6 +48,30 @@
 
         setInterval(updateServerTime, 1000);
         window.switchTab('overview');
+    }
+
+    function initMap() {
+        const container = $('admin-live-map');
+        if (!container) return;
+        
+        // Ensure container has height
+        if (container.offsetHeight === 0) {
+            container.style.height = '400px';
+        }
+
+        try {
+            window.adminMap = L.map('admin-live-map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(window.adminMap);
+            console.log('[MasterDispatch] Tactical Map Synchronized.');
+        } catch (err) {
+            console.error('[MasterDispatch] Leaflet Init Error:', err);
+            container.innerHTML = `<div class="h-full flex items-center justify-center text-slate-500 text-[10px] uppercase font-black tracking-widest gap-2 bg-slate-900/50">
+                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i> Local Grid Map Offline (Check Internet)
+            </div>`;
+            if (window.lucide) lucide.createIcons();
+        }
     }
 
     function updateServerTime() {
