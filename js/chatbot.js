@@ -46,12 +46,33 @@
                     typing.classList.add('hidden');
                     const bypass = localStorage.getItem('master_bypass');
                     const supabaseStatus = window.supabaseClient ? 'Online' : 'Offline';
-                    addMessageToUI('ai', `**[AI DIAGNOSTICS]**\n- **Session**: ${bypass === 'true' ? 'Master Bypass Enabled' : 'Auth Required'}\n- **Supabase Cloud**: ${supabaseStatus}\n- **Edge Function**: ai-dispatch-assistant\n- **Client**: window.supabaseClient\n\n> [!NOTE]\n> Ensure your GROQ_API_KEY is set in the Supabase Dashboard > Edge Functions > Secrets.`);
+                    
+                    // Edge Function Ping Test
+                    let efStatus = "Testing...";
+                    try {
+                        const { error } = await window.supabaseClient.functions.invoke('ai-dispatch-assistant', {
+                            body: { ping: true }
+                        });
+                        efStatus = error ? `Error: ${error.message}` : "Responsive (Live)";
+                    } catch (e) {
+                        efStatus = "Unreachable (Network Block)";
+                    }
+
+                    addMessageToUI('ai', `**[AI TACTICAL DIAGNOSTICS]**
+- **Session**: ${bypass === 'true' ? 'Master Bypass (Admin)' : 'Standard Auth'}
+- **Supabase Cloud**: ${supabaseStatus}
+- **Edge Function**: ${efStatus}
+- **Endpoint**: ai-dispatch-assistant
+
+> [!NOTE]
+> If the status is **'Unreachable'**, verify your local server is NOT blocking CORS and the function is deployed:
+> \`supabase functions deploy ai-dispatch-assistant\``);
                     return;
                 }
 
                 // Fetch registry snapshot
                 const patients = await window.Storage.getAllPatients() || [];
+                const currentUser = await window.Auth.getUser();
                 
                 const context = {
                     patients: patients.map(p => ({
@@ -62,7 +83,7 @@
                     })).slice(0, 50), // Send first 50 for token management
                     activeScan: window.activeConsoleScan || null,
                     activePatient: window.activeConsolePatient || null,
-                    adminEmail: (await window.supabaseClient.auth.getUser()).data.user?.email
+                    adminEmail: currentUser?.email || 'master-bypass-active'
                 };
 
                 // 4. Call AI Hub

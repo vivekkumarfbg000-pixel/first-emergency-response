@@ -16,7 +16,16 @@ serve(async (req: any) => {
   }
 
   try {
-    const { messages, context } = await req.json()
+    const body = await req.json()
+    const { messages, context, ping } = body;
+    
+    // PING HANDLER (DIAGNOSTIC)
+    if (ping) {
+      return new Response(JSON.stringify({ status: "alive", key_active: !!GROQ_API_KEY }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Groq-Status': GROQ_API_KEY ? 'READY' : 'KEY_MISSING' }
+      });
+    }
+
     const { patients, activeScan, activePatient } = context || {};
 
     console.log(`[SehatAI Hub] Request received. GROQ_API_KEY is ${GROQ_API_KEY ? 'PRESENT' : 'MISSING'}.`);
@@ -26,7 +35,7 @@ serve(async (req: any) => {
       const fallbackResponse = generateLocalTacticalResponse(context);
       return new Response(JSON.stringify({ content: fallbackResponse }), { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Groq-Status': 'FALLBACK' } 
       });
     }
 
