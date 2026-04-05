@@ -3,28 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <script>
-        // ─── Entry Point Stabilization & Global Exposure ───
-        (function() {
-            window.switchTab = function(tabId) {
-                document.querySelectorAll('main > div > section').forEach(s => s.classList.add('hidden'));
-                const target = document.getElementById('section-' + tabId);
-                if (target) {
-                    target.classList.remove('hidden');
-                    document.querySelectorAll('nav button').forEach(b => {
-                        b.classList.remove('bg-enterprise-border', 'text-white');
-                        b.classList.add('text-enterprise-muted');
-                    });
-                    const btn = document.getElementById('nav-' + tabId);
-                    if (btn) {
-                        btn.classList.add('bg-enterprise-border', 'text-white');
-                        btn.classList.remove('text-enterprise-muted');
-                    }
-                }
-            };
-            window.refreshLogs = function() {};
-            window.generateAdminAssets = function() {};
-            window.deletePatientProfile = function() {};
-        })();
+        // Placeholder for early called functions in case of extremely fast interaction before JS load
+        window.switchTab = window.switchTab || function() {};
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise Ops | Sehat Point</title>

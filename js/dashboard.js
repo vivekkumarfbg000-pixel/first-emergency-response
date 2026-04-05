@@ -23,8 +23,11 @@
             return;
         }
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const sid = urlParams.get('sid');
+
         // 2. Initial Data Pull
-        await loadDashboardData();
+        await loadDashboardData(sid);
         
         // 3. Register Global Listeners
         if ($('patientSwitcher')) {
@@ -38,8 +41,21 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    async function loadDashboardData() {
-        _patients = await window.Storage.getAllPatients();
+    async function loadDashboardData(sid = null) {
+        if (sid) {
+            const isAdmin = await window.Storage._isAdminUser();
+            if (isAdmin) {
+                const p = await window.Storage.getPatientById(sid);
+                if (p) {
+                    _patients = [p];
+                    console.log('[PersonalCommand] Admin override: Loading patient context', p.id);
+                }
+            }
+        }
+
+        if (_patients.length === 0) {
+            _patients = await window.Storage.getAllPatients();
+        }
         
         // Populate Registry Metrics
         txt('stat-profiles', _patients.length);
@@ -48,13 +64,18 @@
         const switcher = $('patientSwitcher');
         if (switcher && _patients.length > 0) {
             switcher.innerHTML = _patients.map(p => `
-                <option value="${p.id}" ${p.isPrimary ? 'selected' : ''}>${p.fullName.split(' ')[0]}</option>
+                <option value="${p.id}">${p.fullName.split(' ')[0]}</option>
             `).join('');
 
             // Set Initial Active
             const primary = _patients.find(p => p.isPrimary) || _patients[0];
             await switchPatient(primary.id);
         } else if (_patients.length === 0) {
+            const isAdmin = await window.Storage._isAdminUser();
+            if (isAdmin) {
+                txt('welcome-msg', 'Admin Monitor');
+                return;
+            }
             // NEW: Auto-Redirect to Registration for first-time users
             console.log('[PersonalCommand] No clinical profiles detected. Redirecting to initialization...');
             const user = await window.Auth.getUser();

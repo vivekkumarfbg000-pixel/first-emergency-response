@@ -241,6 +241,7 @@
                         <div class="flex justify-end gap-2">
                             <button onclick="window.generateAdminAssets('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-[#1E293B] transition-colors">PRNT</button>
                             <button onclick="window.openEditModal('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-colors">EDIT</button>
+                            <button onclick="window.viewUserDashboard('${p.id}')" class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500/70 px-2 py-1 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">DASH</button>
                             <button onclick="window.deletePatientProfile('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-red-500 hover:border-red-500/50 transition-colors">DEL</button>
                         </div>
                     </td>
@@ -351,12 +352,12 @@
             if(!sections[k] || !navs[k]) return;
             if(k === tab) {
                 sections[k].classList.remove('hidden');
-                navs[k].classList.add('bg-dispatch-blue', 'text-white', 'shadow-lg', 'active-tab');
-                navs[k].classList.remove('text-slate-500');
+                navs[k].classList.add('bg-enterprise-border', 'text-white');
+                navs[k].classList.remove('text-enterprise-muted');
             } else {
                 sections[k].classList.add('hidden');
-                navs[k].classList.remove('bg-dispatch-blue', 'text-white', 'shadow-lg', 'active-tab');
-                navs[k].classList.add('text-slate-500');
+                navs[k].classList.remove('bg-enterprise-border', 'text-white');
+                navs[k].classList.add('text-enterprise-muted');
             }
         });
 
@@ -460,6 +461,11 @@
     window.closeEditModal = function() {
         const modal = $('admin-edit-modal');
         if(modal) modal.classList.add('hidden');
+    };
+
+    window.viewUserDashboard = function(id) {
+        if (!id) return;
+        window.location.href = `dashboard.html?sid=${id}`;
     };
 
     window.savePatientEdit = async function() {
