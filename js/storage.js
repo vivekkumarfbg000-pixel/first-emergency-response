@@ -83,8 +83,28 @@ const Storage = {
     },
 
     _isAdminUser: async function () {
+        // Check for master bypass first (for session persistence)
+        if (localStorage.getItem('master_bypass') === 'true') return true;
+        
         const user = await this._getCurrentUserObj();
-        return (user?.email || '').trim().toLowerCase() === this.MASTER_ADMIN_EMAIL.toLowerCase();
+        if (!user) return false;
+        
+        // 1. Direct Email Match
+        const email = (user.email || '').trim().toLowerCase();
+        if (email === this.MASTER_ADMIN_EMAIL.toLowerCase()) return true;
+
+        // 2. Database Check (Fallback)
+        if (this.db()) {
+            try {
+                const { data, error } = await this.db()
+                    .from('user_roles')
+                    .select('role')
+                    .eq('user_id', user.id)
+                    .single();
+                if (!error && data?.role === 'admin') return true;
+            } catch (e) {}
+        }
+        return false;
     },
 
     _getAssignedOwnerId: async function () {
