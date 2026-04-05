@@ -364,9 +364,14 @@
 
         body.innerHTML = filtered.map(p => {
             const isCritical = (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5;
+            const displayId = (p.id||'0000').substring(0,8);
             return `
                 <tr class="group border-b border-[#1E293B] hover:bg-[#0B1120] transition-colors">
-                    <td class="px-4 py-3 font-mono text-[10px] text-[#64748b]">ID-${(p.id||'0000').substring(0,8)}</td>
+                    <td class="px-4 py-3 font-mono text-[10px]">
+                        <button onclick="window.viewUserDashboard('${p.id}')" class="text-[#64748b] hover:text-blue-400 hover:underline transition-colors decoration-blue-500/50 underline-offset-4">
+                            ID-${displayId}
+                        </button>
+                    </td>
                     <td class="px-4 py-3 text-xs text-white uppercase">${p.fullName}</td>
                     <td class="px-4 py-3">
                         <span class="text-xs font-mono text-[#64748b]">${p.bloodGroup || 'UNK'}</span>
@@ -526,24 +531,28 @@
             overview: $('section-overview'), 
             monitoring: $('section-overview'), 
             registry: $('section-registry'), 
-            logs: $('section-logs') 
+            logs: $('section-logs'),
+            settings: $('section-settings')
         };
         const navs = { 
             overview: $('nav-overview'), 
             monitoring: $('nav-monitoring'), 
             registry: $('nav-registry'), 
-            logs: $('nav-logs') 
+            logs: $('nav-logs'),
+            settings: $('nav-settings')
         };
 
         const navsMobile = {
             overview: $('nav-overview-mobile'),
             registry: $('nav-registry-mobile'),
-            logs: $('nav-logs-mobile')
+            logs: $('nav-logs-mobile'),
+            settings: $('nav-settings-mobile')
         };
         const navsPills = {
             overview: $('nav-overview-pill'),
             registry: $('nav-registry-pill'),
-            logs: $('nav-logs-pill')
+            logs: $('nav-logs-pill'),
+            settings: $('nav-settings-pill')
         };
 
         // 1. Reset all sections to hidden safely
@@ -576,9 +585,11 @@
             if(!navsMobile[k] || !navsPills[k]) return;
             
             const txtColor = k === 'overview' ? 'text-emerald-400' : 
-                             k === 'registry' ? 'text-amber-400' : 'text-blue-400';
+                             k === 'registry' ? 'text-amber-400' : 
+                             k === 'logs' ? 'text-blue-400' : 'text-blue-500';
             const pillColor = k === 'overview' ? 'bg-emerald-500/10' : 
-                              k === 'registry' ? 'bg-amber-500/10' : 'bg-blue-500/10';
+                              k === 'registry' ? 'bg-amber-500/10' : 
+                              k === 'logs' ? 'bg-blue-500/10' : 'bg-blue-500/20';
 
             if (k === tab) {
                 navsMobile[k].classList.add(txtColor);
@@ -592,6 +603,56 @@
         });
 
         if (window.lucide) lucide.createIcons();
+
+        if (tab === 'settings') {
+            loadAdminProfileData();
+        }
+    };
+
+    async function loadAdminProfileData() {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            if (user) {
+                txt('admin-profile-email', user.email);
+                const displayName = user.user_metadata?.display_name || '';
+                $('admin-display-name').value = displayName;
+            }
+        } catch (e) { logError('Profile Fetch Error', e); }
+    }
+
+    window.updateAdminProfile = async function() {
+        const newName = $('admin-display-name').value;
+        try {
+            const { error } = await window.supabaseClient.auth.updateUser({
+                data: { display_name: newName }
+            });
+            if (error) throw error;
+            alert('Admin Profile Synchronized Successfully');
+        } catch (e) {
+            logError('Profile Update Failed', e);
+            alert('System failed to sync profile data.');
+        }
+    };
+
+    window.triggerPasswordReset = async function() {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            if (!user) return;
+            const { error } = await window.supabaseClient.auth.resetPasswordForEmail(user.email, {
+                redirectTo: window.location.origin + '/admin-login.html'
+            });
+            if (error) throw error;
+            alert('Security Link Dispatched to ' + user.email);
+        } catch (e) {
+            logError('Password Reset Failed', e);
+            alert('Failed to initiate security protocol.');
+        }
+    };
+
+    window.handleLogout = async function() {
+        if (confirm('TERMINATE SESSION: Are you sure?')) {
+            await window.Auth.signOut();
+        }
     };
 
     window.generateAdminAssets = async function(id) {

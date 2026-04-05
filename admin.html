@@ -6,8 +6,13 @@
         // Placeholder for early called functions in case of extremely fast interaction before JS load
         window.switchTab = window.switchTab || function() {};
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enterprise Ops | Sehat Point</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0B1120">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -70,9 +75,8 @@
             <button onclick="switchTab('logs')" id="nav-logs" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
                 <i data-lucide="terminal" class="w-5 h-5 group-hover:text-blue-400 transition-colors"></i>
             </button>
-        </nav>
-        <button class="w-10 h-10 rounded hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors" onclick="window.Auth.signOut()">
-            <i data-lucide="power" class="w-5 h-5"></i>
+        <button onclick="switchTab('settings')" id="nav-settings" class="w-10 h-10 rounded hover:bg-enterprise-border text-enterprise-muted flex items-center justify-center transition-colors group">
+            <i data-lucide="settings" class="w-5 h-5 group-hover:text-blue-400"></i>
         </button>
     </aside>
 
@@ -96,11 +100,11 @@
             </div>
             <span class="text-[10px] font-bold tracking-tight">Logs</span>
         </button>
-        <button onclick="window.Auth.signOut()" class="flex flex-col items-center justify-center gap-1 text-red-500/70 w-16 transition-colors pt-2">
-            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5">
-                <i data-lucide="log-out" class="w-5 h-5"></i>
+        <button onclick="switchTab('settings')" id="nav-settings-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
+            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-settings-pill">
+                <i data-lucide="settings" class="w-5 h-5"></i>
             </div>
-            <span class="text-[10px] font-bold tracking-tight">Exit</span>
+            <span class="text-[10px] font-bold tracking-tight">Settings</span>
         </button>
     </nav>
 
@@ -357,7 +361,70 @@
                         </table>
                     </div>
                 </div>
+            <!-- SETTINGS SECTOR -->
+            <section id="section-settings" class="hidden flex flex-col gap-6 max-w-4xl">
+                <div class="flex items-center gap-3 border-b border-enterprise-border pb-4">
+                    <div class="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-500">
+                        <i data-lucide="cog" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-white uppercase tracking-wider">Administrative Control</h2>
+                        <p class="text-xs text-enterprise-muted font-mono">System Configuration & Security Hub</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <!-- Profile Card -->
+                    <div class="bg-[#131B2F] border border-enterprise-border rounded-xl p-6 relative overflow-hidden shadow-lg border-l-4 border-l-blue-500">
+                        <h3 class="text-xs font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <i data-lucide="user-circle" class="w-4 h-4 text-blue-500"></i> Admin Profile
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-enterprise-muted uppercase mb-1">Authenticated ID</label>
+                                <div id="admin-profile-email" class="w-full bg-[#0B1120] border border-enterprise-border p-3 text-sm text-slate-400 font-mono">
+                                    Loading...
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-enterprise-muted uppercase mb-1">Display Call-sign</label>
+                                <input type="text" id="admin-display-name" class="w-full bg-[#0B1120] border border-enterprise-border p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter name...">
+                            </div>
+                            <button onclick="window.updateAdminProfile()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-widest transition-all rounded shadow-lg shadow-blue-500/20">
+                                Save Profile Changes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Security Hub -->
+                    <div class="bg-[#131B2F] border border-enterprise-border rounded-xl p-6 relative overflow-hidden shadow-lg border-l-4 border-l-amber-500">
+                        <h3 class="text-xs font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-amber-500"></i> Security Protocol
+                        </h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6 font-mono">Manage your access credentials and authorization parameters.</p>
+                        
+                        <button onclick="window.triggerPasswordReset()" class="w-full py-4 border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 text-xs font-bold uppercase tracking-widest transition-all mb-4">
+                            Request Password Reset Link
+                        </button>
+                        <p class="text-[10px] text-enterprise-muted text-center italic leading-tight">A recovery link will be dispatched to your authorized email address.</p>
+                    </div>
+
+                    <!-- Termination Card (Full Width) -->
+                    <div class="md:col-span-2 bg-[#131B2F] border border-enterprise-border rounded-xl p-6 relative overflow-hidden shadow-lg border-l-4 border-l-red-500 flex flex-col md:flex-row items-center justify-between gap-6 mt-4">
+                        <div>
+                            <h3 class="text-xs font-black text-white uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <i data-lucide="power" class="w-4 h-4 text-red-500"></i> Session Termination
+                            </h3>
+                            <p class="text-xs text-slate-400 font-mono">Clear active authorization token and evacuate Command Center.</p>
+                        </div>
+                        <button onclick="window.handleLogout()" class="px-12 py-4 bg-red-600 hover:bg-red-700 text-white text-sm font-black uppercase tracking-[0.2em] transition-all rounded animate-pulse shadow-lg shadow-red-500/20">
+                            LOGOUT
+                        </button>
+                    </div>
+                </div>
             </section>
+        </section>
             
             <!-- Hidden required graph elements to satisfy admin.js -->
             <div id="chart-velocity" class="hidden"></div>
@@ -460,5 +527,14 @@
     <script src="js/auth.js"></script>
     <script src="js/card-generator.js"></script>
     <script src="js/admin.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('PWA Sync Alpha: Ready'))
+                    .catch(e => console.error('PWA Sync Alpha: Failed', e));
+            });
+        }
+    </script>
 </body>
 </html>

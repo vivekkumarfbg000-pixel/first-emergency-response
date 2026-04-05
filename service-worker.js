@@ -3,27 +3,34 @@
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
-const CACHE_NAME = 'sehat-point-v6-pro-final';
+const CACHE_NAME = 'sehat-point-v12-pro-final';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
+    './admin.html',
     './dashboard.html',
     './emergency.html',
     './login.html',
     './register.html',
+    './signup.html',
+    './admin-login.html',
     './css/style.css',
     './js/auth.js',
     './js/storage.js',
     './js/dashboard.js',
+    './js/admin.js',
+    './js/card-generator.js',
     './js/supabase-config.js',
+    './manifest.json',
     './assets/icon-192.png',
-    './assets/icon-512.png'
+    './assets/icon-512.png',
+    './assets/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Pre-caching Professional Shell');
+            console.log('[SW] Pre-caching Enterprise Shell Assets...');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -43,7 +50,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// NETWORK-FIRST STRATEGY (Functional Fix for "No Changes on Mobile")
+// NETWORK-FIRST STRATEGY (Fallback to cache if signal lost)
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
 
