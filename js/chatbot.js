@@ -55,9 +55,15 @@
                         });
                         
                         if (error) {
-                            // Try to get specific error from body if possible
-                            const errDetail = error.message || "Unknown Error";
-                            efStatus = `Error: ${errDetail}`;
+                            // DEEP SCAN: Attempt to read the core error reason from the response body
+                            let detail = error.message;
+                            if (error.context && typeof error.context.json === 'function') {
+                                try {
+                                    const body = await error.context.json();
+                                    detail = body.error || body.message || error.message;
+                                } catch(e) {}
+                            }
+                            efStatus = `Error: ${detail}`;
                         } else {
                             efStatus = data?.status === 'alive' ? "Responsive (Live)" : "Unexpected Response";
                         }
