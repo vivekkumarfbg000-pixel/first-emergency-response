@@ -440,6 +440,15 @@
                 }).join('');
                 if (window.lucide) lucide.createIcons();
             }
+
+            // Automatically load the latest scan into the Console widget
+            // if it's empty, or if a new scan has arrived.
+            if (scans.length > 0) {
+                const latest = scans[0];
+                if (!_activeConsoleScan || _activeConsoleScan.timestamp !== latest.timestamp) {
+                    window.renderOperationsConsole(latest);
+                }
+            }
         } catch (e) { console.error('[MasterDispatch] Log Sync Failure:', e); }
     };
 
