@@ -6,57 +6,46 @@
         // ─── Entry Point Stabilization & Global Exposure ───
         (function() {
             window.switchTab = function(tabId) {
-                console.log('Switching to tab:', tabId);
                 document.querySelectorAll('main > div > section').forEach(s => s.classList.add('hidden'));
                 const target = document.getElementById('section-' + tabId);
                 if (target) {
                     target.classList.remove('hidden');
-                    document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-dispatch-blue', 'text-white'));
+                    document.querySelectorAll('nav button').forEach(b => {
+                        b.classList.remove('bg-enterprise-border', 'text-white');
+                        b.classList.add('text-enterprise-muted');
+                    });
                     const btn = document.getElementById('nav-' + tabId);
-                    if (btn) btn.classList.add('bg-dispatch-blue', 'text-white');
+                    if (btn) {
+                        btn.classList.add('bg-enterprise-border', 'text-white');
+                        btn.classList.remove('text-enterprise-muted');
+                    }
                 }
             };
-
-            window.refreshLogs = function() {
-                console.log('Refreshing audit logs...');
-            };
-
-            window.generateAdminAssets = function() {
-                console.log('Generating tactical assets...');
-            };
-
-            window.deletePatientProfile = function(id) {
-                console.log('Deleting profile:', id);
-            };
-
-            function init() {
-                console.log('Tactical Ops Initialized');
-                try {
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                } catch (e) {
-                    console.error('Icon initialization failed:', e);
-                }
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
+            window.refreshLogs = function() {};
+            window.generateAdminAssets = function() {};
+            window.deletePatientProfile = function() {};
         })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TACTICAL OPS | Sehat Point</title>
+    <title>Enterprise Ops | Sehat Point</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        slate: { 850: '#151e2e', 900: '#0F172A', 950: '#0B1120' },
-                        dispatch: { red: '#EF4444', amber: '#F59E0B', green: '#22C55E', blue: '#3B82F6' }
+                        enterprise: {
+                            bg: '#0B1120',
+                            surface: '#0F172A',
+                            border: '#1E293B',
+                            text: '#F8FAFC',
+                            muted: '#64748b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
@@ -64,259 +53,301 @@
     </script>
     <!-- Icons & Fonts -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Leaflet Map -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #060911; color: #F8FAFC; overflow: hidden; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* ─── Tactical Aesthetics ─── */
-        .glass-panel { 
-            background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #F8FAFC; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Map tuning */
+        .leaflet-container { background: #0B1120 !important; }
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(0.7) contrast(1.2);
         }
-        
-        .scanline {
-            width: 100%; height: 100px;
-            background: linear-gradient(0deg, rgba(59, 130, 246, 0.02) 0%, rgba(59, 130, 246, 0) 100%);
-            position: absolute; top: -100px; left: 0; pointer-events: none;
-            animation: scan 8s linear infinite; z-index: 50;
-        }
-        @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
-
-        .emergency-pulse { animation: alertPulse 2s infinite; }
-        @keyframes alertPulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* Map styling */
-        #admin-live-map { background: #060911 !important; height: 100%; width: 100%; }
-        .leaflet-container { filter: invert(100%) hue-rotate(180deg) brightness(0.7) contrast(1.2); }
-
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .animate-tactical-reveal { animation: fadeInScale 0.5s ease-out forwards; }
-
-        /* Tactical CSS Overrides - Vital for Bento Hub Visibility */
-        #section-overview {
-            display: grid !important;
-            grid-template-columns: repeat(12, 1fr) !important;
-            grid-template-rows: repeat(6, 160px) !important;
-            min-height: 1000px !important;
-            width: 100% !important;
-        }
-        #admin-live-map {
-            height: 100% !important;
-            min-height: 480px !important;
-            background: #0a0e17;
-        }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        ::-webkit-scrollbar-thumb { background: #1E293B; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body class="h-screen flex overflow-hidden bg-enterprise-bg text-enterprise-text selection:bg-blue-500/30">
 
-    <!-- ─── TACTICAL SIDEBAR (Global Controls) ─── -->
-    <aside class="w-20 lg:w-24 bg-[#0B1120] border-r border-white/5 flex flex-col items-center py-8 gap-10 z-[2000]">
-        <div class="w-12 h-12 bg-dispatch-blue/20 rounded-2xl flex items-center justify-center border border-dispatch-blue/30 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-            <i data-lucide="satellite" class="w-6 h-6 text-dispatch-blue"></i>
+    <!-- Sidebar -->
+    <aside class="w-16 md:w-20 bg-enterprise-surface border-r border-enterprise-border flex flex-col items-center py-6 gap-8 z-[2000]">
+        <div class="w-10 h-10 bg-enterprise-border rounded flex items-center justify-center">
+            <i data-lucide="shield" class="w-5 h-5 text-white"></i>
         </div>
-
-        <nav class="flex flex-col gap-6 flex-1">
-            <button onclick="switchTab('overview')" id="nav-overview" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-dispatch-blue text-white shadow-lg active-tab" title="Dashboard Overview">
-                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <nav class="flex flex-col gap-4 flex-1 w-full px-3">
+            <button onclick="switchTab('overview')" id="nav-overview" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-white bg-enterprise-border">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
             </button>
-            <button onclick="switchTab('monitoring')" id="nav-monitoring" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all text-slate-500 hover:bg-white/5 hover:text-white" title="Live Incident Feed">
-                <i data-lucide="radio" class="w-5 h-5"></i>
+            <button onclick="switchTab('monitoring')" id="nav-monitoring" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
+                <i data-lucide="activity" class="w-5 h-5"></i>
             </button>
-            <button onclick="switchTab('registry')" id="nav-registry" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all text-slate-500 hover:bg-white/5 hover:text-white" title="Patient Registry">
-                <i data-lucide="database" class="w-5 h-5"></i>
+            <button onclick="switchTab('registry')" id="nav-registry" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
+                <i data-lucide="users" class="w-5 h-5"></i>
             </button>
-            <button onclick="switchTab('logs')" id="nav-logs" class="w-12 h-12 rounded-xl flex items-center justify-center transition-all text-slate-500 hover:bg-white/5 hover:text-white" title="Audit Logs">
-                <i data-lucide="history" class="w-5 h-5"></i>
+            <button onclick="switchTab('logs')" id="nav-logs" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
+                <i data-lucide="terminal" class="w-5 h-5"></i>
             </button>
         </nav>
-
-        <button class="w-12 h-12 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-500/10" onclick="window.Auth.signOut()">
+        <button class="w-10 h-10 rounded hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors" onclick="window.Auth.signOut()">
             <i data-lucide="power" class="w-5 h-5"></i>
         </button>
     </aside>
 
-    <!-- ─── MAIN OVERVIEW INTERFACE ─── -->
-    <main class="flex-1 flex flex-col relative overflow-hidden bg-slate-950">
-        <div class="scanline"></div>
-
-        <!-- Header -->
-        <header class="h-20 border-b border-white/5 px-8 flex justify-between items-center bg-[#0B1120]/50 backdrop-blur-md z-50">
-            <div>
-                <h1 class="text-xs font-black uppercase text-slate-500 tracking-[0.4em] mb-1">Command Control</h1>
-                <p class="text-xl font-black text-white italic tracking-tighter uppercase leading-none">SEHAT POINT OPS <span class="text-dispatch-blue not-italic font-black ml-2" id="admin-time">00:00:00</span></p>
+    <main class="flex-1 flex flex-col relative overflow-hidden">
+        
+        <!-- Compact Header -->
+        <header class="h-12 border-b border-enterprise-border px-6 flex justify-between items-center bg-enterprise-surface shrink-0">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xs font-semibold tracking-wide text-white">COMMAND CENTER</h1>
             </div>
             
-            <div class="flex items-center gap-6">
-                <!-- Status -->
-                <div class="flex items-center gap-3 bg-emerald-500/5 px-4 py-2 rounded-full border border-emerald-500/10">
-                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
-                    <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest" id="connection-status">Operational Sync</span>
+            <div class="flex items-center gap-4 text-xs font-mono text-enterprise-muted">
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span id="connection-status">SYNC: OK</span>
                 </div>
-                
-                <button class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest px-6 py-2.5 rounded-xl shadow-lg transition-all active:scale-95">
-                    BroadCast Alert
-                </button>
+                <span>|</span>
+                <span>12ms</span>
+                <span>|</span>
+                <span id="admin-time">00:00:00</span>
             </div>
         </header>
 
-        <!-- Dynamic Content Area -->
-        <div id="admin-main-container" class="flex-1 p-6 relative overflow-y-auto bg-[#060911]">
+        <!-- Main Content -->
+        <div id="admin-main-container" class="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
             
-            <!-- OVERVIEW: BENTO GRID DASHBOARD -->
-            <section id="section-overview" class="grid grid-cols-12 grid-rows-6 gap-6 min-h-[1000px] w-full !opacity-100 !visible">
+            <!-- OVERVIEW & MONITORING SECTOR -->
+            <section id="section-overview" class="flex flex-col gap-4">
                 
-                <!-- Hero Operation: Live Dispatch Map -->
-                <div class="col-span-12 xl:col-span-8 row-span-4 glass-panel rounded-3xl overflow-hidden relative group">
-                    <div class="absolute top-6 left-6 z-[400] px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg border border-white/10 flex items-center gap-2">
-                        <i data-lucide="crosshair" class="w-3.5 h-3.5 text-blue-500 animate-pulse"></i>
-                        <span class="text-[10px] font-black tracking-widest uppercase text-white">Live Operations Grid</span>
+                <!-- KPI Strip: 4 metrics -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-enterprise-surface border border-enterprise-border p-4">
+                        <p class="text-[10px] uppercase text-enterprise-muted mb-1">Active Operations</p>
+                        <p class="text-xl font-mono text-white" id="metric-users">0</p>
                     </div>
-                    <div id="admin-live-map"></div>
+                    <!-- Monitored Nodes / Profiles -->
+                    <div class="bg-enterprise-surface border border-enterprise-border p-4">
+                        <p class="text-[10px] uppercase text-enterprise-muted mb-1">Monitored Nodes</p>
+                        <div class="flex justify-between items-end">
+                            <p class="text-xl font-mono text-white" id="metric-profiles-count">0</p>
+                            <span class="text-[10px] bg-red-500/10 text-red-500 border border-red-500/20 px-1 py-0.5 rounded-sm">CRIT</span>
+                        </div>
+                    </div>
+                    <div class="bg-enterprise-surface border border-enterprise-border p-4">
+                        <p class="text-[10px] uppercase text-enterprise-muted mb-1">Scan Volume (24h)</p>
+                        <p class="text-xl font-mono text-white" id="metric-scans">0</p>
+                    </div>
+                    <div class="bg-enterprise-surface border border-enterprise-border p-4">
+                        <p class="text-[10px] uppercase text-enterprise-muted mb-1">System Health</p>
+                        <div class="flex items-center gap-2 h-full pb-1">
+                            <div class="flex-1 h-1 bg-enterprise-border rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 w-[98%]"></div>
+                            </div>
+                            <span class="text-[10px] font-mono text-emerald-500">99.9%</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Strategic Metrics (Vertical Stack) -->
-                <div class="col-span-12 md:col-span-4 xl:col-span-4 row-span-2 glass-panel rounded-3xl p-6 flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
+                <!-- Live Operations Split -->
+                
+                <!-- AI Fleet Engine Widget -->
+                <div class="bg-[#0B1120] border border-blue-500/30 p-4 relative overflow-hidden flex items-center justify-between shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-500">
+                            <i data-lucide="cpu" class="w-5 h-5 animate-pulse"></i>
+                        </div>
                         <div>
-                            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Fleet</h3>
-                            <p class="text-4xl font-black text-white italic" id="metric-users">0</p>
-                        </div>
-                        <div class="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
-                            <i data-lucide="users" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                    <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500 w-[65%]" id="metric-users-progress"></div>
-                    </div>
-                    <p class="text-[9px] font-bold text-slate-600 uppercase italic tracking-widest">Global Identity Registry Active</p>
-                </div>
-
-                <!-- Signal Intensity (Analytics Chart) -->
-                <div class="col-span-12 md:col-span-4 xl:col-span-4 row-span-2 glass-panel rounded-3xl p-6 relative overflow-hidden">
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">Signal Frequency</h3>
-                    <div id="chart-velocity" class="w-full h-24 flex items-end gap-1 px-1">
-                        <!-- Bars injected by JS -->
-                        <div class="flex-1 bg-slate-800 rounded-t h-[40%]"></div>
-                        <div class="flex-1 bg-slate-800 rounded-t h-[20%]"></div>
-                        <div class="flex-1 bg-slate-800 rounded-t h-[60%]"></div>
-                        <div class="flex-1 bg-blue-500 rounded-t h-[80%] animate-pulse"></div>
-                    </div>
-                    <div class="mt-4 flex justify-between items-center flex-wrap gap-2">
-                        <p class="text-2xl font-black text-white" id="metric-scans">0</p>
-                        <span class="text-[9px] font-black text-emerald-500 py-1 px-2 bg-emerald-500/10 rounded uppercase">Live Scans: +20%</span>
-                    </div>
-                </div>
-
-                <!-- Triage Insights -->
-                <div class="col-span-12 xl:col-span-4 row-span-2 glass-panel rounded-3xl p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Triage Breakdown</h3>
-                        <i data-lucide="pie-chart" class="w-4 h-4 text-slate-600"></i>
-                    </div>
-                    <div class="space-y-4" id="admin-triage-list">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                <span class="text-[11px] font-bold text-slate-400">Regular</span>
-                            </div>
-                            <span class="text-[11px] font-black text-white">40%</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <span class="w-2 h-2 rounded-full bg-dispatch-red"></span>
-                                <span class="text-[11px] font-bold text-slate-400">Critical</span>
-                            </div>
-                            <span class="text-[11px] font-black text-white">25%</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <span class="w-2 h-2 rounded-full bg-dispatch-amber"></span>
-                                <span class="text-[11px] font-bold text-slate-400">Under Review</span>
-                            </div>
-                            <span class="text-[11px] font-black text-white">35%</span>
+                            <h3 class="text-[11px] font-semibold text-blue-400 uppercase tracking-widest flex items-center gap-2">Groq LLaMA-3 Triage Engine <span class="bg-blue-500/20 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-mono border border-blue-500/30">ACTIVE</span></h3>
+                            <p class="text-[10px] font-mono text-enterprise-muted mt-1">Monitoring incoming profiles for critical risk metrics.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Activity Center: Real-time Incident Feed -->
-                <div class="col-span-12 xl:col-span-8 row-span-2 glass-panel rounded-3xl overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-white/5 flex justify-between items-center">
-                        <h2 class="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2">
-                            <i data-lucide="radio" class="w-4 h-4 text-red-500"></i> Live Response Feed
-                        </h2>
-                        <button onclick="refreshLogs()" class="p-2 hover:bg-white/5 rounded-lg transition-colors"><i data-lucide="refresh-cw" class="w-4 h-4 text-slate-500"></i></button>
+                <div class="flex flex-col lg:flex-row gap-4 lg:h-[600px]">
+                    <!-- Map (2/3 desktop, 300px mobile) -->
+                    <div class="w-full lg:w-2/3 h-[300px] lg:h-full bg-enterprise-surface border border-enterprise-border relative overflow-hidden flex-shrink-0">
+                        <div id="admin-live-map" class="w-full h-full z-10 bg-enterprise-bg"></div>
+                        <!-- Surgical map overlay UI -->
+                        <div class="absolute top-4 left-4 z-20 px-2 py-1 bg-enterprise-bg border border-enterprise-border shadow-sm">
+                            <p class="text-[10px] font-mono text-enterprise-muted">OPS GRID: ALPHA</p>
+                        </div>
                     </div>
-                    <div id="admin-live-log-mini" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-                        <div class="flex flex-col items-center justify-center py-10 opacity-30 text-slate-400">
-                            <i data-lucide="radar" class="w-10 h-10 mb-4 animate-pulse"></i>
-                            <p class="text-[9px] font-black uppercase tracking-widest text-center italic">Scanning Sector Frequencies...</p>
+                    
+                    <!-- Alert Feed (1/3 desktop, remaining mobile) -->
+                    <div class="w-full lg:w-1/3 flex flex-col bg-enterprise-surface border border-enterprise-border">
+                        <div class="p-3 border-b border-enterprise-border flex justify-between items-center bg-enterprise-bg">
+                            <h2 class="text-[10px] uppercase text-enterprise-muted flex items-center gap-2">
+                                <i data-lucide="radio" class="w-3 h-3 text-red-500"></i> Alert Feed
+                            </h2>
+                            <button onclick="refreshLogs()" class="text-enterprise-muted hover:text-white transition-colors">
+                                <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                        <div id="admin-live-log-mini" class="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar bg-enterprise-surface">
+                            <!-- Populated by JS -->
+                            <div class="py-10 text-center text-xs font-mono text-enterprise-muted">WAITING FOR COMMS...</div>
                         </div>
                     </div>
                 </div>
-
             </section>
 
-            <!-- REGISTRY SECTOR (Hidden by default) -->
-            <section id="section-registry" class="hidden h-full animate-fade-in flex flex-col gap-6">
-                <div class="glass-panel rounded-3xl p-6 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
-                        <i data-lucide="database" class="w-4 h-4 text-blue-500"></i> Global Master Registry
+            <!-- REGISTRY SECTOR -->
+            <section id="section-registry" class="hidden flex-col gap-4">
+                <div class="bg-enterprise-surface border border-enterprise-border p-4 flex justify-between items-center">
+                    <h2 class="text-xs uppercase text-white flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4"></i> Master Registry
                     </h2>
-                    <div class="relative w-80">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="db-search" placeholder="Search Master ID..." 
-                               class="bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500 w-full shadow-inner transition-all">
+                    <div class="relative w-64">
+                        <i data-lucide="search" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-enterprise-muted"></i>
+                        <input type="text" id="db-search" placeholder="Query ID..." 
+                               class="bg-enterprise-bg border border-enterprise-border text-[11px] font-mono text-white placeholder-enterprise-muted w-full py-1.5 pl-8 pr-3 focus:outline-none focus:border-white transition-colors">
                     </div>
                 </div>
                 
-                <div class="glass-panel flex-1 rounded-3xl overflow-hidden">
-                    <div class="overflow-x-auto h-full">
-                        <table class="w-full text-left text-sm border-collapse min-w-[800px]">
-                            <thead class="bg-white/[0.01] text-[10px] font-black uppercase text-slate-500 border-b border-white/5 sticky top-0">
+                <div class="bg-enterprise-surface border border-enterprise-border overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead class="bg-enterprise-bg text-[10px] uppercase text-enterprise-muted border-b border-enterprise-border">
                                 <tr>
-                                    <th class="px-8 py-4 tracking-widest">Identifier</th>
-                                    <th class="px-8 py-4 tracking-widest text-white">Full Identity</th>
-                                    <th class="px-8 py-4 tracking-widest">Medical / Blood</th>
-                                    <th class="px-8 py-4 tracking-widest">Risk Triage</th>
-                                    <th class="px-8 py-4 tracking-widest text-right">Operations</th>
+                                    <th class="px-4 py-3 font-medium">Identifier</th>
+                                    <th class="px-4 py-3 font-medium">Identity</th>
+                                    <th class="px-4 py-3 font-medium">Blood/Med</th>
+                                    <th class="px-4 py-3 font-medium">Status</th>
+                                    <th class="px-4 py-3 font-medium text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-white/5" id="admin-table-body"></tbody>
+                            <tbody class="divide-y divide-enterprise-border text-[12px]" id="admin-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- LOGS SECTOR (Hidden by default) -->
-            <section id="section-logs" class="hidden h-full animate-tactical-reveal flex-col gap-6">
-                <!-- Log content... -->
+            <!-- LOGS SECTOR -->
+            <section id="section-logs" class="hidden flex-col gap-4">
+                <div class="bg-enterprise-surface border border-enterprise-border p-4">
+                    <h2 class="text-xs uppercase text-white flex items-center gap-2 mb-4">
+                        <i data-lucide="terminal" class="w-4 h-4"></i> System Audit Logs
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead class="bg-enterprise-bg text-[10px] uppercase text-enterprise-muted border-b border-enterprise-border">
+                                <tr>
+                                    <th class="px-4 py-3 font-medium">Timestamp</th>
+                                    <th class="px-4 py-3 font-medium">Event Type</th>
+                                    <th class="px-4 py-3 font-medium">Target ID</th>
+                                    <th class="px-4 py-3 font-medium">Location</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-enterprise-border text-[11px] font-mono" id="admin-log-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
+            
+            <!-- Hidden required graph elements to satisfy admin.js -->
+            <div id="chart-velocity" class="hidden"></div>
+            <div id="admin-triage-list" class="hidden"></div>
 
         </div>
  
-        <!-- DIAGNOSTIC HUD (Hidden by default, toggle with 'D') -->
-        <div id="admin-debug-log" class="hidden fixed bottom-0 left-0 right-0 bg-black/90 text-[10px] font-mono p-4 z-[9999] border-t border-red-500/50 max-h-40 overflow-y-auto">
-            <div class="text-white font-bold mb-2">/ TACTICAL DIAGNOSTIC CONSOLE /</div>
+        <!-- Diagnostics -->
+        <div id="admin-debug-log" class="hidden fixed bottom-0 left-0 right-0 bg-[#0B1120] text-[10px] font-mono p-2 z-[9999] border-t border-red-500/30 max-h-32 overflow-y-auto text-enterprise-muted">
+            <div class="text-white mb-1">> SYS_DIAGNOSTICS</div>
         </div>
     </main>
 
-    <!-- Project Logic Assets -->
+    <!-- Edit Profile Modal -->
+    <div id="admin-edit-modal" class="hidden fixed inset-0 z-[3000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-enterprise-surface border border-enterprise-border w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-enterprise-border flex justify-between items-center bg-enterprise-bg">
+                <h3 class="text-white text-sm font-semibold flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> EXAMINE & EDIT PROFILE
+                </h3>
+                <button onclick="closeEditModal()" class="text-enterprise-muted hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-4 text-xs font-mono">
+                <!-- AI Profile Intelligence -->
+                <div id="ai-profile-insights" class="bg-[#0B1120] border border-blue-500/30 p-4 shadow-[0_0_10px_rgba(59,130,246,0.05)] hidden relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]" id="ai-modal-strip"></div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="cpu" class="w-4 h-4 text-blue-500"></i>
+                        <h4 class="text-[10px] font-semibold uppercase text-blue-400 tracking-widest">Groq Intelligence</h4>
+                        <span id="ai-modal-risk" class="ml-auto text-[9px] px-2 py-0.5 font-mono border hidden"></span>
+                    </div>
+                    <div id="ai-modal-loading" class="text-[10px] text-blue-500/50 flex flex-col items-center py-4 animate-pulse">
+                        <i data-lucide="loader-2" class="w-5 h-5 animate-spin mb-2"></i> Analyzing Vitals...
+                    </div>
+                    <div id="ai-modal-content" class="hidden">
+                        <div id="ai-modal-flags" class="flex flex-wrap gap-2 mb-3"></div>
+                        <p id="ai-modal-summary" class="text-[11px] text-white/90 leading-relaxed border-l border-blue-500/50 pl-3 italic"></p>
+                    </div>
+                </div>
+
+                <input type="hidden" id="edit-patient-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Full Identity</label>
+                        <input type="text" id="edit-fullName" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="John Doe">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Date of Birth</label>
+                        <input type="date" id="edit-dob" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Blood Type</label>
+                        <input type="text" id="edit-bloodGroup" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="O+">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Emergency Contact</label>
+                        <input type="text" id="edit-emergencyContact" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="+1234567890">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-enterprise-muted uppercase">Medical Conditions (High Risk Flags)</label>
+                    <textarea id="edit-conditions" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="Type 2 Diabetes, Hypertension..."></textarea>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-enterprise-muted uppercase">Known Allergies</label>
+                    <textarea id="edit-allergies" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="Peanuts, Penicillin..."></textarea>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-enterprise-muted uppercase">Current Medications</label>
+                    <textarea id="edit-medications" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="Lisinopril 10mg..."></textarea>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-enterprise-border bg-[#0B1120] flex justify-end gap-3">
+                <button onclick="closeEditModal()" class="px-4 py-2 border border-enterprise-border text-enterprise-muted hover:text-white hover:bg-enterprise-border text-xs font-mono transition-colors">CANCEL</button>
+                <button onclick="savePatientEdit()" id="btn-save-edit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono transition-colors shadow-[0_0_10px_rgba(37,99,235,0.2)]">OVERRIDE RECORD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
