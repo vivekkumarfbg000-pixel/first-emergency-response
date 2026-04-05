@@ -82,16 +82,13 @@
             $('db-search').addEventListener('input', (e) => renderMasterTable(e.target.value.toLowerCase()));
         }
 
-        setInterval(updateServerTime, 1000);
+
         window.switchTab('overview');
     }
 
     // (Map Removed)
 
-    function updateServerTime() {
-        const el = $('admin-time');
-        if (el) el.textContent = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    }
+
 
     function updateConnectionStatus(status) {
         const txtEl = $('connection-status');
@@ -112,6 +109,9 @@
             const today = new Date().toISOString().split('T')[0];
             const { count: scanCount } = await db.from('scans').select('*', { count: 'exact', head: true }).gte('timestamp', today);
             txt('metric-scans', (scanCount || 0).toLocaleString());
+            
+            // Update User Count Badge in User Section
+            txt('user-count-badge', `${(userCount || 0).toLocaleString()} Total`);
         } catch (err) { console.error('[MasterDispatch] Sync Failure:', err); }
     }
 
@@ -169,6 +169,7 @@
     window.renderOperationsConsole = async function(scan) {
         if (!scan) return;
         _activeConsoleScan = scan;
+        window.activeConsoleScan = scan; // Expose for AI Hub
         
         const placeholder = $('console-placeholder');
         const activeContainer = $('console-active');
@@ -187,6 +188,7 @@
 
         const patient = await window.Storage.getPatientById(pId);
         _activeConsolePatient = patient;
+        window.activeConsolePatient = patient; // Expose for AI Hub
 
         if (patient) {
             const btnCall = $('console-btn-call');
@@ -366,29 +368,51 @@
             const isCritical = (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5;
             const displayId = (p.id||'0000').substring(0,8);
             return `
-                <tr class="group border-b border-[#1E293B] hover:bg-[#0B1120] transition-colors">
-                    <td class="px-4 py-3 font-mono text-[10px]">
-                        <button onclick="window.viewUserDashboard('${p.id}')" class="text-[#64748b] hover:text-blue-400 hover:underline transition-colors decoration-blue-500/50 underline-offset-4">
+                <tr class="group border-b border-[#1E293B] hover:bg-amber-500/5 transition-all cursor-pointer" onclick="window.viewUserDashboard('${p.id}')">
+                    <td class="px-6 py-5 font-mono text-[10px]">
+                        <span class="bg-[#1E293B] text-slate-400 px-3 py-1.5 rounded border border-[#334155] group-hover:border-amber-500/50 group-hover:text-amber-400 transition-all shadow-inner">
                             ID-${displayId}
-                        </button>
+                        </span>
                     </td>
-                    <td class="px-4 py-3 text-xs text-white uppercase">${p.fullName}</td>
-                    <td class="px-4 py-3">
-                        <span class="text-xs font-mono text-[#64748b]">${p.bloodGroup || 'UNK'}</span>
+                    <td class="px-6 py-5">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-black text-white uppercase tracking-tight group-hover:text-amber-400 transition-colors">${p.fullName}</span>
+                            <span class="text-[9px] text-enterprise-muted font-mono mt-0.5 uppercase tracking-tighter">Identity Verified</span>
+                        </div>
                     </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-red-500' : 'bg-emerald-500'}"></span>
-                            <span class="text-[10px] font-mono ${isCritical ? 'text-red-500' : 'text-emerald-500'}">
-                                ${isCritical ? 'CRIT' : 'OK'}
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 group-hover:border-slate-700 transition-colors">
+                                ${p.bloodGroup || '??'}
+                            </div>
+                            <span class="text-[10px] font-mono text-[#64748b] truncate max-w-[150px] italic">
+                                ${p.conditions || (p.allergies ? 'ALLERGIC' : 'NO KNOWN CONDS')}
                             </span>
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="window.generateAdminAssets('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-[#1E293B] transition-colors">PRNT</button>
-                            <button onclick="window.openEditModal('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-colors">EDIT</button>
-                            <button onclick="window.viewUserDashboard('${p.id}')" class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500/70 px-2 py-1 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">DASH</button>
+                    <td class="px-6 py-5">
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${isCritical ? 'bg-red-400' : 'bg-emerald-400'} opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 ${isCritical ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_8px_#10b981]'}"></span>
+                            </div>
+                            <span class="text-[10px] font-black tracking-widest ${isCritical ? 'text-red-500' : 'text-emerald-500'}">
+                                ${isCritical ? 'CRITICAL' : 'OPTIMAL'}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 text-right" onclick="event.stopPropagation()">
+                        <div class="flex justify-end gap-3">
+                            <button onclick="window.generateAdminAssets('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-slate-800 transition-all rounded-lg group/btn" title="Print Assets">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="window.openEditModal('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-all rounded-lg group/btn" title="Edit Profile">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="window.viewUserDashboard('${p.id}')" class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-amber-500/30 text-amber-500/80 px-4 py-2 hover:text-white hover:bg-amber-500 transition-all rounded-lg shadow-lg shadow-amber-500/5 group/btn">
+                                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                                Open Ops
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -530,27 +554,27 @@
         const sections = { 
             overview: $('section-overview'), 
             monitoring: $('section-overview'), 
-            registry: $('section-registry'), 
+            user: $('section-user'), 
             logs: $('section-logs'),
             settings: $('section-settings')
         };
         const navs = { 
             overview: $('nav-overview'), 
             monitoring: $('nav-monitoring'), 
-            registry: $('nav-registry'), 
+            user: $('nav-user'), 
             logs: $('nav-logs'),
             settings: $('nav-settings')
         };
 
         const navsMobile = {
             overview: $('nav-overview-mobile'),
-            registry: $('nav-registry-mobile'),
+            user: $('nav-user-mobile'),
             logs: $('nav-logs-mobile'),
             settings: $('nav-settings-mobile')
         };
         const navsPills = {
             overview: $('nav-overview-pill'),
-            registry: $('nav-registry-pill'),
+            user: $('nav-user-pill'),
             logs: $('nav-logs-pill'),
             settings: $('nav-settings-pill')
         };
@@ -585,11 +609,11 @@
             if(!navsMobile[k] || !navsPills[k]) return;
             
             const txtColor = k === 'overview' ? 'text-emerald-400' : 
-                             k === 'registry' ? 'text-amber-400' : 
+                             k === 'user' ? 'text-amber-400' : 
                              k === 'logs' ? 'text-blue-400' : 'text-blue-500';
             const pillColor = k === 'overview' ? 'bg-emerald-500/10' : 
-                              k === 'registry' ? 'bg-amber-500/10' : 
-                              k === 'logs' ? 'bg-blue-500/10' : 'bg-blue-500/20';
+                               k === 'user' ? 'bg-amber-500/10' : 
+                               k === 'logs' ? 'bg-blue-500/10' : 'bg-blue-500/20';
 
             if (k === tab) {
                 navsMobile[k].classList.add(txtColor);

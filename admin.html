@@ -41,6 +41,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #F8FAFC; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
@@ -56,6 +57,58 @@
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1E293B; }
+
+        /* Floating AI Button & Chat Interface Styles */
+        .ai-floater {
+            background: linear-gradient(135deg, #3b82f6 0%, #a855f7 50%, #ec4899 100%);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            animation: pulse-ai 3s infinite;
+        }
+        @keyframes pulse-ai {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(168, 85, 247, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+        }
+        .chat-window {
+            height: 500px;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            z-index: 1000;
+        }
+        .message-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .message-ai {
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #334155;
+            border-bottom-left-radius: 2px;
+        }
+        .message-user {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            border-bottom-right-radius: 2px;
+            margin-left: auto;
+        }
+
+        /* Colorful SEHAT POINT Branding */
+        .brand-sehat {
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        .header-glow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-enterprise-bg text-enterprise-text selection:bg-blue-500/30">
@@ -69,7 +122,7 @@
             <button onclick="switchTab('overview')" id="nav-overview" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-white bg-enterprise-border gap-1 relative group">
                 <i data-lucide="layout-dashboard" class="w-5 h-5 group-hover:text-emerald-400 transition-colors"></i>
             </button>
-            <button onclick="switchTab('registry')" id="nav-registry" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
+            <button onclick="switchTab('user')" id="nav-user" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
                 <i data-lucide="users" class="w-5 h-5 group-hover:text-amber-400 transition-colors"></i>
             </button>
             <button onclick="switchTab('logs')" id="nav-logs" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
@@ -88,11 +141,11 @@
             </div>
             <span class="text-[10px] font-bold tracking-tight">Alerts</span>
         </button>
-        <button onclick="switchTab('registry')" id="nav-registry-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
-            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-registry-pill">
+        <button onclick="switchTab('user')" id="nav-user-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
+            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-user-pill">
                 <i data-lucide="users" class="w-5 h-5"></i>
             </div>
-            <span class="text-[10px] font-bold tracking-tight">Registry</span>
+            <span class="text-[10px] font-bold tracking-tight">User</span>
         </button>
         <button onclick="switchTab('logs')" id="nav-logs-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
             <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-logs-pill">
@@ -111,20 +164,26 @@
     <main class="flex-1 flex flex-col relative overflow-hidden bg-enterprise-bg pb-20 md:pb-0">
         
         <!-- Compact Header -->
-        <header class="h-12 border-b border-enterprise-border px-6 flex justify-between items-center bg-enterprise-surface shrink-0">
+        <header class="h-12 border-b border-enterprise-border px-6 flex justify-between items-center bg-enterprise-surface shrink-0 header-glow">
             <div class="flex items-center gap-4">
-                <h1 class="text-xs font-semibold tracking-wide text-white">COMMAND CENTER</h1>
+                <div class="flex flex-col">
+                    <h1 class="text-xs font-black brand-sehat uppercase">SEHAT POINT</h1>
+                    <span class="text-[8px] text-emerald-500/80 font-mono -mt-1 tracking-widest uppercase">Emergency Service</span>
+                </div>
             </div>
             
             <div class="flex items-center gap-4 text-xs font-mono text-enterprise-muted">
                 <div class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span id="connection-status">SYNC: OK</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
+                    <span id="connection-status">OPERATIONAL SYNC</span>
                 </div>
                 <span>|</span>
-                <span>12ms</span>
+                <div class="flex items-center gap-1 opacity-50">
+                    <i data-lucide="zap" class="w-2.5 h-2.5 text-blue-400"></i>
+                    <span>12ms</span>
+                </div>
                 <span>|</span>
-                <span id="admin-time">00:00:00</span>
+                <span class="bg-enterprise-border px-3 py-1 rounded text-[10px] font-black text-white tracking-widest uppercase brightness-110">COMMAND CENTER</span>
             </div>
         </header>
 
@@ -165,16 +224,40 @@
 
                 <!-- Live Operations Split -->
                 
-                <!-- AI Fleet Engine Widget -->
-                <div class="bg-[#0B1120] border border-blue-500/30 p-4 relative overflow-hidden flex items-center justify-between shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]"></div>
-                    <div class="flex items-center gap-4 relative z-10">
-                        <div class="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-500">
-                            <i data-lucide="cpu" class="w-5 h-5 animate-pulse"></i>
+                <!-- System Capability & Readiness Widget -->
+                <div class="bg-[#0B1120] border border-emerald-500/30 p-5 relative overflow-hidden flex items-center justify-between shadow-[0_0_20px_rgba(16,185,129,0.1)] rounded-xl">
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 shadow-[0_0_15px_#10b981]"></div>
+                    <div class="flex items-center gap-5 relative z-10">
+                        <div class="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-500 shadow-inner">
+                            <i data-lucide="activity" class="w-6 h-6 animate-pulse"></i>
                         </div>
                         <div>
-                            <h3 class="text-[11px] font-semibold text-blue-400 uppercase tracking-widest flex items-center gap-2">Groq LLaMA-3 Triage Engine <span class="bg-blue-500/20 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-mono border border-blue-500/30">ACTIVE</span></h3>
-                            <p class="text-[10px] font-mono text-enterprise-muted mt-1">Monitoring incoming profiles for critical risk metrics.</p>
+                            <h3 class="text-[12px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-3">System Operational Readiness <span class="bg-emerald-500/20 text-emerald-300 text-[9px] px-2 py-0.5 rounded-full font-mono border border-emerald-500/30">MAX CAPABILITY</span></h3>
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] uppercase text-enterprise-muted font-bold tracking-wider">Node Connectivity</span>
+                                    <span class="text-xs font-mono text-white">99.98%</span>
+                                </div>
+                                <div class="w-px h-6 bg-enterprise-border"></div>
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] uppercase text-enterprise-muted font-bold tracking-wider">Dispatch Latency</span>
+                                    <span class="text-xs font-mono text-white">12.4ms</span>
+                                </div>
+                                <div class="w-px h-6 bg-enterprise-border"></div>
+                                <div class="flex flex-col">
+                                    <span class="text-[8px] uppercase text-enterprise-muted font-bold tracking-wider">Storage Sync</span>
+                                    <span class="text-xs font-mono text-emerald-400">ACTIVE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block pr-6">
+                        <div class="flex gap-1 items-end h-8">
+                            <div class="w-1 bg-emerald-500/40 h-4 rounded-full"></div>
+                            <div class="w-1 bg-emerald-500/60 h-6 rounded-full"></div>
+                            <div class="w-1 bg-emerald-500/40 h-3 rounded-full"></div>
+                            <div class="w-1 bg-emerald-500/80 h-8 rounded-full"></div>
+                            <div class="w-1 bg-emerald-500/50 h-5 rounded-full"></div>
                         </div>
                     </div>
                 </div>
@@ -306,32 +389,39 @@
                 </div>
             </section>
 
-            <!-- REGISTRY SECTOR -->
-            <section id="section-registry" class="hidden flex-col gap-4">
-                <div class="bg-enterprise-surface border border-enterprise-border p-4 flex justify-between items-center">
-                    <h2 class="text-xs uppercase text-white flex items-center gap-2">
-                        <i data-lucide="database" class="w-4 h-4"></i> Master Registry
-                    </h2>
-                    <div class="relative w-64">
-                        <i data-lucide="search" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-enterprise-muted"></i>
-                        <input type="text" id="db-search" placeholder="Query ID..." 
-                               class="bg-enterprise-bg border border-enterprise-border text-[11px] font-mono text-white placeholder-enterprise-muted w-full py-1.5 pl-8 pr-3 focus:outline-none focus:border-white transition-colors">
+            <!-- USER SECTOR -->
+            <section id="section-user" class="hidden flex-col gap-6">
+                <div class="bg-enterprise-surface border border-enterprise-border p-6 flex justify-between items-center rounded-xl shadow-lg border-t-2 border-t-amber-500/50">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-500">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-black text-white uppercase tracking-wider">User Registry Control</h2>
+                            <p class="text-xs text-enterprise-muted font-mono uppercase tracking-widest">Master Personnel Database • <span id="user-count-badge" class="text-amber-500">0 Total</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="relative w-72">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-enterprise-muted"></i>
+                        <input type="text" id="db-search" placeholder="QUICK SEARCH ID / NAME..." 
+                               class="bg-enterprise-bg border border-enterprise-border text-[11px] font-mono text-white placeholder-enterprise-muted w-full py-3 pl-10 pr-4 focus:outline-none focus:border-amber-500 transition-all rounded-lg uppercase tracking-wider">
                     </div>
                 </div>
                 
-                <div class="bg-enterprise-surface border border-enterprise-border overflow-hidden">
+                <div class="bg-enterprise-surface border border-enterprise-border overflow-hidden rounded-xl shadow-2xl">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[800px]">
-                            <thead class="bg-enterprise-bg text-[10px] uppercase text-enterprise-muted border-b border-enterprise-border">
+                        <table class="w-full text-left border-collapse min-w-[900px]">
+                            <thead class="bg-[#131B2F] text-[10px] uppercase text-enterprise-muted border-b border-enterprise-border">
                                 <tr>
-                                    <th class="px-4 py-3 font-medium">Identifier</th>
-                                    <th class="px-4 py-3 font-medium">Identity</th>
-                                    <th class="px-4 py-3 font-medium">Blood/Med</th>
-                                    <th class="px-4 py-3 font-medium">Status</th>
-                                    <th class="px-4 py-3 font-medium text-right">Actions</th>
+                                    <th class="px-6 py-5 font-black tracking-widest text-[#64748b]">Operational ID</th>
+                                    <th class="px-6 py-5 font-black tracking-widest text-[#64748b]">Identity Profile</th>
+                                    <th class="px-6 py-5 font-black tracking-widest text-[#64748b]">Medical Baseline</th>
+                                    <th class="px-6 py-5 font-black tracking-widest text-[#64748b]">Signal Status</th>
+                                    <th class="px-6 py-5 font-black tracking-widest text-[#64748b] text-right uppercase">Mission Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-enterprise-border text-[12px]" id="admin-table-body">
+                            <tbody class="divide-y divide-[#1E293B] text-[12px]" id="admin-table-body">
                                 <!-- Populated by JS -->
                             </tbody>
                         </table>
@@ -527,6 +617,7 @@
     <script src="js/auth.js"></script>
     <script src="js/card-generator.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/chatbot.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -536,5 +627,62 @@
             });
         }
     </script>
+
+    <!-- FLOATING AI DISPATCH ASSISTANT -->
+    <div id="ai-chat-container" class="fixed bottom-6 right-6 z-[3000] flex flex-col items-end gap-4 pointer-events-none">
+        <!-- Chat Window -->
+        <div id="ai-chat-window" class="chat-window bg-[#0B1120] border border-enterprise-border rounded-2xl shadow-2xl flex flex-col overflow-hidden hidden pointer-events-auto scale-95 opacity-0 transition-all duration-300 origin-bottom-right">
+            <!-- Header -->
+            <div class="p-4 bg-enterprise-surface border-b border-enterprise-border flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full ai-floater flex items-center justify-center p-1.5 shadow-lg">
+                         <i data-lucide="brain-circuit" class="w-full h-full text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-black text-white uppercase tracking-widest">Sehat Tactical AI</h3>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Mission Control Active</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="window.ChatAI.toggle()" class="text-enterprise-muted hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Messages Area -->
+            <div id="ai-messages" class="flex-1 overflow-y-auto p-4 flex flex-col space-y-2 scrollbar-hide">
+                <div class="message-bubble message-ai">
+                    Mission Control ready. I have analyzed current registry data and the active dispatch grid. How can I assist with the rescue?
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="ai-typing" class="px-4 py-2 hidden">
+                <div class="flex gap-1">
+                    <span class="w-1 h-1 bg-enterprise-muted rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-enterprise-muted rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1 h-1 bg-enterprise-muted rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="p-4 border-t border-enterprise-border bg-enterprise-bg">
+                <form id="ai-chat-form" class="relative flex items-center gap-2" onsubmit="window.ChatAI.sendMessage(event)">
+                    <input type="text" id="ai-input" placeholder="Query Intelligence..." 
+                           class="bg-enterprise-surface border border-enterprise-border text-xs text-white placeholder-enterprise-muted w-full py-3 pl-4 pr-10 focus:outline-none focus:border-amber-500 rounded-xl transition-all">
+                    <button type="submit" class="absolute right-2 p-2 text-amber-500 hover:text-amber-400 transition-colors">
+                        <i data-lucide="send-horizontal" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Floating Toggle Button -->
+        <button onclick="window.ChatAI.toggle()" id="ai-toggle-btn" class="ai-floater w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95 pointer-events-auto border-2 border-white/10 group">
+             <i data-lucide="brain-circuit" class="w-6 h-6 text-white group-hover:scale-110 transition-transform"></i>
+        </button>
+    </div>
 </body>
 </html>
