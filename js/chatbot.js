@@ -111,13 +111,19 @@
 
                 if (error || !data) {
                     console.error('[SehatAI] Dispatch Error:', error);
-                    let errMsg = "Unable to stabilize signal. Terminal offline.";
-                    if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-                        errMsg = "**[AUTH FAILURE]** Mission Control has rejected the connection. Check your API Key in Supabase Secrets.";
-                    } else if (error?.message?.includes('500')) {
-                        errMsg = "**[ENGINE FAILURE]** The Groq LLaMA Engine encountered an error. This usually means the API key is invalid or not yet configured.";
+                    
+                    // DEEP SCAN: Attempt to read the core error reason from the response body
+                    let detail = "Unable to stabilize signal. Terminal offline.";
+                    if (error?.context && typeof error.context.json === 'function') {
+                        try {
+                            const errBody = await error.context.json();
+                            detail = `**[ENGINE FAILURE]** ${errBody.error || errBody.message || error.message}`;
+                        } catch(e) {}
+                    } else if (error?.message) {
+                        detail = `**[CONNECTION ERROR]** ${error.message}`;
                     }
-                    addMessageToUI('ai', errMsg);
+                    
+                    addMessageToUI('ai', detail);
                     return;
                 }
 
