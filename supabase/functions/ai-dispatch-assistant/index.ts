@@ -17,14 +17,12 @@ serve(async (req: any) => {
 
   try {
     const { messages, context } = await req.json()
-    
-    // context: { patients: [], activeScan: {}, activePatient: {}, adminName: "" }
     const { patients, activeScan, activePatient } = context || {};
 
     if (!GROQ_API_KEY) {
-      return new Response(JSON.stringify({ 
-        content: "I am currently in **Offline Protocol Mode**. Please configure GROQ_API_KEY in Supabase to enable my full tactical intelligence." 
-      }), { 
+      console.warn("GROQ_API_KEY missing. Activating Tactical Fallback Engine.");
+      const fallbackResponse = generateLocalTacticalResponse(context);
+      return new Response(JSON.stringify({ content: fallbackResponse }), { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -41,8 +39,8 @@ TACTICAL CONTEXT:
 
 YOUR CAPABILITIES:
 1. RISK ASSESSMENT: Analyze patient history vs. current incident type to predict fatalities.
-2. LOGISTICS: If coordinates are provided (${activeScan?.gps_lat}, ${activeScan?.gps_long}), suggest looking for nearest medical centers.
-3. REGISTRY OPS: Help find specific people in the database based on blood group or conditions.
+2. LOGISTICS: If coordinates are provided, suggest looking for nearest medical centers.
+3. REGISTRY OPS: Help find specific people in the database.
 
 GUIDELINES:
 - Be concise, tactical, and mission-oriented. 
@@ -57,7 +55,7 @@ GUIDELINES:
         'Authorization': `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama3-70b-8192', // Use 70B for high-fidelity reasoning
+        model: 'llama3-70b-8192',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
@@ -68,12 +66,9 @@ GUIDELINES:
     })
 
     const data = await res.json()
-    
     if (data.error) throw new Error(data.error.message);
 
-    const aiResponse = data.choices[0].message.content;
-
-    return new Response(JSON.stringify({ content: aiResponse }), { 
+    return new Response(JSON.stringify({ content: data.choices[0].message.content }), { 
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
@@ -86,3 +81,26 @@ GUIDELINES:
     })
   }
 })
+
+function generateLocalTacticalResponse(ctx: any) {
+    const { activeScan, activePatient, patients } = ctx;
+    let response = "### 📡 TACTICAL FALLBACK ACTIVE\n\nI am currently operating on internal logic due to primary cloud latency (API Key Missing). Here is my assessment:\n\n";
+
+    if (activePatient) {
+        response += `* **CRITICAL ALERT**: Active patient **${activePatient.name || 'Unknown'}** has the following conditions: _${activePatient.conditions || 'None listed'}_. Verify medication compatibility immediately.\n`;
+        if (activePatient.blood) response += `* **BLOOD TYPE**: ${activePatient.blood}. Prepare matching units if trauma is expected.\n`;
+    }
+
+    if (activeScan && activeScan.gps_lat) {
+        const mapLink = `https://www.google.com/maps/search/hospital/@${activeScan.gps_lat},${activeScan.gps_long},15z`;
+        response += `* **LOGISTICS**: Incident detected at [${activeScan.gps_lat}, ${activeScan.gps_long}](${mapLink}). Please direct the nearest ambulance to this sector.\n`;
+    }
+
+    if (patients && patients.length > 0) {
+        response += `* **REGISTRY**: I have localized ${patients.length} personnel profiles for tactical lookup.\n`;
+    }
+
+    response += "\n> [!TIP]\n> Configure your `GROQ_API_KEY` in the Supabase Dashboard to restore full multi-modal tactical reasoning.";
+    
+    return response;
+}

@@ -447,10 +447,11 @@
                             </thead>
                             <tbody class="divide-y divide-enterprise-border text-[11px] font-mono" id="admin-log-body">
                                 <!-- Populated by JS -->
-                            </tbody>
                         </table>
                     </div>
                 </div>
+            </section>
+
             <!-- SETTINGS SECTOR -->
             <section id="section-settings" class="hidden flex flex-col gap-6 max-w-4xl">
                 <div class="flex items-center gap-3 border-b border-enterprise-border pb-4">
@@ -513,8 +514,8 @@
                         </button>
                     </div>
                 </div>
+                </div>
             </section>
-        </section>
             
             <!-- Hidden required graph elements to satisfy admin.js -->
             <div id="chart-velocity" class="hidden"></div>
@@ -629,7 +630,7 @@
     </script>
 
     <!-- FLOATING AI DISPATCH ASSISTANT -->
-    <div id="ai-chat-container" class="fixed bottom-6 right-6 z-[3000] flex flex-col items-end gap-4 pointer-events-none">
+    <div id="ai-chat-container" class="fixed bottom-28 md:bottom-6 right-6 z-[3000] flex flex-col items-end gap-4 pointer-events-none">
         <!-- Chat Window -->
         <div id="ai-chat-window" class="chat-window bg-[#0B1120] border border-enterprise-border rounded-2xl shadow-2xl flex flex-col overflow-hidden hidden pointer-events-auto scale-95 opacity-0 transition-all duration-300 origin-bottom-right">
             <!-- Header -->

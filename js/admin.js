@@ -60,6 +60,15 @@
                 window.location.href = 'login.html';
                 return;
             }
+            
+            // Populate Settings Profile
+            const user = (await window.Auth.getUser());
+            if (user) {
+                txt('admin-profile-email', user.email);
+                if ($('admin-display-name')) {
+                    $('admin-display-name').value = user.user_metadata?.display_name || user.user_metadata?.full_name || '';
+                }
+            }
         } catch (e) { logError('Clearance Protocol Error', e); }
 
         updateConnectionStatus('connected');
@@ -807,6 +816,42 @@
                 logError('Edit Save Failed', e);
                 alert('Failed to save profile changes. Check console for details.');
             }
+        }
+    };
+
+    // ─── Administrative Settings ───
+    window.updateAdminProfile = async function() {
+        const name = $('admin-display-name').value;
+        try {
+            const { error } = await window.supabaseClient.auth.updateUser({
+                data: { display_name: name }
+            });
+            if (error) throw error;
+            alert('Profile configuration updated successfully.');
+        } catch (e) {
+            logError('Settings Update Failed', e);
+            alert('Failed to update profile.');
+        }
+    };
+
+    window.triggerPasswordReset = async function() {
+        const user = await window.Auth.getUser();
+        if (!user) return;
+        try {
+            const { error } = await window.supabaseClient.auth.resetPasswordForEmail(user.email, {
+                redirectTo: window.location.origin + '/admin-login.html'
+            });
+            if (error) throw error;
+            alert('A secure reset link has been dispatched to your authorized email.');
+        } catch (e) {
+            logError('Reset Request Failed', e);
+            alert('Failed to dispatch reset request.');
+        }
+    };
+
+    window.handleLogout = async function() {
+        if (confirm('Initiate Command Center evacuation? All active administrative sessions will be terminated.')) {
+            await window.Auth.signOut();
         }
     };
 
