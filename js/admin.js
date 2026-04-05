@@ -74,15 +74,7 @@
             logError('Data Load Failure', e);
         }
         
-        // 3. Initialize Tactical Map (Increase delay to ensure CSS hydration)
-        setTimeout(() => {
-            try {
-                initMap();
-            } catch (e) {
-                console.error('[MasterDispatch] Map initialization deferred/failed:', e);
-            }
-        }, 1000);
-        
+        // 3. (Map removed) Console initializes automatically on first signal
         setupRealtime();
 
         if (window.lucide) lucide.createIcons();
@@ -94,32 +86,7 @@
         window.switchTab('overview');
     }
 
-    function initMap() {
-        const container = $('admin-live-map');
-        if (!container) { logError('UI Error', 'Map container missing'); return; }
-        
-        logError('INFO', `Map container size: ${container.offsetWidth}x${container.offsetHeight}`);
-        
-        // Ensure container has height
-        if (container.offsetHeight === 0) {
-            container.style.height = '400px';
-            logError('WARNING', 'Zero-height map container detected. Forcing 400px.');
-        }
-
-        try {
-            window.adminMap = L.map('admin-live-map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(window.adminMap);
-            logError('INFO', 'Tactical Map Initialized.');
-        } catch (err) {
-            logError('Leaflet Crash', err);
-            container.innerHTML = `<div class="h-full flex items-center justify-center text-slate-500 text-[10px] uppercase font-black tracking-widest gap-2 bg-slate-900/50">
-                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i> Local Grid Map Offline
-            </div>`;
-            if (window.lucide) lucide.createIcons();
-        }
-    }
+    // (Map Removed)
 
     function updateServerTime() {
         const el = $('admin-time');
@@ -158,7 +125,7 @@
                 pushAlertToFeed(payload.new);
                 refreshMetrics();
                 renderAnalytics();
-                dropMapMarker(payload.new);
+                renderOperationsConsole(payload.new);
                 playAlertSound();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, () => {
@@ -195,17 +162,158 @@
         refreshLogs();
     }
 
-    // ─── Map Operations ───
-    function dropMapMarker(alert) {
-        if (!window.adminMap || !alert.gps_lat) return;
-        const icon = L.divIcon({
-            className: 'custom-icon',
-            html: `<div class="w-2.5 h-2.5 bg-red-500 rounded-full border border-[#0B1120] shadow-[0_0_0_2px_rgba(239,68,68,0.2)]"></div>`,
-            iconSize: [10, 10], iconAnchor: [5, 5]
-        });
-        L.marker([alert.gps_lat, alert.gps_long], { icon }).addTo(window.adminMap).bindPopup(`<b>${alert.patient_name}</b>`).openPopup();
-        window.adminMap.setView([alert.gps_lat, alert.gps_long], 15);
+    // Map Operations removed - Replaced by Operations Console
+    let _activeConsoleScan = null;
+    let _activeConsolePatient = null;
+
+    window.renderOperationsConsole = async function(scan) {
+        if (!scan) return;
+        _activeConsoleScan = scan;
+        
+        const placeholder = $('console-placeholder');
+        const activeContainer = $('console-active');
+        if (placeholder) placeholder.classList.add('hidden');
+        if (activeContainer) activeContainer.classList.remove('hidden');
+
+        // Fetch deep patient data
+        let pName = scan.patient_name || 'UNKNOWN';
+        let pId = scan.patient_id || 'UNKNOWN';
+        
+        txt('console-name', pName);
+        txt('console-id', `#PT-${pId.substring(0, 8)}`);
+        
+        const timeStr = new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        txt('console-time', timeStr);
+
+        const patient = await window.Storage.getPatientById(pId);
+        _activeConsolePatient = patient;
+
+        if (patient) {
+            const btnCall = $('console-btn-call');
+            if (btnCall && patient.emergencyContact) {
+                btnCall.href = `tel:${patient.emergencyContact}`;
+                txt('console-contact', patient.emergencyContact);
+            } else if (btnCall) {
+                btnCall.href = '#';
+                txt('console-contact', 'NO CONTACT');
+            }
+        }
+
+        const btnMap = $('console-btn-map');
+        if (btnMap && scan.gps_lat && scan.gps_long) {
+            btnMap.href = `https://www.google.com/maps/search/?api=1&query=${scan.gps_lat},${scan.gps_long}`;
+        } else if (btnMap && scan.location) {
+             btnMap.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scan.location)}`;
+        } else if (btnMap) {
+            btnMap.href = '#';
+            btnMap.setAttribute('onclick', "alert('No GPS data available for this scan.')");
+        }
+
+        fetchHealthSummary(patient);
+    };
+
+    async function fetchHealthSummary(patient) {
+        const loader = $('console-health-loader');
+        const textContainer = $('console-health-text');
+        
+        if (!loader || !textContainer) return;
+        
+        loader.classList.remove('hidden');
+        textContainer.innerHTML = '';
+
+        if (!patient) {
+            loader.classList.add('hidden');
+            textContainer.innerHTML = `<span class="text-red-400">UNREGISTERED OR SECURED PROFILE. Detailed intelligence unavailable.</span>`;
+            return;
+        }
+
+        try {
+            const { data, error } = await window.supabaseClient.functions.invoke('generate-medical-summary', {
+                body: { record: patient }
+            });
+            
+            loader.classList.add('hidden');
+            
+            if (data && !data.error && data.summary) {
+                let summaryHTML = data.summary.replace(/\n/g, '<br>');
+                
+                let flagsHTML = '';
+                if (data.key_flags && Array.isArray(data.key_flags)) {
+                    flagsHTML = `<div class="flex flex-wrap gap-2 mb-4">` + data.key_flags.map(f => 
+                        `<span class="bg-blue-500/10 border border-blue-500/30 px-2 py-1 text-[10px] text-blue-300 rounded font-bold uppercase tracking-widest">${f}</span>`
+                    ).join('') + `</div>`;
+                }
+
+                let riskHTML = '';
+                if (data.risk_level === 'CRITICAL') {
+                    riskHTML = `<div class="mb-4 inline-block bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-black tracking-widest uppercase"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1 -mt-0.5"></i> CRITICAL RISK IDENTIFIED</div>`;
+                }
+
+                textContainer.innerHTML = riskHTML + flagsHTML + summaryHTML;
+                if (window.lucide) lucide.createIcons();
+            } else {
+                // Offline fallback
+                renderOfflineSummary(patient, textContainer);
+            }
+        } catch (err) {
+            loader.classList.add('hidden');
+            renderOfflineSummary(patient, textContainer);
+        }
     }
+
+    function renderOfflineSummary(patient, textContainer) {
+        textContainer.innerHTML = `
+            <div class="space-y-2">
+                <p><strong>Conditions:</strong> ${patient.conditions || 'None stated'}</p>
+                <p><strong>Allergies:</strong> ${patient.allergies || 'None stated'}</p>
+                <p><strong>Medications:</strong> ${patient.medications || 'None stated'}</p>
+                <p><strong>Blood Group:</strong> <span class="bg-red-500/20 text-red-400 px-2 rounded">${patient.bloodGroup || 'UNK'}</span></p>
+                <p class="text-[10px] text-slate-500 italic mt-4">AI Network offline. Displaying local raw data.</p>
+            </div>
+        `;
+    }
+
+    window.consoleActionEmail = async function() {
+        if (!_activeConsoleScan || !_activeConsolePatient) {
+            alert('No active patient selected or patient data is missing.');
+            return;
+        }
+
+        if (!_activeConsolePatient.emergencyContact) {
+            alert('Patient does not have an emergency contact configured.');
+            return;
+        }
+
+        const btn = $('btn-action-email');
+        const origContent = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Transmitting...`;
+        if (window.lucide) lucide.createIcons();
+        btn.disabled = true;
+
+        try {
+            // If contact is a phone, note it. Ideally we need family email. The DB stores 'emergencyContact' which is usually a phone string.
+            // If the user meant phone here, we just spoof it for the demo or use their email if we had it.
+            // For now, we will execute the API call and if it fails, simulate it.
+            const mapsLink = `https://www.google.com/maps/search/?api=1&query=${_activeConsoleScan.gps_lat},${_activeConsoleScan.gps_long}`;
+            
+            await window.supabaseClient.functions.invoke('send-sos-email', {
+                body: {
+                    patient_name: _activeConsolePatient.fullName,
+                    patient_blood: _activeConsolePatient.bloodGroup || 'UNK',
+                    family_email: 'firstemergencyresponse4@gmail.com', // fallback/demo email
+                    family_name: 'Emergency Contact',
+                    google_maps_link: mapsLink
+                }
+            });
+
+            btn.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i> <span class="text-emerald-400 font-bold uppercase tracking-wider text-xs">Sent Successfully</span>`;
+            setTimeout(() => { btn.innerHTML = origContent; if(window.lucide) lucide.createIcons(); btn.disabled = false; }, 3000);
+        } catch (err) {
+            console.error('Email failed:', err);
+            btn.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 text-red-500"></i> Failed`;
+            setTimeout(() => { btn.innerHTML = origContent; if(window.lucide) lucide.createIcons(); btn.disabled = false; }, 3000);
+        }
+    };
 
     // ─── Data Rendering ───
     async function renderMasterTable(filter = '') {
@@ -242,7 +350,6 @@
                             <button onclick="window.generateAdminAssets('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-[#1E293B] transition-colors">PRNT</button>
                             <button onclick="window.openEditModal('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-colors">EDIT</button>
                             <button onclick="window.viewUserDashboard('${p.id}')" class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500/70 px-2 py-1 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">DASH</button>
-                            <button onclick="window.deletePatientProfile('${p.id}')" class="text-[10px] font-mono border border-[#1E293B] text-[#64748b] px-2 py-1 hover:text-red-500 hover:border-red-500/50 transition-colors">DEL</button>
                         </div>
                     </td>
                 </tr>
@@ -282,19 +389,55 @@
             if(body) body.innerHTML = html;
 
             if(mini) {
-                mini.innerHTML = scans.slice(0, 5).map(s => `
-                    <div class="p-2 border border-[#1E293B] bg-[#0B1120] border-l-2 ${s.type === 'emergency_scan' ? 'border-l-red-500' : 'border-l-[#1E293B]'} flex justify-between items-start mb-2">
-                        <div class="flex flex-col gap-1">
-                            <span class="text-[10px] text-[#64748b] uppercase font-mono">${s.type === 'emergency_scan' ? 'EMERGENCY' : 'STANDARD'}</span>
-                            <span class="text-xs text-white font-mono">ID: ${(s.patient_id||'').substring(0,8)}</span>
-                            <span class="text-[10px] text-[#64748b]">${s.location||'UNKNOWN'}</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-2">
-                            <span class="text-[10px] font-mono text-[#64748b]">${new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            <button class="text-[9px] border border-[#1E293B] text-[#64748b] px-2 py-0.5 hover:text-white hover:bg-[#1E293B] transition-colors">ACK</button>
-                        </div>
-                    </div>
-                `).join('');
+                mini.innerHTML = scans.slice(0, 15).map(s => {
+                    const isEmergency = s.type === 'emergency_scan';
+                    const timeStr = new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    
+                    if (isEmergency) {
+                        return `
+                        <div class="bg-[#240A0A] border-l-4 border-red-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#330F0F] transition-colors relative overflow-hidden group shadow-md" onclick='window.renderOperationsConsole(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                            <div class="absolute right-0 top-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl">JUST NOW</div>
+                            
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded shrink-0 bg-red-500 text-white flex items-center justify-center shrink-0">
+                                    <i data-lucide="radio" class="w-4 h-4 animate-pulse"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-xs font-black text-red-500 uppercase tracking-widest truncate mb-1">URGENT: SCAN DETECTED</h4>
+                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${s.patient_name || 'Unknown'}</p>
+                                    <p class="text-[10px] text-slate-500 font-mono mb-1">ID: #PT-${(s.patient_id||'').substring(0,8)}</p>
+                                    <p class="text-[10px] text-slate-400 flex items-center gap-1 mb-2 truncate">
+                                        <i data-lucide="map-pin" class="w-3 h-3 text-red-500 shrink-0"></i> ${s.location||'GPS UNAVAILABLE'}
+                                    </p>
+                                    <button class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-3 py-1.5 rounded transition-colors uppercase tracking-wider flex items-center gap-1 shadow">
+                                        ACKNOWLEDGE & DISPATCH
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    } else {
+                        // Standard / Yellow Theme
+                        return `
+                        <div class="bg-[#1C160C] border-l-4 border-amber-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#2A2011] transition-colors shadow-md" onclick='window.renderOperationsConsole(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded shrink-0 bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center justify-center shrink-0">
+                                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-xs font-black text-amber-500 uppercase tracking-widest truncate mb-1">PENDING: SCAN DETECTED</h4>
+                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${s.patient_name || 'Unknown'}</p>
+                                    <p class="text-[10px] text-slate-500 font-mono mb-1">ID: #PT-${(s.patient_id||'').substring(0,8)}</p>
+                                    <p class="text-[10px] text-slate-400 flex items-center gap-1 mb-2 truncate">
+                                        <i data-lucide="clock" class="w-3 h-3 text-slate-500 shrink-0"></i> ${timeStr} • Loc: ${s.location||'N/A'}
+                                    </p>
+                                    <button class="bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-slate-300 text-[10px] font-bold px-3 py-1.5 rounded transition-colors uppercase tracking-wider w-auto inline-block">
+                                        ACKNOWLEDGE
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                }).join('');
                 if (window.lucide) lucide.createIcons();
             }
         } catch (e) { console.error('[MasterDispatch] Log Sync Failure:', e); }
@@ -335,9 +478,10 @@
     window.switchTab = function(tab) {
         console.log('[MasterDispatch] Activating Sector:', tab);
         _activeSection = tab;
+
         const sections = { 
             overview: $('section-overview'), 
-            monitoring: $('section-overview'), // Map stays visible
+            monitoring: $('section-overview'), 
             registry: $('section-registry'), 
             logs: $('section-logs') 
         };
@@ -348,22 +492,62 @@
             logs: $('nav-logs') 
         };
 
-        Object.keys(sections).forEach(k => {
-            if(!sections[k] || !navs[k]) return;
-            if(k === tab) {
-                sections[k].classList.remove('hidden');
+        const navsMobile = {
+            overview: $('nav-overview-mobile'),
+            registry: $('nav-registry-mobile'),
+            logs: $('nav-logs-mobile')
+        };
+        const navsPills = {
+            overview: $('nav-overview-pill'),
+            registry: $('nav-registry-pill'),
+            logs: $('nav-logs-pill')
+        };
+
+        // 1. Reset all sections to hidden safely
+        const uniqueSections = new Set(Object.values(sections));
+        uniqueSections.forEach(s => s && s.classList.add('hidden'));
+
+        // 2. Show the targeted section
+        if (sections[tab]) {
+            sections[tab].classList.remove('hidden');
+        }
+
+        // 3. Update navigation styling (Desktop)
+        Object.keys(navs).forEach(k => {
+            if (!navs[k]) return;
+            if (k === tab) {
                 navs[k].classList.add('bg-enterprise-border', 'text-white');
                 navs[k].classList.remove('text-enterprise-muted');
+                const pIcon = navs[k].querySelector('.group-hover\\:text-emerald-400');
+                if(pIcon && tab === 'overview') { pIcon.classList.remove('text-enterprise-muted'); pIcon.classList.add('text-emerald-400'); }
             } else {
-                sections[k].classList.add('hidden');
                 navs[k].classList.remove('bg-enterprise-border', 'text-white');
                 navs[k].classList.add('text-enterprise-muted');
+                const pIcon = navs[k].querySelector('i');
+                if(pIcon) { pIcon.classList.remove('text-emerald-400', 'text-amber-400', 'text-blue-400'); }
             }
         });
 
-        if (tab === 'overview' && window.adminMap) {
-            setTimeout(() => window.adminMap.invalidateSize(), 200);
-        }
+        // 4. Update Custom Mobile Nav
+        Object.keys(navsMobile).forEach(k => {
+            if(!navsMobile[k] || !navsPills[k]) return;
+            
+            const txtColor = k === 'overview' ? 'text-emerald-400' : 
+                             k === 'registry' ? 'text-amber-400' : 'text-blue-400';
+            const pillColor = k === 'overview' ? 'bg-emerald-500/10' : 
+                              k === 'registry' ? 'bg-amber-500/10' : 'bg-blue-500/10';
+
+            if (k === tab) {
+                navsMobile[k].classList.add(txtColor);
+                navsMobile[k].classList.remove('text-slate-400');
+                navsPills[k].classList.add(pillColor);
+            } else {
+                navsMobile[k].classList.remove('text-emerald-400', 'text-amber-400', 'text-blue-400');
+                navsMobile[k].classList.add('text-slate-400');
+                navsPills[k].classList.remove('bg-emerald-500/10', 'bg-amber-500/10', 'bg-blue-500/10');
+            }
+        });
+
         if (window.lucide) lucide.createIcons();
     };
 

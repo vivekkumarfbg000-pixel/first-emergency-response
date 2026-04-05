@@ -259,5 +259,35 @@
         if (window.lucide) lucide.createIcons();
     };
 
+    window.deleteActiveProfile = async function() {
+        if (!_activePatient) return;
+        
+        if (confirm(`TERMINATE RECORD: Are you sure you want to permanently delete the profile for ${_activePatient.fullName}? This cannot be undone.`)) {
+            const btn = $('btn-delete-profile');
+            if (btn) btn.disabled = true;
+            
+            try {
+                await window.Storage.deletePatient(_activePatient.id);
+                const isAdmin = await window.Storage._isAdminUser();
+                
+                if (isAdmin) {
+                    window.location.href = 'admin.html';
+                } else {
+                    // If user deleted their only profile or one of them, reload or logout if last
+                    const remaining = await window.Storage.getAllPatients() || [];
+                    if (remaining.length === 0) {
+                        window.Auth.signOut();
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            } catch (err) {
+                console.error('[PersonalCommand] Deletion Failed:', err);
+                alert('System Failure: Could not terminate record.');
+                if (btn) btn.disabled = false;
+            }
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', init);
 })();

@@ -55,23 +55,20 @@
 </head>
 <body class="h-screen flex overflow-hidden bg-enterprise-bg text-enterprise-text selection:bg-blue-500/30">
 
-    <!-- Sidebar -->
-    <aside class="w-16 md:w-20 bg-enterprise-surface border-r border-enterprise-border flex flex-col items-center py-6 gap-8 z-[2000]">
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex w-20 bg-enterprise-surface border-r border-enterprise-border flex-col items-center py-6 gap-8 z-[2000] shrink-0">
         <div class="w-10 h-10 bg-enterprise-border rounded flex items-center justify-center">
-            <i data-lucide="shield" class="w-5 h-5 text-white"></i>
+            <i data-lucide="shield" class="w-5 h-5 text-red-500 border border-red-500/30 p-1 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.2)]"></i>
         </div>
         <nav class="flex flex-col gap-4 flex-1 w-full px-3">
-            <button onclick="switchTab('overview')" id="nav-overview" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-white bg-enterprise-border">
-                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <button onclick="switchTab('overview')" id="nav-overview" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-white bg-enterprise-border gap-1 relative group">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 group-hover:text-emerald-400 transition-colors"></i>
             </button>
-            <button onclick="switchTab('monitoring')" id="nav-monitoring" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
-                <i data-lucide="activity" class="w-5 h-5"></i>
+            <button onclick="switchTab('registry')" id="nav-registry" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
+                <i data-lucide="users" class="w-5 h-5 group-hover:text-amber-400 transition-colors"></i>
             </button>
-            <button onclick="switchTab('registry')" id="nav-registry" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
-                <i data-lucide="users" class="w-5 h-5"></i>
-            </button>
-            <button onclick="switchTab('logs')" id="nav-logs" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex items-center justify-center text-enterprise-muted">
-                <i data-lucide="terminal" class="w-5 h-5"></i>
+            <button onclick="switchTab('logs')" id="nav-logs" class="w-full aspect-square rounded hover:bg-enterprise-border transition-colors flex flex-col items-center justify-center text-enterprise-muted gap-1 relative group">
+                <i data-lucide="terminal" class="w-5 h-5 group-hover:text-blue-400 transition-colors"></i>
             </button>
         </nav>
         <button class="w-10 h-10 rounded hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors" onclick="window.Auth.signOut()">
@@ -79,7 +76,35 @@
         </button>
     </aside>
 
-    <main class="flex-1 flex flex-col relative overflow-hidden">
+    <!-- Mobile Footer (WhatsApp Style) -->
+    <nav class="md:hidden fixed bottom-0 w-full bg-[#0B1120] border-t border-[#1E293B] z-[3000] flex justify-around items-center px-2 py-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        <button onclick="switchTab('overview')" id="nav-overview-mobile" class="flex flex-col items-center justify-center gap-1 text-emerald-400 w-16 transition-colors pt-2">
+            <div class="bg-emerald-500/10 rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-overview-pill">
+                <i data-lucide="message-square-warning" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[10px] font-bold tracking-tight">Alerts</span>
+        </button>
+        <button onclick="switchTab('registry')" id="nav-registry-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
+            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-registry-pill">
+                <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[10px] font-bold tracking-tight">Registry</span>
+        </button>
+        <button onclick="switchTab('logs')" id="nav-logs-mobile" class="flex flex-col items-center justify-center gap-1 text-slate-400 w-16 transition-colors pt-2">
+            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5" id="nav-logs-pill">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[10px] font-bold tracking-tight">Logs</span>
+        </button>
+        <button onclick="window.Auth.signOut()" class="flex flex-col items-center justify-center gap-1 text-red-500/70 w-16 transition-colors pt-2">
+            <div class="rounded-2xl w-14 h-8 flex items-center justify-center mb-0.5">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+            </div>
+            <span class="text-[10px] font-bold tracking-tight">Exit</span>
+        </button>
+    </nav>
+
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-enterprise-bg pb-20 md:pb-0">
         
         <!-- Compact Header -->
         <header class="h-12 border-b border-enterprise-border px-6 flex justify-between items-center bg-enterprise-surface shrink-0">
@@ -150,29 +175,128 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col lg:flex-row gap-4 lg:h-[600px]">
-                    <!-- Map (2/3 desktop, 300px mobile) -->
-                    <div class="w-full lg:w-2/3 h-[300px] lg:h-full bg-enterprise-surface border border-enterprise-border relative overflow-hidden flex-shrink-0">
-                        <div id="admin-live-map" class="w-full h-full z-10 bg-enterprise-bg"></div>
-                        <!-- Surgical map overlay UI -->
-                        <div class="absolute top-4 left-4 z-20 px-2 py-1 bg-enterprise-bg border border-enterprise-border shadow-sm">
-                            <p class="text-[10px] font-mono text-enterprise-muted">OPS GRID: ALPHA</p>
+                <div class="flex flex-col lg:flex-row gap-4 h-auto lg:h-[700px] mt-4">
+                    
+                    <!-- Alert Feed (Left Side, 1/3 desktop) -->
+                    <div class="w-full lg:w-1/3 flex flex-col bg-enterprise-surface border border-enterprise-border rounded-xl border-t bg-[#0D1525] overflow-hidden max-h-[500px] lg:max-h-full shadow-lg shrink-0">
+                        <div class="px-5 py-4 border-b border-enterprise-border flex justify-between items-center bg-[#131B2F] shrink-0">
+                            <h2 class="text-[11px] font-black text-white tracking-widest flex items-center gap-2">
+                                <span class="relative flex h-2 w-2">
+                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                                LIVE ALERT FEED
+                            </h2>
+                            <span class="text-[9px] bg-[#1E293B] text-slate-300 font-bold px-2 py-1.5 rounded uppercase flex items-center gap-1 shadow-inner">
+                                AUTO-SCROLLING
+                            </span>
+                        </div>
+                        <div id="admin-live-log-mini" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0B1120]/50 relative pb-8">
+                            <!-- Populated by JS -->
+                            <div class="py-16 text-center text-[10px] font-mono text-enterprise-muted flex flex-col items-center">
+                                <i data-lucide="radar" class="w-6 h-6 mb-3 opacity-30 text-emerald-500"></i>
+                                AWAITING SIGNALS...
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Alert Feed (1/3 desktop, remaining mobile) -->
-                    <div class="w-full lg:w-1/3 flex flex-col bg-enterprise-surface border border-enterprise-border">
-                        <div class="p-3 border-b border-enterprise-border flex justify-between items-center bg-enterprise-bg">
-                            <h2 class="text-[10px] uppercase text-enterprise-muted flex items-center gap-2">
-                                <i data-lucide="radio" class="w-3 h-3 text-red-500"></i> Alert Feed
-                            </h2>
-                            <button onclick="refreshLogs()" class="text-enterprise-muted hover:text-white transition-colors">
-                                <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-                            </button>
+
+                    <!-- Operations Console (Right Side, 2/3 desktop) Replacing Map -->
+                    <div class="w-full lg:w-2/3 lg:h-full bg-enterprise-surface border border-enterprise-border rounded-xl flex flex-col overflow-hidden relative shadow-lg bg-[#0D1525]" id="operations-console" style="min-height: 600px;">
+                        
+                        <!-- Placeholder State -->
+                        <div id="console-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 bg-enterprise-surface">
+                            <div class="w-24 h-24 rounded-full border border-blue-500/20 bg-blue-500/5 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.1)]">
+                                <i data-lucide="radio-tower" class="w-10 h-10 text-blue-500/70 animate-pulse"></i>
+                            </div>
+                            <h3 class="text-[13px] font-black text-slate-300 uppercase tracking-widest mb-2">Sector Clear</h3>
+                            <p class="text-xs text-enterprise-muted max-w-xs leading-relaxed font-mono">Operations Console is in standby mode. Awaiting emergency QR scan initialization.</p>
                         </div>
-                        <div id="admin-live-log-mini" class="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar bg-enterprise-surface">
-                            <!-- Populated by JS -->
-                            <div class="py-10 text-center text-xs font-mono text-enterprise-muted">WAITING FOR COMMS...</div>
+                        
+                        <!-- Active State (Hidden by default) -->
+                        <div id="console-active" class="hidden flex-col h-full z-20 w-full overflow-y-auto bg-[#0B1120]">
+                            <!-- Header / Red Box -->
+                            <div class="bg-[#240A0A] text-white p-6 md:p-8 border-l-[6px] border-red-500 shrink-0 relative overflow-hidden flex flex-col justify-between" style="min-height: 180px;">
+                                <!-- Subtle red gradient -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent"></div>
+                                <div class="absolute right-0 bottom-0 opacity-5 rotate-[15deg] translate-x-1/4 translate-y-1/4">
+                                    <i data-lucide="shield-alert" class="w-64 h-64"></i>
+                                </div>
+                                
+                                <div class="relative z-10 flex flex-col gap-1">
+                                    <h2 class="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2 mb-2">
+                                        <i data-lucide="zap" class="w-3 h-3 text-red-400"></i> Code Red Active
+                                    </h2>
+                                    <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight" id="console-name">GUEST PATIENT</h1>
+                                    <p class="text-[12px] font-bold text-red-100 flex items-center gap-3 mt-1 mono">
+                                        <span id="console-id" class="bg-red-500/20 px-2 py-0.5 rounded text-red-300">#PT-UNKNOWN</span>
+                                        <span id="console-time" class="opacity-80">Just Now</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Body -->
+                            <div class="p-4 md:p-8 flex-1 flex flex-col gap-6">
+                                <!-- Quick Actions -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+                                    <!-- Email -->
+                                    <button class="bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-white p-4 rounded-xl flex items-center justify-center gap-3 transition-all group shadow-lg hover:shadow-xl hover:-translate-y-0.5" onclick="window.consoleActionEmail()" id="btn-action-email">
+                                        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                                            <i data-lucide="mail" class="w-4 h-4 text-blue-400"></i>
+                                        </div>
+                                        <div class="text-left flex-1">
+                                            <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Automated Notification</span>
+                                            <span class="block text-sm font-bold mt-0.5">Email Family</span>
+                                        </div>
+                                    </button>
+                                    
+                                    <!-- Call -->
+                                    <a id="console-btn-call" href="#" class="bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-white p-4 rounded-xl flex items-center justify-center gap-3 transition-all group shadow-lg hover:shadow-xl hover:-translate-y-0.5 relative overflow-hidden">
+                                        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+                                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors z-10">
+                                            <i data-lucide="phone-call" class="w-4 h-4 text-emerald-400"></i>
+                                        </div>
+                                        <div class="text-left flex-1 z-10">
+                                            <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Emergency Contact</span>
+                                            <span class="block text-sm font-bold text-emerald-400 mt-0.5" id="console-contact">Call Now</span>
+                                        </div>
+                                    </a>
+                                    
+                                    <!-- Map -->
+                                    <a id="console-btn-map" href="#" target="_blank" class="bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-white p-4 rounded-xl flex items-center justify-center gap-3 transition-all group shadow-lg hover:shadow-xl hover:-translate-y-0.5 relative">
+                                        <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
+                                        <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center group-hover:bg-amber-500/30 transition-colors z-10">
+                                            <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i>
+                                        </div>
+                                        <div class="text-left flex-1 z-10">
+                                            <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Live Coordinates</span>
+                                            <span class="block text-sm font-bold text-amber-500 mt-0.5">Open Map</span>
+                                        </div>
+                                    </a>
+                                </div>
+
+                                <!-- AI Health Summary Box -->
+                                <div class="flex-1 bg-[#131B2F] border border-[#1E293B] rounded-xl p-6 md:p-8 relative overflow-hidden flex flex-col shadow-inner">
+                                    <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500 shadow-[0_0_20px_#3b82f6]"></div>
+                                    <div class="flex items-center gap-3 mb-6">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shadow-sm">
+                                            <i data-lucide="brain-circuit" class="w-5 h-5 text-blue-500"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-black text-white uppercase tracking-widest leading-none">Medical Intelligence Summary</h3>
+                                            <p class="text-[10px] text-blue-400/80 font-mono mt-1">Generated via Groq LLaMA-3 Edge</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="console-health-body" class="flex-1 overflow-y-auto text-[13px] md:text-sm text-slate-300 leading-relaxed pr-4 relative">
+                                        <!-- Loader -->
+                                        <div id="console-health-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-[#131B2F]/90 backdrop-blur-sm z-10">
+                                            <i data-lucide="radar" class="w-8 h-8 animate-spin text-blue-500 mb-4 opacity-80"></i>
+                                            <p class="text-xs font-mono text-blue-400 uppercase tracking-widest animate-pulse">Analyzing Patient History...</p>
+                                        </div>
+                                        <div id="console-health-text" class="space-y-3 pb-8"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
