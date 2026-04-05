@@ -212,13 +212,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
                     <span id="connection-status">OPERATIONAL SYNC</span>
                 </div>
-                <span>|</span>
-                <div class="flex items-center gap-1 opacity-50">
-                    <i data-lucide="zap" class="w-2.5 h-2.5 text-blue-400"></i>
-                    <span>12ms</span>
-                </div>
-                <span>|</span>
-                <span class="bg-enterprise-border px-3 py-1 rounded text-[10px] font-black text-white tracking-widest uppercase brightness-110">COMMAND CENTER</span>
+                <span class="bg-white px-4 py-1.5 rounded-full text-[10px] font-black text-black tracking-[0.2em] uppercase shadow-lg border border-white/20">COMMAND CENTRE</span>
             </div>
         </header>
 
@@ -228,6 +222,25 @@
             <!-- OVERVIEW & MONITORING SECTOR -->
             <section id="section-overview" class="flex flex-col gap-4">
                 
+                <!-- TACTICAL ONBOARDING WIDGET (NEW) -->
+                <div class="bg-[#111827] border border-amber-500/30 p-5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.1)] flex items-center justify-between group hover:border-amber-500/50 transition-all cursor-pointer" onclick="window.openCreateManualModal()">
+                    <div class="flex items-center gap-5">
+                        <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 shadow-inner group-hover:scale-110 transition-transform">
+                            <i data-lucide="user-plus" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-[12px] font-black text-amber-500 uppercase tracking-[0.2em]">Personnel Onboarding Portal</h3>
+                            <p class="text-[11px] text-slate-400 font-mono mt-1">Initiate manual record creation for field operatives. Optimized for tactical speed.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden md:block">Click to initialize</span>
+                        <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-lg group-hover:translate-x-1 transition-transform">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- KPI Strip: 4 metrics -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-enterprise-surface border border-enterprise-border p-4">
@@ -348,11 +361,15 @@
                                     <h2 class="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2 mb-2">
                                         <i data-lucide="zap" class="w-3 h-3 text-red-400"></i> Code Red Active
                                     </h2>
-                                    <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight" id="console-name">GUEST PATIENT</h1>
-                                    <p class="text-[12px] font-bold text-red-100 flex items-center gap-3 mt-1 mono">
-                                        <span id="console-id" class="bg-red-500/20 px-2 py-0.5 rounded text-red-300">#PT-UNKNOWN</span>
-                                        <span id="console-time" class="opacity-80">Just Now</span>
-                                    </p>
+                                    <div class="flex flex-col gap-3 items-start">
+                                        <div class="bg-white px-6 py-3 rounded-2xl shadow-2xl transform -rotate-1">
+                                            <h1 class="text-xl md:text-3xl font-black text-black uppercase tracking-tighter leading-none" id="console-name">RESOLVING IDENTITY...</h1>
+                                        </div>
+                                        <div class="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-xl shadow-xl transform rotate-1 border border-white/20">
+                                            <p class="text-[11px] font-black text-black mono tracking-widest" id="console-id">#ID-PENDING</p>
+                                        </div>
+                                        <p class="text-[10px] font-bold text-red-200 mt-1 opacity-60 uppercase tracking-widest" id="console-time">INITIALIZING DATA SECTOR...</p>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -683,63 +700,98 @@
 
     <!-- Create Manual Profile Modal -->
     <div id="admin-create-modal" class="hidden fixed inset-0 z-[3000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-enterprise-surface border border-enterprise-border w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+        <div class="bg-enterprise-surface border border-enterprise-border w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-enterprise-border flex justify-between items-center bg-[#131B2F]">
-                <h3 class="text-white text-sm font-black tracking-widest flex items-center gap-2 uppercase">
-                    <i data-lucide="user-plus" class="w-4 h-4 text-amber-500"></i> New Personnel Record
+            <div class="px-6 py-5 border-b border-enterprise-border flex justify-between items-center bg-[#131B2F] relative">
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500"></div>
+                <h3 class="text-white text-sm font-black tracking-[0.2em] flex items-center gap-3 uppercase ml-2">
+                    <i data-lucide="shield-plus" class="w-5 h-5 text-amber-500"></i> Personnel Deployment Profile
                 </h3>
                 <button onclick="closeCreateManualModal()" class="text-enterprise-muted hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-1 space-y-5 text-xs font-mono">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Full Identity (Required)</label>
-                        <input type="text" id="create-fullName" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase tracking-tight" placeholder="JOHN DOE">
+            <div class="p-6 md:p-8 overflow-y-auto flex-1 space-y-6 text-xs font-mono bg-[#0B1120]">
+                <!-- Step 1: Basic Identity -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2 border-b border-enterprise-border pb-1">
+                        <span class="text-amber-500 font-black">01</span>
+                        <span class="text-[10px] text-white uppercase tracking-widest">Core Identification</span>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Blood Type</label>
-                        <select id="create-bloodGroup" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase">
-                            <option value="">Select...</option>
-                            <option value="A+">A+</option><option value="A-">A-</option>
-                            <option value="B+">B+</option><option value="B-">B-</option>
-                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                            <option value="O+">O+</option><option value="O-">O-</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Age</label>
-                        <input type="number" id="create-age" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="25">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Gender</label>
-                        <select id="create-gender" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase">
-                            <option value="MALE">MALE</option>
-                            <option value="FEMALE">FEMALE</option>
-                            <option value="OTHER">OTHER</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Contact #</label>
-                        <input type="text" id="create-contact" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="9988776655">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] text-enterprise-muted uppercase font-bold">Operative Full Name</label>
+                            <input type="text" id="create-fullName" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all uppercase placeholder-slate-700 font-black" placeholder="RAHUL RANJAN">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] text-enterprise-muted uppercase font-bold">Age</label>
+                                <input type="number" id="create-age" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all font-black" placeholder="25">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] text-enterprise-muted uppercase font-bold">Gender</label>
+                                <select id="create-gender" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all font-black uppercase">
+                                    <option value="MALE">MALE</option>
+                                    <option value="FEMALE">FEMALE</option>
+                                    <option value="NON-BINARY">NON-BINARY</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <label class="text-[10px] text-enterprise-muted uppercase">Critical Allergies</label>
-                    <textarea id="create-allergies" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="e.g. Peanuts, Aspirin..."></textarea>
+                <!-- Step 2: Essential Vitals -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center gap-2 mb-2 border-b border-enterprise-border pb-1">
+                        <span class="text-amber-500 font-black">02</span>
+                        <span class="text-[10px] text-white uppercase tracking-widest">Medical Parameters</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] text-enterprise-muted uppercase font-bold">Blood Group</label>
+                            <select id="create-bloodGroup" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-red-500 transition-all font-black uppercase">
+                                <option value="">SELECT...</option>
+                                <option value="A+">A+</option><option value="A-">A-</option>
+                                <option value="B+">B+</option><option value="B-">B-</option>
+                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                <option value="O+">O+</option><option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 space-y-1.5">
+                            <label class="text-[10px] text-enterprise-muted uppercase font-bold">Emergency Contact #</label>
+                            <input type="text" id="create-contact" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all font-black" placeholder="+91 98355 96655">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Tactical Medical Context -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center gap-2 mb-2 border-b border-enterprise-border pb-1">
+                        <span class="text-amber-500 font-black">03</span>
+                        <span class="text-[10px] text-white uppercase tracking-widest">Mission Critical Context</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] text-enterprise-muted uppercase font-bold">Active Diseases / Conditions</label>
+                            <textarea id="create-conditions" rows="2" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all placeholder-slate-700" placeholder="e.g. Type 2 Diabetes, Hypertension..."></textarea>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] text-enterprise-muted uppercase font-bold">Current Medications</label>
+                            <textarea id="create-medications" rows="2" class="w-full bg-[#111827] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-all placeholder-slate-700" placeholder="e.g. Metformin 500mg (Daily)..."></textarea>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5 mt-4">
+                        <label class="text-[10px] text-enterprise-muted uppercase font-bold text-red-400">Critical Allergies / Life-Threatening</label>
+                        <textarea id="create-allergies" rows="2" class="w-full bg-[#111827] border border-red-500/30 p-3 focus:border-red-500 focus:outline-none text-white transition-all placeholder-slate-800" placeholder="e.g. PEANUTS, PENICILLIN (SEVERE RESPONSE)"></textarea>
+                    </div>
                 </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-enterprise-border bg-[#0B1120] flex justify-end gap-3">
-                <button onclick="closeCreateManualModal()" class="px-6 py-3 border border-enterprise-border text-enterprise-muted hover:text-white hover:bg-enterprise-border text-[11px] font-black uppercase tracking-widest transition-all">STAY OF EXECUTION</button>
-                <button onclick="window.saveManualProfile()" id="btn-save-manual" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">COMMIT RECORD</button>
+            <div class="px-6 py-5 border-t border-enterprise-border bg-[#131B2F] flex justify-end items-center gap-4">
+                <span class="text-[10px] text-slate-500 font-mono italic flex-1">Authorized personnel creation only.</span>
+                <button onclick="closeCreateManualModal()" class="px-6 py-3 border border-enterprise-border text-enterprise-muted hover:text-white hover:bg-enterprise-border text-[11px] font-black uppercase tracking-widest transition-all">ABORT</button>
+                <button onclick="window.saveManualProfile()" id="btn-save-manual" class="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">COMMIT PROFILE</button>
             </div>
         </div>
     </div>

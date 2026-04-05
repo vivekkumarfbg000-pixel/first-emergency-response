@@ -6,6 +6,14 @@
 -- ── STEP 1: Add missing columns to patients table ──────────
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS contact1_email TEXT DEFAULT '';
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS age INTEGER;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS gender TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS emergencyContact TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS allergies TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS conditions TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS medications TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS bloodGroup TEXT;
+ALTER TABLE patients ADD COLUMN IF NOT EXISTS fullName TEXT;
 
 -- ── STEP 2: Add missing columns to scans table ────────────
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS is_emergency BOOLEAN DEFAULT FALSE;

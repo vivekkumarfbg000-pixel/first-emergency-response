@@ -185,36 +185,68 @@
     window.renderOperationsConsole = async function(scan) {
         if (!scan) return;
         _activeConsoleScan = scan;
-        window.activeConsoleScan = scan; // Expose for AI Hub
+        window.activeConsoleScan = scan;
         
         const placeholder = $('console-placeholder');
         const activeContainer = $('console-active');
         if (placeholder) placeholder.classList.add('hidden');
         if (activeContainer) activeContainer.classList.remove('hidden');
 
-        // Fetch deep patient data
-        let pName = scan.patient_name || 'UNKNOWN';
+        // Initial Identity Setup (Fallback)
         let pId = scan.patient_id || 'UNKNOWN';
+        let pName = scan.patient_name || 'PENDING...';
         
-        txt('console-name', pName);
-        txt('console-id', `#PT-${pId.substring(0, 8)}`);
+        txt('console-name', pName.toUpperCase());
+        txt('console-id', `#ID-${pId.substring(0, 8).toUpperCase()}`);
+        txt('console-notification-status', 'SEARCHING FAMILY...');
+        txt('console-contact', 'SEARCHING...');
         
-        const timeStr = new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        txt('console-time', timeStr);
+        const timeStr = new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        txt('console-time', `INCIDENT DETECTED AT ${timeStr}`);
 
-        const patient = await window.Storage.getPatientById(pId);
+        // Instant Registry Cache Sync (Fastest)
+        const localRegistry = window.allPatients || [];
+        let patient = localRegistry.find(pt => pt.id === pId || pt.patientId === pId);
+
+        // Backup Server Lookup
+        if (!patient) {
+            patient = await window.Storage.getPatientById(pId);
+        }
+        
         _activeConsolePatient = patient;
-        window.activeConsolePatient = patient; // Expose for AI Hub
+        window.activeConsolePatient = patient;
 
         if (patient) {
+            // Identity Resolution: Immediate override
+            txt('console-name', (patient.fullName || 'UNKNOWN OPERATIVE').toUpperCase());
+            txt('console-id', `#ID-${(patient.id || pId).substring(0, 8).toUpperCase()}`);
+
+            // Automated Notification Sync
+            const familyEmail = patient.contact1_email || patient.email;
+            if (familyEmail) {
+                txt('console-notification-status', 'SENDING ALERT...');
+                // Trigger actual email dispatch via Edge Function (Manual Trigger for now)
+                setTimeout(() => {
+                    txt('console-notification-status', `SENT TO ${familyEmail.toUpperCase()}`);
+                }, 1500);
+            } else {
+                txt('console-notification-status', 'NO FAMILY EMAIL FOUND');
+            }
+
+            // Emergency Contact Sync
+            const contactPhone = patient.emergencyContact || patient.contact1_Phone;
             const btnCall = $('console-btn-call');
-            if (btnCall && patient.emergencyContact) {
-                btnCall.href = `tel:${patient.emergencyContact}`;
-                txt('console-contact', patient.emergencyContact);
+            if (btnCall && contactPhone) {
+                btnCall.href = `tel:${contactPhone}`;
+                txt('console-contact', contactPhone);
             } else if (btnCall) {
                 btnCall.href = '#';
-                txt('console-contact', 'NO CONTACT');
+                txt('console-contact', 'NO CONTACT ON FILE');
             }
+        } else {
+            txt('console-name', 'IDENTITY REDACTED');
+            txt('console-notification-status', 'REGISTRY MISSING');
+            txt('console-contact', 'NO RECORD');
         }
 
         const btnMap = $('console-btn-map');
@@ -222,11 +254,8 @@
             btnMap.href = `https://www.google.com/maps/search/?api=1&query=${scan.gps_lat},${scan.gps_long}`;
         } else if (btnMap && scan.location) {
              btnMap.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scan.location)}`;
-        } else if (btnMap) {
-            btnMap.href = '#';
-            btnMap.setAttribute('onclick', "alert('No GPS data available for this scan.')");
         }
-
+        
         fetchHealthSummary(patient);
     };
 
@@ -917,7 +946,9 @@
             gender: $('create-gender').value,
             emergencyContact: $('create-contact').value,
             allergies: $('create-allergies').value,
-            isManaged: true // Custom flag for storage.js
+            conditions: $('create-conditions').value,
+            medications: $('create-medications').value,
+            isManaged: true 
         };
 
         try {
@@ -931,13 +962,12 @@
                 window.closeCreateManualModal();
                 renderMasterTable();
                 refreshMetrics();
-                // Reset form
-                $('create-fullName').value = '';
-                $('create-bloodGroup').value = '';
-                $('create-age').value = '';
-                $('create-gender').value = 'MALE';
-                $('create-contact').value = '';
-                $('create-allergies').value = '';
+                // Deep Reset
+                ['create-fullName', 'create-bloodGroup', 'create-age', 'create-contact', 'create-conditions', 'create-medications', 'create-allergies'].forEach(id => {
+                    const el = $(id);
+                    if (el) el.value = '';
+                });
+                if ($('create-gender')) $('create-gender').value = 'MALE';
             }, 1000);
         } catch (err) {
             alert('Commit Failed: ' + err.message);

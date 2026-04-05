@@ -41,13 +41,18 @@ window.CardGenerator = {
         return canvas;
     },
 
-    // ─── 1. USER: High-Fidelity Branded QR (Metallic Design) ───
+    // ─── 1. USER: High-Fidelity Branded QR (Metallic Landscape Design) ───
     generateBrandedQR: async function(p, mode = 'vcard') {
-        const cw = 800;
-        const ch = 880;
+        const cw = 1100;
+        const ch = 650;
         const canvas = document.createElement('canvas');
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext('2d');
+
+        const burgundy = '#6B1C23';
+        const gold = '#D4A017';
+        const teal = '#064E3B';
+        const brandGold = '#C5A059';
 
         // 1. Metallic Background (Brushed Steel)
         const grad = ctx.createLinearGradient(0, 0, cw, ch);
@@ -60,7 +65,7 @@ window.CardGenerator = {
         ctx.fillRect(0, 0, cw, ch);
 
         // Enhanced Brushed Texture
-        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+        ctx.strokeStyle = 'rgba(0,0,0,0.07)';
         ctx.lineWidth = 0.5;
         for(let i=0; i<ch; i+=2) {
             ctx.beginPath();
@@ -70,103 +75,123 @@ window.CardGenerator = {
         }
 
         // 2. Upper Section (Emergency - Burgundy)
-        const burgundy = '#6B1C23';
-        const gold = '#D4A017';
-        
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 30, 30, 480, 150, 20);
+        this._roundRect(ctx, 30, 30, 640, 140, 20);
         ctx.fill();
         
-        // "EMERGENCY" text
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 36px "Inter", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('EMERGENCY', 85, 95);
 
-        // Gold-bordered prompter box (centered inside burgundy tab)
+        // Gold prompter box (centered inside header)
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 80, 115, 380, 80, 10);
+        this._roundRect(ctx, 90, 110, 680, 80, 15);
         ctx.fill();
         ctx.strokeStyle = gold;
         ctx.lineWidth = 4;
         ctx.stroke();
 
-        // "स्कैन करें" correctly spelled prompter
         ctx.fillStyle = gold;
-        ctx.font = 'bold 44px "Hind", serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('स्कैन करें', 270, 172);
+        ctx.font = 'bold 54px "Hind", serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('स्कैन करें', 740, 172);
         
-        // Lines inside the prompter box
+        // Lines inside prompter
         ctx.beginPath();
         ctx.strokeStyle = gold;
         ctx.lineWidth = 2;
-        ctx.moveTo(105, 160); ctx.lineTo(190, 160);
-        ctx.moveTo(350, 160); ctx.lineTo(435, 160);
+        ctx.moveTo(110, 160); ctx.lineTo(500, 160);
         ctx.stroke();
 
-        // 3. QR Code Grid
-        const qrSize = 580;
+        // 3. Patient Info (Left Section)
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#1e293b';
+        ctx.font = '900 64px "Inter", sans-serif';
+        const name = (p.fullName || 'NAME REDACTED').toUpperCase();
+        ctx.fillText(name, 80, 260);
+
+        ctx.font = 'bold 38px "Inter", sans-serif';
+        const displayId = (p.id || p.patientId || 'A0000000').substring(0, 8).toUpperCase();
+        ctx.fillText(`ID: ${displayId}`, 80, 320);
+
+        // Blood Group (Red)
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '900 44px "Inter", sans-serif';
+        ctx.fillText(`BLOOD GROUP: ${p.bloodGroup || 'UNKNOWN'}`, 80, 385);
+
+        // Allergies
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 38px "Inter", sans-serif';
+        ctx.fillText(`Critical Allergies: `, 80, 450);
+        const allergies = p.allergies || 'NA';
+        ctx.fillStyle = (allergies === 'NA' || !allergies) ? '#334155' : '#ef4444';
+        ctx.fillText(allergies.toUpperCase(), 430, 450);
+
+        // Contact
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 38px "Inter", sans-serif';
+        ctx.fillText(`Family Contact: ${p.emergencyContact || 'NOT SET'}`, 80, 515);
+
+        // 4. QR Section (Right Side)
+        const qrSize = 300;
         const qrCanvas = await this._generateQR(p, qrSize, mode);
         
-        // Outer glow/shadow for the QR area to make it look embedded
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 40;
-        ctx.shadowOffsetY = 10;
-        
-        // Draw a slightly larger container for the QR
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 20;
         ctx.fillStyle = '#ffffff';
-        this._roundRect(ctx, (cw - (qrSize + 20))/2, 220, qrSize + 20, qrSize + 20, 15);
+        this._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
         ctx.fill();
         ctx.restore();
-
-        ctx.drawImage(qrCanvas, (cw - qrSize)/2, 230, qrSize, qrSize);
-
-        // 4. Lower Section (Initiative - Teal)
-        const teal = '#064E3B'; // Deep Emerald Teal
-        const brandGold = '#C5A059'; // Metallic Gold
         
-        ctx.fillStyle = teal;
-        this._roundRect(ctx, 30, 750, 740, 110, 20);
-        ctx.fill();
-        
-        // Border for teal bar
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = gold;
+        ctx.lineWidth = 4;
+        this._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
         ctx.stroke();
 
-        // Medical Icon (Shield with inner plus)
-        this._drawMedicalShield(ctx, 130, 805, 45);
+        ctx.drawImage(qrCanvas, 742, 222, qrSize, qrSize);
 
-        // "Initiative:" label
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'normal 22px "Inter", sans-serif';
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 18px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('SCAN TO VIEW MEDICAL REPORT', 742 + qrSize/2, 535);
+
+        // 5. Footer (Teal Bar)
+        ctx.fillStyle = teal;
+        this._roundRect(ctx, 30, 550, 1040, 110, 20);
+        ctx.fill();
+
+        this._drawMedicalShield(ctx, 130, 605, 45);
+
+        // Brand Label
         ctx.textAlign = 'left';
-        ctx.fillText('Initiative:', 195, 792);
-        
-        // "सेहत Point" brand mark
-        // Drop shadow for gold text depth
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 4;
         ctx.shadowOffsetY = 2;
-
         ctx.fillStyle = brandGold;
-        ctx.font = 'bold 58px "Hind", serif';
-        ctx.fillText('सेहत', 310, 818);
+        ctx.font = 'bold 54px "Hind", serif';
+        ctx.fillText('सेहत', 195, 618);
         ctx.restore();
 
-        ctx.fillStyle = '#ffffff'; // Brand "Point" is white
-        ctx.font = 'bold 50px "Inter", sans-serif';
-        ctx.fillText('Point', 445, 818);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px "Inter", sans-serif';
+        ctx.fillText('Point', 320, 618);
 
-        // 5. Card Border Accents (Gold line above footer)
+        // Local Emergency Numbers (Right side of footer)
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px "Inter", sans-serif';
+        ctx.fillText('Emergency - 112', 1030, 595);
+        ctx.font = 'normal 28px "Inter", sans-serif';
+        ctx.fillText('sehat point - 9876543210', 1030, 635);
+
+        // Gold line separator
         ctx.strokeStyle = gold;
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(30, 740);
-        ctx.lineTo(770, 740);
+        ctx.moveTo(30, 550); ctx.lineTo(1070, 550);
         ctx.stroke();
 
         this._download(canvas, `SehatPoint-QR-${p.fullName || 'User'}-${mode}.png`);
