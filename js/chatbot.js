@@ -142,6 +142,7 @@
     async function getTacticalContext() {
         const patients = await window.Storage.getAllPatients() || [];
         return {
+            patients: patients.slice(0, 30),
             systemMetrics: { totalUsers: $('metric-users')?.textContent || '0', totalScans: $('metric-scans')?.textContent || '0' },
             activeScan: window.activeConsoleScan || null,
             activePatient: window.activeConsolePatient || null,

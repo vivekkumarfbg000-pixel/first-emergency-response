@@ -460,6 +460,10 @@ END:VCARD`;
             } catch (err) { }
         }
         return this.getScanHistoryLocal().length;
+    },
+
+    getScanCount: async function() {
+        return await this.getTotalScans();
     }
 };
 

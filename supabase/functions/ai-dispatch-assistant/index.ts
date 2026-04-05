@@ -112,18 +112,24 @@ serve(async (req: any) => {
 });
 
 function getSystemPrompt(ctx: any) {
-  const { systemMetrics, activeScan, activePatient } = ctx || {};
+  const { patients, systemMetrics, activeScan, activePatient } = ctx || {};
+  const registryText = patients && patients.length > 0 
+    ? `REGISTRY DATA (${patients.length} records): ${JSON.stringify(patients.map((p:any) => ({ name: p.fullName, blood: p.bloodGroup, cond: p.conditions })))}`
+    : 'REGISTRY DATA: Empty or Restricted Access.';
+
   return `You are Sehat Dispatch Intelligence (V2). Your objective: Tactical support for the Sehat Point Emergency Administrator.
 
 TACTICAL FEED:
 - ACTIVE INCIDENT: ${activeScan ? `Location: ${activeScan.location || activeScan.gps_lat + ',' + activeScan.gps_long}. Type: ${activeScan.type}` : 'Sector Clear'}
 - RISK PATIENT: ${activePatient ? `${activePatient.fullName} (Blood: ${activePatient.bloodGroup}, Allergies: ${activePatient.allergies})` : 'None'}
 - METRICS: Profiles: ${systemMetrics?.totalUsers || '0'}, Scans: ${systemMetrics?.totalScans || '0'}
+- ${registryText}
 
 CAPABILITIES:
 1. INFRASTRUCTURE: Report on system health or scan volume.
 2. TRIAGE: Analyze blood groups and allergies.
-3. ACTION TRIGGERING: If the user wants to see a patient, include :::ACTION:::{"type":"view_patient","id":"ID"}::: at the end.
+3. REGISTRY AUDIT: If asked to "analyze the registry" or "audit personnel", use the REGISTRY DATA above to provide a professional summary of available medical readiness and personnel health trends.
+4. ACTION TRIGGERING: If the user wants to see a patient, include :::ACTION:::{"type":"view_patient","id":"ID"}::: at the end.
 
 RESPONSE FORMAT:
 - Use Markdown. Use Bold headers.

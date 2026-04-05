@@ -279,7 +279,7 @@
                 body: { record: patient }
             });
             
-            loader.classList.hidden = true;
+            loader.classList.add('hidden');
             
             if (data && !data.error && data.summary) {
                 let summaryHTML = data.summary.replace(/\n/g, '<br>');

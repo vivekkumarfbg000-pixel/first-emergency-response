@@ -76,7 +76,7 @@ window.CardGenerator = {
 
         // 2. Upper Section (Emergency - Burgundy)
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 30, 30, 640, 140, 20);
+        CardGenerator._roundRect(ctx, 30, 30, 640, 140, 20);
         ctx.fill();
         
         ctx.fillStyle = '#ffffff';
@@ -86,7 +86,7 @@ window.CardGenerator = {
 
         // Gold prompter box (centered inside header)
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 90, 110, 680, 80, 15);
+        CardGenerator._roundRect(ctx, 90, 110, 680, 80, 15);
         ctx.fill();
         ctx.strokeStyle = gold;
         ctx.lineWidth = 4;
@@ -131,23 +131,23 @@ window.CardGenerator = {
         // Contact
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 38px "Inter", sans-serif';
-        ctx.fillText(`Family Contact: ${p.emergencyContact || 'NOT SET'}`, 80, 515);
+        ctx.fillText(`Family Contact: ${p.emergencyContact || p.contact1_Phone || 'NOT SET'}`, 80, 515);
 
         // 4. QR Section (Right Side)
         const qrSize = 300;
-        const qrCanvas = await this._generateQR(p, qrSize, mode);
+        const qrCanvas = await CardGenerator._generateQR(p, qrSize, mode);
         
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.15)';
         ctx.shadowBlur = 20;
         ctx.fillStyle = '#ffffff';
-        this._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
+        CardGenerator._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
         ctx.fill();
         ctx.restore();
         
         ctx.strokeStyle = gold;
         ctx.lineWidth = 4;
-        this._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
+        CardGenerator._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
         ctx.stroke();
 
         ctx.drawImage(qrCanvas, 742, 222, qrSize, qrSize);
@@ -159,10 +159,10 @@ window.CardGenerator = {
 
         // 5. Footer (Teal Bar)
         ctx.fillStyle = teal;
-        this._roundRect(ctx, 30, 550, 1040, 110, 20);
+        CardGenerator._roundRect(ctx, 30, 550, 1040, 110, 20);
         ctx.fill();
 
-        this._drawMedicalShield(ctx, 130, 605, 45);
+        CardGenerator._drawMedicalShield(ctx, 130, 605, 45);
 
         // Brand Label
         ctx.textAlign = 'left';
@@ -194,7 +194,7 @@ window.CardGenerator = {
         ctx.moveTo(30, 550); ctx.lineTo(1070, 550);
         ctx.stroke();
 
-        this._download(canvas, `SehatPoint-QR-${p.fullName || 'User'}-${mode}.png`);
+        CardGenerator._download(canvas, `SehatPoint-QR-${p.fullName || 'User'}-${mode}.png`);
     },
 
     // ─── 2. ADMIN: Premium Medical Identity Card ───
@@ -230,7 +230,7 @@ window.CardGenerator = {
         const gold = '#D4A017';
         
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 30, 30, 640, 140, 20);
+        CardGenerator._roundRect(ctx, 30, 30, 640, 140, 20);
         ctx.fill();
         
         ctx.fillStyle = '#ffffff';
@@ -240,7 +240,7 @@ window.CardGenerator = {
 
         // Gold prompter box (centered inside header)
         ctx.fillStyle = burgundy;
-        this._roundRect(ctx, 90, 110, 680, 80, 15);
+        CardGenerator._roundRect(ctx, 90, 110, 680, 80, 15);
         ctx.fill();
         ctx.strokeStyle = gold;
         ctx.lineWidth = 4;
@@ -284,14 +284,15 @@ window.CardGenerator = {
 
         // Contact
         ctx.fillStyle = '#334155';
-        ctx.fillText(`Family Contact: ${p.contact1_Phone || 'NOT SET'}`, 80, 515);
+        ctx.font = 'bold 38px "Inter", sans-serif';
+        ctx.fillText(`Family Contact: ${p.contact1_Phone || p.emergencyContact || 'NOT SET'}`, 80, 515);
 
         // 4. QR Section (Right Side)
         const qrSize = 280;
-        const qrCanvas = await this._generateQR(p, qrSize, 'url'); // Identity cards use URL for instant access
+        const qrCanvas = await CardGenerator._generateQR(p, qrSize, 'url'); // Identity cards use URL for instant access
         
         ctx.fillStyle = '#ffffff';
-        this._roundRect(ctx, 730, 210, qrSize + 20, qrSize + 20, 10);
+        CardGenerator._roundRect(ctx, 730, 210, qrSize + 20, qrSize + 20, 10);
         ctx.fill();
         ctx.strokeStyle = gold;
         ctx.lineWidth = 3;
@@ -309,10 +310,10 @@ window.CardGenerator = {
         const brandGold = '#C5A059';
 
         ctx.fillStyle = teal;
-        this._roundRect(ctx, 30, 550, 1040, 110, 20); // Overflow a bit for bleed look
+        CardGenerator._roundRect(ctx, 30, 550, 1040, 110, 20); // Overflow a bit for bleed look
         ctx.fill();
 
-        this._drawMedicalShield(ctx, 130, 605, 45);
+        CardGenerator._drawMedicalShield(ctx, 130, 605, 45);
 
         // Brand Label
         ctx.textAlign = 'left';
@@ -344,7 +345,7 @@ window.CardGenerator = {
         ctx.moveTo(30, 550); ctx.lineTo(1070, 550);
         ctx.stroke();
 
-        this._download(canvas, `SehatPoint-ID-${p.fullName || 'User'}.png`);
+        CardGenerator._download(canvas, `SehatPoint-ID-${p.fullName || 'User'}.png`);
     },
 
     // ─── 3. ADMIN: Premium Silicon Wristband ───
@@ -360,7 +361,7 @@ window.CardGenerator = {
         bandGrad.addColorStop(0.5, '#0f172a');
         bandGrad.addColorStop(1, '#1e293b');
         ctx.fillStyle = bandGrad;
-        this._roundRect(ctx, 40, 40, cw-80, ch-80, 40);
+        CardGenerator._roundRect(ctx, 40, 40, cw-80, ch-80, 40);
         ctx.fill();
 
         // Texture/Shadow
@@ -369,7 +370,7 @@ window.CardGenerator = {
         ctx.strokeRect(50, 50, cw-100, ch-100);
 
         // Left Branding
-        this._drawMedicalShield(ctx, 150, ch/2, 50);
+        CardGenerator._drawMedicalShield(ctx, 150, ch/2, 50);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'italic 900 48px sans-serif';
         ctx.textAlign = 'left';
@@ -403,13 +404,13 @@ window.CardGenerator = {
 
         // QR Zone
         const qrSize = 240;
-        const qrCanvas = await this._generateQR(p, qrSize, 'url');
+        const qrCanvas = await CardGenerator._generateQR(p, qrSize, 'url');
         
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(1420, 80, qrSize+20, qrSize+20);
         ctx.drawImage(qrCanvas, 1430, 90, qrSize, qrSize);
 
-        this._download(canvas, `Premium-Wristband-${p.fullName || 'Patient'}.png`);
+        CardGenerator._download(canvas, `Premium-Wristband-${p.fullName || 'Patient'}.png`);
     },
 
     // ─── HELPERS ───
