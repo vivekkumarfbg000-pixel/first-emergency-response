@@ -8,6 +8,12 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   
+  <!-- PWA & iOS Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#0B1120">
+  
   <script>
       // High-Priority Redirect for Session Persistence
       (function() {
@@ -549,9 +555,9 @@
   <script>
       if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-              navigator.serviceWorker.register('service-worker.js')
-                  .then(reg => console.log('ServiceWorker registered:', reg.scope))
-                  .catch(e => console.error('ServiceWorker error:', e));
+              navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                  .then(reg => console.log('[PWA] ServiceWorker Registered:', reg.scope))
+                  .catch(e => console.error('[PWA] ServiceWorker Failed:', e));
           });
       }
   </script>

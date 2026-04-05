@@ -139,19 +139,19 @@
         _realtimeChannel = db.channel('dispatch-incident-reporting')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, payload => {
                 pushAlertToFeed(payload.new);
-                refreshMetrics();
+                window.refreshMetrics();
                 renderAnalytics();
                 renderOperationsConsole(payload.new);
                 playAlertSound();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, () => {
-                refreshMetrics();
+                window.refreshMetrics();
                 refreshLogs();
                 renderAnalytics();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
-                renderMasterTable();
-                refreshMetrics();
+                window.renderMasterTable();
+                window.refreshMetrics();
                 renderAnalytics();
             })
             .subscribe();
@@ -250,7 +250,7 @@
                 body: { record: patient }
             });
             
-            loader.classList.add('hidden');
+            loader.classList.hidden = true;
             
             if (data && !data.error && data.summary) {
                 let summaryHTML = data.summary.replace(/\n/g, '<br>');
@@ -368,7 +368,7 @@
     };
 
     // ─── Data Rendering ───
-    async function renderMasterTable(filter = '') {
+    window.renderMasterTable = async function(filter = '') {
         const body = $('admin-table-body');
         if (!body) return;
 
@@ -419,15 +419,17 @@
                     </td>
                     <td class="px-6 py-5 text-right" onclick="event.stopPropagation()">
                         <div class="flex justify-end gap-3">
-                            <button onclick="window.generateAdminAssets('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-slate-800 transition-all rounded-lg group/btn" title="Print Assets">
-                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            <button onclick="window.generateCustomIDCard('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-all rounded-lg group/btn" title="Medical Identity Card">
+                                <i data-lucide="id-card" class="w-4 h-4"></i>
                             </button>
-                            <button onclick="window.openEditModal('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-blue-600/20 hover:border-blue-500/50 transition-all rounded-lg group/btn" title="Edit Profile">
+                            <button onclick="window.generateCustomWristband('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-emerald-600/20 hover:border-emerald-500/50 transition-all rounded-lg group/btn" title="Premium Wristband">
+                                <i data-lucide="watch" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="window.generateHighFidelityBranding('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-amber-600/20 hover:border-amber-500/50 transition-all rounded-lg group/btn" title="Branded QR Asset">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="window.openEditModal('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-slate-700 transition-all rounded-lg group/btn" title="Edit Profile">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="window.viewUserDashboard('${p.id}')" class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-amber-500/30 text-amber-500/80 px-4 py-2 hover:text-white hover:bg-amber-500 transition-all rounded-lg shadow-lg shadow-amber-500/5 group/btn">
-                                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
-                                Open Ops
                             </button>
                         </div>
                     </td>
@@ -435,7 +437,7 @@
             `;
         }).join('');
         if (window.lucide) lucide.createIcons();
-    }
+    };
 
     window.refreshLogs = async function() {
         const body = $('admin-log-body');
@@ -443,6 +445,14 @@
         
         try {
             const scans = await window.Storage.getScanHistory() || [];
+            const patients = await window.Storage.getAllPatients() || [];
+            
+            const getName = (s) => {
+                if (s.patient_name && s.patient_name !== 'Unknown') return s.patient_name;
+                const p = patients.find(p => p.id === s.patient_id || p.patientId === s.patient_id);
+                return p ? p.fullName : 'Unknown';
+            };
+
             if (scans.length === 0) {
                 if(mini) mini.innerHTML = `<div class="py-6 text-center opacity-20 text-[8px] uppercase font-black tracking-widest">Awaiting Scanner Signals...</div>`;
                 return;
@@ -483,7 +493,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <h4 class="text-xs font-black text-red-500 uppercase tracking-widest truncate mb-1">URGENT: SCAN DETECTED</h4>
-                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${s.patient_name || 'Unknown'}</p>
+                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${getName(s)}</p>
                                     <p class="text-[10px] text-slate-500 font-mono mb-1">ID: #PT-${(s.patient_id||'').substring(0,8)}</p>
                                     <p class="text-[10px] text-slate-400 flex items-center gap-1 mb-2 truncate">
                                         <i data-lucide="map-pin" class="w-3 h-3 text-red-500 shrink-0"></i> ${s.location||'GPS UNAVAILABLE'}
@@ -504,7 +514,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <h4 class="text-xs font-black text-amber-500 uppercase tracking-widest truncate mb-1">PENDING: SCAN DETECTED</h4>
-                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${s.patient_name || 'Unknown'}</p>
+                                    <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${getName(s)}</p>
                                     <p class="text-[10px] text-slate-500 font-mono mb-1">ID: #PT-${(s.patient_id||'').substring(0,8)}</p>
                                     <p class="text-[10px] text-slate-400 flex items-center gap-1 mb-2 truncate">
                                         <i data-lucide="clock" class="w-3 h-3 text-slate-500 shrink-0"></i> ${timeStr} • Loc: ${s.location||'N/A'}
@@ -695,11 +705,40 @@
         }
     };
 
-    window.generateAdminAssets = async function(id) {
+    let _adminQRMode = 'vcard';
+    window.setAdminQRMode = function(mode) {
+        _adminQRMode = mode;
+        const vcardBtn = $('admin-qr-vcard');
+        const urlBtn = $('admin-qr-url');
+        if (vcardBtn && urlBtn) {
+            if (mode === 'vcard') {
+                vcardBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white';
+                urlBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white';
+            } else {
+                urlBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white';
+                vcardBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white';
+            }
+        }
+    };
+
+    window.generateCustomIDCard = async function(id) {
         const patient = await window.Storage.getPatientById(id);
         if (patient && window.CardGenerator) {
             await window.CardGenerator.generateMedicalCard(patient);
-            setTimeout(() => window.CardGenerator.generateWristband(patient), 1000);
+        }
+    };
+
+    window.generateCustomWristband = async function(id) {
+        const patient = await window.Storage.getPatientById(id);
+        if (patient && window.CardGenerator) {
+            await window.CardGenerator.generateWristband(patient);
+        }
+    };
+
+    window.generateHighFidelityBranding = async function(id) {
+        const patient = await window.Storage.getPatientById(id);
+        if (patient && window.CardGenerator) {
+            await window.CardGenerator.generateBrandedQR(patient, _adminQRMode);
         }
     };
 
@@ -725,6 +764,16 @@
         
         const modal = $('admin-edit-modal');
         if(modal) modal.classList.remove('hidden');
+
+        // Toggle Conversion Section
+        const convSection = $('conversion-section');
+        if (convSection) {
+            if (!patient.user_id) {
+                convSection.classList.remove('hidden');
+            } else {
+                convSection.classList.add('hidden');
+            }
+        }
 
         // Groq AI Profile Intelligence Fetch
         const aiWrapper = $('ai-profile-insights');
@@ -798,31 +847,102 @@
 
     window.savePatientEdit = async function() {
         const id = $('edit-patient-id').value;
-        if(!id) return;
+        const btn = $('btn-save-edit');
+        const origText = btn.textContent;
         
-        const updates = {
+        btn.disabled = true;
+        btn.textContent = 'SYNCHRONIZING...';
+        
+        const updateData = {
+            id,
             fullName: $('edit-fullName').value,
             dob: $('edit-dob').value,
             bloodGroup: $('edit-bloodGroup').value,
             emergencyContact: $('edit-emergencyContact').value,
             conditions: $('edit-conditions').value,
             allergies: $('edit-allergies').value,
-            medications: $('edit-medications').value,
-            updatedAt: new Date().toISOString()
+            medications: $('edit-medications').value
         };
-        
-        const db = window.Storage.db();
-        if(db) {
-            try {
-                const { error } = await db.from('patients').update(updates).eq('id', id);
-                if(error) throw error;
+
+        // Handle Conversion if relevant
+        const email = $('convert-email')?.value;
+        const password = $('convert-password')?.value;
+        if (email && password) {
+            updateData.email = email;
+            // Note: Password can't be stored in 'patients' for security.
+            // In a real app, this would trigger an Edge Function to create the auth account.
+            // For now, we save the email so the user can 'claim' it via signup.
+            alert('SYSTEM NOTE: Digital Wallet enabled. Personnel must now Signup at the portal using this email to finalize activation.');
+        }
+
+        try {
+            await window.Storage.savePatient(updateData);
+            btn.textContent = 'SUCCESS';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = origText;
                 window.closeEditModal();
-                await renderMasterTable();
-                await renderAnalytics();
-            } catch(e) {
-                logError('Edit Save Failed', e);
-                alert('Failed to save profile changes. Check console for details.');
-            }
+                renderMasterTable($('db-search')?.value.toLowerCase() || '');
+            }, 1000);
+        } catch (err) {
+            alert('Override Failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = origText;
+        }
+    };
+
+    // ─── Manual Profile Creation Logic ───
+    window.openCreateManualModal = function() {
+        $('admin-create-modal')?.classList.remove('hidden');
+    };
+
+    window.closeCreateManualModal = function() {
+        $('admin-create-modal')?.classList.add('hidden');
+    };
+
+    window.saveManualProfile = async function() {
+        const name = $('create-fullName').value;
+        if (!name) return alert('Operational Identity Name required.');
+
+        const btn = $('btn-save-manual');
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> COMMITTING...';
+        btn.disabled = true;
+        if (window.lucide) lucide.createIcons();
+
+        const patientData = {
+            fullName: name,
+            bloodGroup: $('create-bloodGroup').value,
+            age: $('create-age').value,
+            gender: $('create-gender').value,
+            emergencyContact: $('create-contact').value,
+            allergies: $('create-allergies').value,
+            isManaged: true // Custom flag for storage.js
+        };
+
+        try {
+            const result = await window.Storage.savePatient(patientData);
+            if (result.error) throw new Error(result.error);
+            
+            btn.innerHTML = 'SUCCESS';
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                window.closeCreateManualModal();
+                renderMasterTable();
+                refreshMetrics();
+                // Reset form
+                $('create-fullName').value = '';
+                $('create-bloodGroup').value = '';
+                $('create-age').value = '';
+                $('create-gender').value = 'MALE';
+                $('create-contact').value = '';
+                $('create-allergies').value = '';
+            }, 1000);
+        } catch (err) {
+            alert('Commit Failed: ' + err.message);
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
         }
     };
 

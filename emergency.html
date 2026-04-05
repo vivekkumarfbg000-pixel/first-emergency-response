@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Emergency Rescuer View | Sehat Point</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0B1120">
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- PWA & iOS Support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#6B1C23">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,6 +46,32 @@
     /* Hide scrollbar for a seamless app-like experience */
     ::-webkit-scrollbar { display: none; }
     body { background-color: #e2e8f0; } /* Outer background to frame the mobile view */
+    /* High-Fidelity SEHAT POINT Branding */
+    .brand-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 10px;
+        background: #064E3B;
+        border-radius: 6px;
+        border: 1px solid rgba(197, 160, 89, 0.2);
+    }
+    .brand-hindi {
+        font-family: 'Hind', sans-serif;
+        font-weight: 700;
+        color: #C5A059;
+        text-shadow: 1px 1px 0px rgba(0,0,0,0.2), 0px 4px 4px rgba(0,0,0,0.1);
+        font-size: 1rem;
+        line-height: 1;
+    }
+    .brand-english {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #FFFFFF;
+        font-size: 0.9rem;
+        line-height: 1;
+        margin-top: 1px;
+    }
   </style>
 </head>
 <body class="font-sans text-slate-900 antialiased flex justify-center min-h-screen py-0 md:py-8">
@@ -56,8 +85,9 @@
       <!-- Top Navigation & Status -->
       <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center sticky top-0 z-40 shadow-md">
         <div class="flex items-center gap-3">
-          <div class="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 w-7 h-7 flex-shrink-0">
-            <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain p-0.5">
+          <div class="brand-container">
+            <span class="brand-hindi">सेहत</span>
+            <span class="brand-english">Point</span>
           </div>
           <div class="flex flex-col">
             <div class="flex items-center gap-1.5">
@@ -441,9 +471,9 @@
   <script>
       if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-              navigator.serviceWorker.register('service-worker.js')
-                  .then(reg => console.log('PWA Sync Alpha: Ready'))
-                  .catch(e => console.error('PWA Sync Alpha: Failed', e));
+              navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                  .then(reg => console.log('[PWA] ServiceWorker Registered:', reg.scope))
+                  .catch(e => console.error('[PWA] ServiceWorker Failed:', e));
           });
       }
   </script>

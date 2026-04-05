@@ -2,7 +2,7 @@
   "name": "Sehat Point Emergency Response",
   "short_name": "Sehat Point",
   "description": "Professional Emergency medical profile and SOS alert system.",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0B1120",
   "theme_color": "#0B1120",

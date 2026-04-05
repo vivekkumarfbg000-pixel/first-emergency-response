@@ -38,7 +38,7 @@
     </script>
     <!-- Icons & Fonts -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     
@@ -95,16 +95,49 @@
             border-bottom-right-radius: 2px;
             margin-left: auto;
         }
+        /* AI Tables & Alerts */
+        .ai-table { 
+            width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px;
+            background: rgba(0,0,0,0.2); border-radius: 6px; overflow: hidden;
+        }
+        .ai-table th { background: rgba(59,130,246,0.2); text-align: left; padding: 6px; border-bottom: 1px solid #334155; }
+        .ai-table td { padding: 6px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .ai-alert {
+            padding: 8px 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.1); color: #fecaca; font-size: 11px;
+        }
+        .ai-chip {
+            padding: 4px 10px; border-radius: 99px; background: #1e293b; border: 1px solid #334155;
+            color: #94a3b8; font-size: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .ai-chip:hover { border-color: #3b82f6; color: white; background: #334155; }
 
         /* Colorful SEHAT POINT Branding */
-        .brand-sehat {
-            background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            text-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        /* High-Fidelity SEHAT POINT Branding */
+        .brand-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 12px;
+            background: #064E3B;
+            border-radius: 8px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+        .brand-hindi {
+            font-family: 'Hind', sans-serif;
+            font-weight: 700;
+            color: #C5A059;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.2), 0px 4px 4px rgba(0,0,0,0.1);
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .brand-english {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: #FFFFFF;
+            font-size: 1.1rem;
+            line-height: 1;
+            margin-top: 2px;
         }
         .header-glow {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -167,8 +200,10 @@
         <header class="h-12 border-b border-enterprise-border px-6 flex justify-between items-center bg-enterprise-surface shrink-0 header-glow">
             <div class="flex items-center gap-4">
                 <div class="flex flex-col">
-                    <h1 class="text-xs font-black brand-sehat uppercase">SEHAT POINT</h1>
-                    <span class="text-[8px] text-emerald-500/80 font-mono -mt-1 tracking-widest uppercase">Emergency Service</span>
+                <div class="brand-container">
+                    <span class="brand-hindi">सेहत</span>
+                    <span class="brand-english">Point</span>
+                </div>
                 </div>
             </div>
             
@@ -402,10 +437,26 @@
                         </div>
                     </div>
                     
-                    <div class="relative w-72">
+                    <div class="flex items-center gap-6">
+                        <!-- QR Mode Toggle for Admin -->
+                        <div class="hidden md:flex flex-col items-end gap-1.5">
+                            <span class="text-[9px] font-black text-enterprise-muted uppercase tracking-widest">QR Asset Mode</span>
+                            <div class="flex items-center bg-enterprise-bg border border-enterprise-border rounded-lg p-1 gap-1">
+                                <button id="admin-qr-vcard" onclick="window.setAdminQRMode('vcard')" class="px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white">Offline</button>
+                                <button id="admin-qr-url" onclick="window.setAdminQRMode('url')" class="px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white">URL Fast</button>
+                            </div>
+                        </div>
+
+                        <div class="relative w-72">
                         <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-enterprise-muted"></i>
                         <input type="text" id="db-search" placeholder="QUICK SEARCH ID / NAME..." 
                                class="bg-enterprise-bg border border-enterprise-border text-[11px] font-mono text-white placeholder-enterprise-muted w-full py-3 pl-10 pr-4 focus:outline-none focus:border-amber-500 transition-all rounded-lg uppercase tracking-wider">
+                        </div>
+
+                        <button onclick="window.openCreateManualModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 shrink-0">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            New Profile
+                        </button>
                     </div>
                 </div>
                 
@@ -599,12 +650,96 @@
                     <label class="text-[10px] text-enterprise-muted uppercase">Current Medications</label>
                     <textarea id="edit-medications" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="Lisinopril 10mg..."></textarea>
                 </div>
+
+                <!-- Conversion Section (Only if no user_id) -->
+                <div id="conversion-section" class="hidden mt-6 pt-6 border-t border-enterprise-border">
+                    <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                        <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <i data-lucide="key" class="w-4 h-4"></i> Activate Digital Wallet
+                        </h4>
+                        <p class="text-[10px] text-slate-400 mb-4 leading-relaxed">Add login credentials to enable this user to manage their own medical dashboard and QR assets from any device.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[9px] text-enterprise-muted uppercase">Assign Email</label>
+                                <input type="email" id="convert-email" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-blue-500 focus:outline-none text-white transition-colors" placeholder="user@example.com">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] text-enterprise-muted uppercase">Assign Password</label>
+                                <input type="password" id="convert-password" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-blue-500 focus:outline-none text-white transition-colors" placeholder="••••••••">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Footer -->
             <div class="px-6 py-4 border-t border-enterprise-border bg-[#0B1120] flex justify-end gap-3">
                 <button onclick="closeEditModal()" class="px-4 py-2 border border-enterprise-border text-enterprise-muted hover:text-white hover:bg-enterprise-border text-xs font-mono transition-colors">CANCEL</button>
                 <button onclick="savePatientEdit()" id="btn-save-edit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono transition-colors shadow-[0_0_10px_rgba(37,99,235,0.2)]">OVERRIDE RECORD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Manual Profile Modal -->
+    <div id="admin-create-modal" class="hidden fixed inset-0 z-[3000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-enterprise-surface border border-enterprise-border w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-enterprise-border flex justify-between items-center bg-[#131B2F]">
+                <h3 class="text-white text-sm font-black tracking-widest flex items-center gap-2 uppercase">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-amber-500"></i> New Personnel Record
+                </h3>
+                <button onclick="closeCreateManualModal()" class="text-enterprise-muted hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 space-y-5 text-xs font-mono">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Full Identity (Required)</label>
+                        <input type="text" id="create-fullName" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase tracking-tight" placeholder="JOHN DOE">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Blood Type</label>
+                        <select id="create-bloodGroup" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase">
+                            <option value="">Select...</option>
+                            <option value="A+">A+</option><option value="A-">A-</option>
+                            <option value="B+">B+</option><option value="B-">B-</option>
+                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                            <option value="O+">O+</option><option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Age</label>
+                        <input type="number" id="create-age" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="25">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Gender</label>
+                        <select id="create-gender" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors uppercase">
+                            <option value="MALE">MALE</option>
+                            <option value="FEMALE">FEMALE</option>
+                            <option value="OTHER">OTHER</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-enterprise-muted uppercase">Contact #</label>
+                        <input type="text" id="create-contact" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="9988776655">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-enterprise-muted uppercase">Critical Allergies</label>
+                    <textarea id="create-allergies" rows="2" class="w-full bg-[#0B1120] border border-enterprise-border p-3 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="e.g. Peanuts, Aspirin..."></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-enterprise-border bg-[#0B1120] flex justify-end gap-3">
+                <button onclick="closeCreateManualModal()" class="px-6 py-3 border border-enterprise-border text-enterprise-muted hover:text-white hover:bg-enterprise-border text-[11px] font-black uppercase tracking-widest transition-all">STAY OF EXECUTION</button>
+                <button onclick="window.saveManualProfile()" id="btn-save-manual" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">COMMIT RECORD</button>
             </div>
         </div>
     </div>
@@ -668,9 +803,20 @@
                 </div>
             </div>
             
+            <!-- Quick Action Chips -->
+            <div class="px-4 py-2 border-t border-enterprise-border bg-enterprise-surface flex gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+                <button class="ai-chip" onclick="window.ChatAI.quickQuery('audit registry')">🔍 Registry Audit</button>
+                <button class="ai-chip" onclick="window.ChatAI.quickQuery('latest critical alerts')">🚨 Critical Alerts</button>
+                <button class="ai-chip" onclick="window.ChatAI.quickQuery('analyze scan trends')">📈 Scan Trends</button>
+                <button class="ai-chip" onclick="window.ChatAI.quickQuery('system health check')">⚡ Health Status</button>
+            </div>
+            
             <!-- Input Area -->
             <div class="p-4 border-t border-enterprise-border bg-enterprise-bg">
                 <form id="ai-chat-form" class="relative flex items-center gap-2" onsubmit="window.ChatAI.sendMessage(event)">
+                    <button type="button" id="ai-voice-btn" onclick="window.ChatAI.startVoice()" class="p-2 text-enterprise-muted hover:text-white transition-colors">
+                        <i data-lucide="mic" class="w-4 h-4" id="mic-icon"></i>
+                    </button>
                     <input type="text" id="ai-input" placeholder="Query Intelligence..." 
                            class="bg-enterprise-surface border border-enterprise-border text-xs text-white placeholder-enterprise-muted w-full py-3 pl-4 pr-10 focus:outline-none focus:border-amber-500 rounded-xl transition-all">
                     <button type="submit" class="absolute right-2 p-2 text-amber-500 hover:text-amber-400 transition-colors">
@@ -685,5 +831,14 @@
              <i data-lucide="brain-circuit" class="w-6 h-6 text-white group-hover:scale-110 transition-transform"></i>
         </button>
     </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                    .then(reg => console.log('[PWA] ServiceWorker Registered:', reg.scope))
+                    .catch(e => console.error('[PWA] ServiceWorker Failed:', e));
+            });
+        }
+    </script>
 </body>
 </html>

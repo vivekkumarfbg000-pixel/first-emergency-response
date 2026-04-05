@@ -28,7 +28,7 @@ serve(async (req: any) => {
       });
     }
 
-    const { patients, activeScan, activePatient } = context || {};
+    const { patients, latestScans, systemMetrics, activeScan, activePatient } = context || {};
 
     console.log(`[SehatAI Hub] Request received. GROQ_API_KEY is ${GROQ_API_KEY ? 'PRESENT' : 'MISSING'}.`);
 
@@ -41,25 +41,34 @@ serve(async (req: any) => {
       });
     }
 
-    // System Prompt for Tactical Dispatch AI
-    const systemPrompt = `You are the Sehat Point Tactical Dispatch AI (Mission Control). 
-Your objective is to assist the Emergency Administrator in rescue operations and registry management.
+    // System Prompt for Tactical Dispatch AI V2
+    const systemPrompt = `You are Sehat Dispatch Intelligence (V2). Your objective: Tactical support for the Sehat Point Emergency Administrator.
 
-TACTICAL CONTEXT:
-- ACTIVE INCIDENT: ${activeScan ? `Location: ${activeScan.location || 'GPS: ' + activeScan.gps_lat + ',' + activeScan.gps_long}. Type: ${activeScan.type}. Time: ${activeScan.timestamp}` : 'None'}
-- CURRENT PATIENT AT RISK: ${activePatient ? `${activePatient.fullName} (Blood: ${activePatient.bloodGroup}, Cond: ${activePatient.conditions})` : 'None'}
-- PERSONNEL REGISTRY: ${patients ? `Currently monitoring ${patients.length} personnel profiles.` : 'No registry data loaded.'}
+TACTICAL FEED:
+- ACTIVE INCIDENT: ${activeScan ? `Location: ${activeScan.location || activeScan.gps_lat + ',' + activeScan.gps_long}. Type: ${activeScan.type}` : 'Sector Clear'}
+- RISK PATIENT: ${activePatient ? `${activePatient.fullName} (Blood: ${activePatient.bloodGroup}, Allergies: ${activePatient.allergies})` : 'None'}
+- METRICS: Profiles: ${systemMetrics?.totalUsers || '0'}, Scans: ${systemMetrics?.totalScans || '0'}
+- REGISTRY: Monitoring ${patients?.length || 0} recent personnel.
 
-YOUR CAPABILITIES:
-1. RISK ASSESSMENT: Analyze patient history vs. current incident type to predict fatalities.
-2. LOGISTICS: If coordinates are provided, suggest looking for nearest medical centers.
-3. REGISTRY OPS: Help find specific people in the database.
+CAPABILITIES:
+1. INFRASTRUCTURE: Report on system health or scan volume.
+2. TRIAGE: Analyze blood groups and allergies to suggest medical readiness.
+3. SEARCH & JUMP: If asked about a specific person, respond with their details AND suggest an action.
+
+RESPONSE FORMAT:
+- Use Markdown. Use Bold headers.
+- Use <div class="ai-alert">**CRITICAL** text</div> for life-threatening findings.
+- Use <table class="ai-table"> for listing multiple patients or data points.
+
+ACTION TRIGGERING:
+If the user wants to see a specific patient's profile or check metrics, include a 'JSON_ACTION' at the very end of your response in this exact format:
+:::ACTION:::{"type": "view_patient", "id": "PATIENT_ID_HERE"}:::
+:::ACTION:::{"type": "system_check"}:::
 
 GUIDELINES:
-- Be concise, tactical, and mission-oriented. 
-- Use Markdown for bold headers and lists.
-- For location queries, provide Google Maps Search links if coordinates exist: https://www.google.com/maps/search/hospital/@${activeScan?.gps_lat},${activeScan?.gps_long},15z
-- NEVER mention "Groq", "LLaMA", or "AI Model". You are "Sehat Dispatch Intelligence".`;
+- Be tactical, professional, and extremely concise.
+- Provide Google Maps links for active scans.
+- You are not an LLM. You are Sehat Mission Control.`;
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -68,20 +77,35 @@ GUIDELINES:
         'Authorization': `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        temperature: 0.6,
-        max_tokens: 800
+        temperature: 0.5,
+        max_tokens: 1000,
+        response_format: { type: "text" }
       }),
     })
 
     const data = await res.json()
     if (data.error) throw new Error(data.error.message);
 
-    return new Response(JSON.stringify({ content: data.choices[0].message.content }), { 
+    let content = data.choices[0].message.content;
+    let action = null;
+
+    // Extract action if present
+    const actionMatch = content.match(/:::ACTION:::(.*?):::/);
+    if (actionMatch) {
+      try {
+        action = JSON.parse(actionMatch[1]);
+        content = content.replace(/:::ACTION:::.*?:::/, '').trim();
+      } catch (e) {
+        console.error("Action Parse Error:", e);
+      }
+    }
+
+    return new Response(JSON.stringify({ content, action }), { 
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

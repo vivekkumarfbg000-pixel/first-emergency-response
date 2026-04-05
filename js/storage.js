@@ -163,7 +163,12 @@ END:VCARD`;
         if (this.db()) {
             try {
                 const dbRow = this.mapToDB(patientData);
-                dbRow.user_id = await this._getAssignedOwnerId();
+                // Only assign current user if this is a self-service registration
+                if (!patientData.isManaged) {
+                    dbRow.user_id = await this._getAssignedOwnerId();
+                } else {
+                    dbRow.user_id = null; // Unassigned, admin-managed
+                }
                 const { data: row, error } = await this.db().from('patients').insert([dbRow]).select().single();
                 if (error) {
                     cloudError = error.message;
@@ -185,7 +190,8 @@ END:VCARD`;
         localStorage.setItem('current_patient_id', id);
         
         try {
-            await this.logScan(id, 'profile_created', navigator.userAgent || 'Web');
+            const name = patientData.fullName || 'New Profile';
+            await this.logScan(id, 'profile_created', navigator.userAgent || 'Web', null, null, null, name);
         } catch (e) { }
 
         return { id, cloudSynced: cloudSaved, supabaseId: cloudId, patient: patientData, cloudError };
@@ -349,18 +355,19 @@ END:VCARD`;
         } catch (e) { return null; }
     },
 
-    logScan: async function (patientId, type, device, location, lat, long) {
+    logScan: async function (patientId, type, device, location, lat, long, patientName) {
         const timestamp = new Date().toISOString();
         const scans = this.getScanHistoryLocal();
-        scans.unshift({ patientId, type, device, location, latitude: lat, longitude: long, timestamp });
+        scans.unshift({ patientId, patient_name: patientName, type, device, location, latitude: lat, longitude: long, timestamp });
         localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
 
-        console.log(`[Storage] Logging event: ${type} for ${patientId}`);
+        console.log(`[Storage] Logging event: ${type} for ${patientId} (${patientName || 'Unknown'})`);
 
         if (this.db()) {
             try {
                 const logData = { 
                     patient_id: patientId, 
+                    patient_name: patientName || null,
                     type: type || 'qr_scan', 
                     device: device || 'Unknown', 
                     location: lat && long ? `${location || 'GPS'} (${lat.toFixed(4)}, ${long.toFixed(4)})` : (location || 'Global Search'),
@@ -397,12 +404,13 @@ END:VCARD`;
 
     triggerSOSAlert: async function(patient, lat, long) {
         const patientId = typeof patient === 'string' ? patient : (patient.id || patient.patientId);
+        const patientName = typeof patient === 'object' ? patient.fullName : null;
         const safeLat = typeof lat === 'number' ? lat : null;
         const safeLong = typeof long === 'number' ? long : null;
         
         console.log(`[Storage] Triggering SOS for ${patientId} at`, lat, long);
 
-        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Restricted', safeLat, safeLong);
+        await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Restricted', safeLat, safeLong, patientName);
         
         if (this.db() && typeof patient === 'object') {
             try {

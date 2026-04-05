@@ -26,6 +26,42 @@
             _isOpen = !_isOpen;
         },
 
+        quickQuery: (text) => {
+            $('ai-input').value = text;
+            window.ChatAI.sendMessage();
+        },
+
+        startVoice: () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert('Speech recognition not supported in this browser.');
+
+            const recognition = new SpeechRecognition();
+            const micIcon = $('mic-icon');
+            
+            recognition.onstart = () => {
+                micIcon.classList.add('text-red-500', 'animate-pulse');
+                $('ai-input').placeholder = "Listening...";
+            };
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                $('ai-input').value = text;
+                window.ChatAI.sendMessage();
+            };
+
+            recognition.onerror = () => {
+                micIcon.classList.remove('text-red-500', 'animate-pulse');
+                $('ai-input').placeholder = "Signal lost. Try typing.";
+            };
+
+            recognition.onend = () => {
+                micIcon.classList.remove('text-red-500', 'animate-pulse');
+                $('ai-input').placeholder = "Query Intelligence...";
+            };
+
+            recognition.start();
+        },
+
         sendMessage: async (e) => {
             if (e) e.preventDefault();
             const input = $('ai-input');
@@ -55,7 +91,6 @@
                         });
                         
                         if (error) {
-                            // DEEP SCAN: Attempt to read the core error reason from the response body
                             let detail = error.message;
                             if (error.context && typeof error.context.json === 'function') {
                                 try {
@@ -83,20 +118,21 @@
                     return;
                 }
 
-                // Fetch registry snapshot
+                // Fetch context snapshot
                 const patients = await window.Storage.getAllPatients() || [];
-                const currentUser = await window.Auth.getUser();
+                const scans = await window.Storage.getScanLogs() || [];
+                const metrics = {
+                    totalUsers: $('metric-users')?.textContent || '0',
+                    totalScans: $('metric-scans')?.textContent || '0',
+                    lastSync: new Date().toLocaleTimeString()
+                };
                 
                 const context = {
-                    patients: patients.map(p => ({
-                        name: p.fullName,
-                        blood: p.bloodGroup,
-                        conditions: p.conditions,
-                        allergies: p.allergies
-                    })).slice(0, 50), // Send first 50 for token management
+                    patients: patients.slice(0, 30), // Smaller slice for speed
+                    latestScans: scans.slice(0, 10),
+                    systemMetrics: metrics,
                     activeScan: window.activeConsoleScan || null,
-                    activePatient: window.activeConsolePatient || null,
-                    adminEmail: currentUser?.email || 'master-bypass-active'
+                    activePatient: window.activeConsolePatient || null
                 };
 
                 // 4. Call AI Hub
@@ -110,24 +146,23 @@
                 typing.classList.add('hidden');
 
                 if (error || !data) {
-                    console.error('[SehatAI] Dispatch Error:', error);
-                    
-                    // DEEP SCAN: Attempt to read the core error reason from the response body
                     let detail = "Unable to stabilize signal. Terminal offline.";
                     if (error?.context && typeof error.context.json === 'function') {
                         try {
                             const errBody = await error.context.json();
                             detail = `**[ENGINE FAILURE]** ${errBody.error || errBody.message || error.message}`;
                         } catch(e) {}
-                    } else if (error?.message) {
-                        detail = `**[CONNECTION ERROR]** ${error.message}`;
                     }
-                    
                     addMessageToUI('ai', detail);
                     return;
                 }
 
-                // 4. Update memory and UI
+                // 5. Actionable Handling
+                if (data.action) {
+                    handleAIAction(data.action);
+                }
+
+                // Update memory and UI
                 _messages.push({ role: 'user', text: query });
                 _messages.push({ role: 'assistant', text: data.content });
                 addMessageToUI('ai', data.content);
@@ -140,6 +175,19 @@
         }
     };
 
+    function handleAIAction(action) {
+        console.log('[SehatAI] Executing Tactical Action:', action);
+        if (action.type === 'view_patient' && action.id) {
+            if (window.switchTab) window.switchTab('registry');
+            if ($('db-search')) {
+                $('db-search').value = action.id;
+                $('db-search').dispatchEvent(new Event('input'));
+            }
+        } else if (action.type === 'system_check') {
+            if (window.refreshMetrics) window.refreshMetrics();
+        }
+    }
+
     function addMessageToUI(sender, text) {
         const container = $('ai-messages');
         if (!container) return;
@@ -147,13 +195,16 @@
         const bubble = document.createElement('div');
         bubble.className = `message-bubble ${sender === 'ai' ? 'message-ai' : 'message-user'}`;
         
-        // Simple Markdown-to-HTML (bold, links, breaks)
+        // Advanced Format (Headers, Breaks, Bold, Links)
         let formatted = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n/g, '<br>')
             .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-amber-400 underline">$1</a>');
         
+        // Pass-through for our custom AI tactical classes (Safe subset of HTML)
+        // Note: In production, use a proper sanitizer like DOMPurify.
         bubble.innerHTML = formatted;
+        
         container.appendChild(bubble);
         container.scrollTop = container.scrollHeight;
         if (window.lucide) lucide.createIcons();

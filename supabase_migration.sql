@@ -11,6 +11,7 @@ ALTER TABLE patients ADD COLUMN IF NOT EXISTS contact1_email TEXT DEFAULT '';
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS is_emergency BOOLEAN DEFAULT FALSE;
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS patient_name TEXT;
 
 -- ── STEP 3: Drop any existing conflicting RLS policies ─────
 DROP POLICY IF EXISTS "allow_anon_insert" ON patients;
@@ -23,6 +24,7 @@ DROP POLICY IF EXISTS "Enable insert for all users" ON patients;
 DROP POLICY IF EXISTS "Enable read access for all users" ON patients;
 DROP POLICY IF EXISTS "Users can insert their own profile." ON patients;
 DROP POLICY IF EXISTS "Users can view their own data." ON patients;
+DROP POLICY IF EXISTS "allow_scan_update" ON scans;
 
 -- ── STEP 4: Enable RLS (safe to run even if already enabled) ─
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
@@ -47,6 +49,13 @@ CREATE POLICY "admin_full_access" ON patients
   TO authenticated
   USING (true)
   WITH CHECK (true);
+
+-- Users can only update their own records
+CREATE POLICY "user_update_own" ON patients
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- Scans: allow anonymous inserts (emergency scans don't require login)
 CREATE POLICY "allow_anon_scan_insert" ON scans

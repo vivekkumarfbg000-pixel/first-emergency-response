@@ -34,6 +34,13 @@
             $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
         }
 
+        if ($('qr-mode-toggle')) {
+            $('qr-mode-toggle').addEventListener('change', e => {
+                const label = $('qr-mode-label');
+                if (label) label.textContent = e.target.checked ? 'Fast URL Scan' : 'Offline vCard';
+            });
+        }
+
         // 4. GPS & Sync Heartbeat
         setupGPS();
         setInterval(() => txt('admin-time', new Date().toLocaleTimeString('en-GB') + ' UTC'), 1000);
@@ -248,12 +255,13 @@
     window.downloadQR = async function() {
         if (!_activePatient) return;
         
-        const btn = document.querySelector('button[onclick="window.downloadQR()"]');
+        const btn = $('btn-download-qr');
         const origHtml = btn.innerHTML;
-        btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Generating Graphic...';
+        btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Processing...';
         if (window.lucide) lucide.createIcons();
         
-        await window.CardGenerator.generateBrandedQR(_activePatient);
+        const mode = $('qr-mode-toggle')?.checked ? 'url' : 'vcard';
+        await window.CardGenerator.generateBrandedQR(_activePatient, mode);
         
         btn.innerHTML = origHtml;
         if (window.lucide) lucide.createIcons();

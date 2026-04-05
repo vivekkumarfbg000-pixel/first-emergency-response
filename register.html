@@ -1011,9 +1011,9 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('PWA Sync Alpha: Ready'))
-                    .catch(e => console.error('PWA Sync Alpha: Failed', e));
+                navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                    .then(reg => console.log('[PWA] ServiceWorker Registered:', reg.scope))
+                    .catch(e => console.error('[PWA] ServiceWorker Failed:', e));
             });
         }
     </script>
