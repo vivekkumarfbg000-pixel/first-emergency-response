@@ -54,11 +54,18 @@
         }
 
         try {
-            const isAdmin = await window.Storage._isAdminUser();
-            console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
-            if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
-                window.location.href = 'login.html';
-                return;
+            // Check for master bypass first (prevents race condition redirects)
+            if (localStorage.getItem('master_bypass') === 'true') {
+                console.log('[MasterDispatch] Admin Clearance: BYPASS AUTHORIZED');
+            } else {
+                const isAdmin = await window.Storage._isAdminUser();
+                console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
+                
+                if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+                    console.warn('[MasterDispatch] Unauthorized access detected, evacuating...');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
             }
             
             // Populate Settings Profile

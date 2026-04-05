@@ -41,6 +41,15 @@
             typing.classList.remove('hidden');
 
             try {
+                // 3. DEBUG COMMAND HANDLER
+                if (query.toLowerCase() === '/debug') {
+                    typing.classList.add('hidden');
+                    const bypass = localStorage.getItem('master_bypass');
+                    const supabaseStatus = window.supabaseClient ? 'Online' : 'Offline';
+                    addMessageToUI('ai', `**[AI DIAGNOSTICS]**\n- **Session**: ${bypass === 'true' ? 'Master Bypass Enabled' : 'Auth Required'}\n- **Supabase Cloud**: ${supabaseStatus}\n- **Edge Function**: ai-dispatch-assistant\n- **Client**: window.supabaseClient\n\n> [!NOTE]\n> Ensure your GROQ_API_KEY is set in the Supabase Dashboard > Edge Functions > Secrets.`);
+                    return;
+                }
+
                 // Fetch registry snapshot
                 const patients = await window.Storage.getAllPatients() || [];
                 
@@ -56,7 +65,7 @@
                     adminEmail: (await window.supabaseClient.auth.getUser()).data.user?.email
                 };
 
-                // 3. Call AI Hub
+                // 4. Call AI Hub
                 const { data, error } = await window.supabaseClient.functions.invoke('ai-dispatch-assistant', {
                     body: { 
                         messages: [..._messages.map(m => ({ role: m.role, content: m.text })), { role: 'user', content: query }],
@@ -67,7 +76,14 @@
                 typing.classList.add('hidden');
 
                 if (error || !data) {
-                    addMessageToUI('ai', "Mission Control error: Unable to stabilize signal. Terminal offline.");
+                    console.error('[SehatAI] Dispatch Error:', error);
+                    let errMsg = "Unable to stabilize signal. Terminal offline.";
+                    if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+                        errMsg = "**[AUTH FAILURE]** Mission Control has rejected the connection. Check your API Key in Supabase Secrets.";
+                    } else if (error?.message?.includes('500')) {
+                        errMsg = "**[ENGINE FAILURE]** The Groq LLaMA Engine encountered an error. This usually means the API key is invalid or not yet configured.";
+                    }
+                    addMessageToUI('ai', errMsg);
                     return;
                 }
 

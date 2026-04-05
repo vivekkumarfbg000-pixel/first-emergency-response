@@ -114,7 +114,13 @@ const Auth = {
 
             if (!isPublicPage) {
                 console.warn('[Auth] No session found, redirecting to login...');
-                window.location.href = 'login.html';
+                
+                // If on admin.html, redirect to admin-login.html instead
+                if (currentPath.includes('admin.html')) {
+                    window.location.href = 'admin-login.html';
+                } else {
+                    window.location.href = 'login.html';
+                }
             }
         }
         return user;
