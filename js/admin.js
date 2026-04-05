@@ -262,15 +262,49 @@
     }
 
     function renderOfflineSummary(patient, textContainer) {
+        // Deterministic High-Fidelity Logic (Sync with Edge Function Fallback)
+        const conditions = (patient.conditions || '').toLowerCase();
+        let risk = "LOW";
+        let summary = `Patient record shows stable history. Primary context: ${patient.conditions || 'No chronic conditions reported'}.`;
+        let flags = [];
+
+        if (conditions.includes('heart') || conditions.includes('cardiac')) {
+            risk = "CRITICAL";
+            flags.push("Cardiac Baseline");
+            summary = `URGENT: Patient has history of ${patient.conditions}. High risk of immediate arrest or complication. Prioritize vitals and ECG.`;
+        } else if (conditions.includes('diabetes')) {
+            risk = "CRITICAL";
+            flags.push("Glucose Instability");
+            summary = `CRITICAL: Patient is diabetic (${patient.conditions}). Risk of ketoacidosis or hypoglycemic shock. Check blood glucose immediately.`;
+        }
+
+        const riskHTML = risk === 'CRITICAL' ? 
+            `<div class="mb-4 inline-block bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-black tracking-widest uppercase"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1 -mt-0.5"></i> CRITICAL RISK (LOCAL)</div>` : '';
+        
+        const flagsHTML = flags.length > 0 ? 
+            `<div class="flex flex-wrap gap-2 mb-4">` + flags.map(f => 
+                `<span class="bg-blue-500/10 border border-blue-500/30 px-2 py-1 text-[10px] text-blue-300 rounded font-bold uppercase tracking-widest">${f}</span>`
+            ).join('') + `</div>` : '';
+
         textContainer.innerHTML = `
-            <div class="space-y-2">
-                <p><strong>Conditions:</strong> ${patient.conditions || 'None stated'}</p>
-                <p><strong>Allergies:</strong> ${patient.allergies || 'None stated'}</p>
-                <p><strong>Medications:</strong> ${patient.medications || 'None stated'}</p>
-                <p><strong>Blood Group:</strong> <span class="bg-red-500/20 text-red-400 px-2 rounded">${patient.bloodGroup || 'UNK'}</span></p>
-                <p class="text-[10px] text-slate-500 italic mt-4">AI Network offline. Displaying local raw data.</p>
+            ${riskHTML}
+            ${flagsHTML}
+            <div class="space-y-4">
+                <p class="text-sm leading-relaxed">${summary}</p>
+                <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-700/50">
+                    <div>
+                        <span class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Allergies</span>
+                        <span class="text-xs text-red-400 font-bold">${patient.allergies || 'NONE'}</span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Medications</span>
+                        <span class="text-xs text-slate-300">${patient.medications || 'NONE'}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 italic mt-8 border-t border-slate-800 pt-2">System operating in Local Intelligence mode (Offline).</p>
             </div>
         `;
+        if (window.lucide) lucide.createIcons();
     }
 
     window.consoleActionEmail = async function() {

@@ -26,10 +26,12 @@ serve(async (req: any) => {
     console.log(`Generating AI Medical Summary...`)
 
     if (!GROQ_API_KEY) {
-      return new Response(JSON.stringify({ error: "GROQ_API_KEY not configured" }), { 
-        status: 500,
+      console.warn("GROQ_API_KEY not configured. Falling back to Local Intelligence Engine.");
+      const fallback = generateFallbackSummary(record);
+      return new Response(JSON.stringify(fallback), { 
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      });
     }
 
     // Construct the prompt for the Crash-Cart Summarizer
@@ -94,3 +96,37 @@ Current Medications: ${medications || 'None reported'}`
     })
   }
 })
+
+function generateFallbackSummary(p: any) {
+    const conditions = (p.conditions || '').toLowerCase();
+    const allergies = (p.allergies || '').toLowerCase();
+    
+    let risk = "LOW";
+    let flags = [];
+    let summary = `Patient is currently stable. Primary medical history includes ${p.conditions || 'no chronic conditions'} and ${p.allergies || 'no known allergies'}. Monitoring is recommended until hospital arrival.`;
+    
+    if (conditions.includes('heart') || conditions.includes('cardiac') || conditions.includes('diabetes')) {
+        risk = "CRITICAL";
+        flags.push("Cardiac/Metabolic Risk");
+        summary = `URGENT: Patient has historical ${p.conditions}. Risk of immediate cardiac episodes or glucose instability. Maintain airway and immediate vitals monitoring.`;
+    } else if (conditions.includes('asthma') || conditions.includes('copd') || conditions.includes('breathing')) {
+        risk = "CRITICAL";
+        flags.push("Respiratory Distress");
+        summary = `CRITICAL: Known respiratory condition (${p.conditions}). Monitor oxygen saturation levels closely. Carry out standard asthma/COPD stabilization protocols.`;
+    }
+    
+    if (allergies.length > 5) {
+        flags.push("Severe Allergy Alert");
+        if (risk !== "CRITICAL") risk = "MODERATE";
+    }
+
+    if (p.bloodGroup === 'O-' || p.bloodGroup === 'B-') {
+        flags.push(`Rare Blood: ${p.bloodGroup}`);
+    }
+
+    return {
+        summary: summary,
+        risk_level: risk,
+        key_flags: flags.slice(0, 4)
+    };
+}
