@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Expose-Headers': 'X-Groq-Status'
 };
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
@@ -16,6 +17,7 @@ serve(async (req: any) => {
   }
 
   try {
+    if (!req.body) throw new Error("Empty Request Body (Expected AI Context)");
     const body = await req.json()
     const { messages, context, ping } = body;
     

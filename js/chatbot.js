@@ -50,12 +50,19 @@
                     // Edge Function Ping Test
                     let efStatus = "Testing...";
                     try {
-                        const { error } = await window.supabaseClient.functions.invoke('ai-dispatch-assistant', {
+                        const { data, error } = await window.supabaseClient.functions.invoke('ai-dispatch-assistant', {
                             body: { ping: true }
                         });
-                        efStatus = error ? `Error: ${error.message}` : "Responsive (Live)";
+                        
+                        if (error) {
+                            // Try to get specific error from body if possible
+                            const errDetail = error.message || "Unknown Error";
+                            efStatus = `Error: ${errDetail}`;
+                        } else {
+                            efStatus = data?.status === 'alive' ? "Responsive (Live)" : "Unexpected Response";
+                        }
                     } catch (e) {
-                        efStatus = "Unreachable (Network Block)";
+                        efStatus = "Unreachable (Check Network tab)";
                     }
 
                     addMessageToUI('ai', `**[AI TACTICAL DIAGNOSTICS]**
