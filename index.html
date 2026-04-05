@@ -7,6 +7,17 @@
   <meta name="description" content="Next-generation medical ID system for first responders.">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  
+  <script>
+      // High-Priority Redirect for Session Persistence
+      (function() {
+          if (localStorage.getItem('master_bypass') === 'true') {
+              console.log('[SehatAuth] Persistent session detected, redirecting to Admin Console...');
+              window.location.href = 'admin.html';
+          }
+      })();
+  </script>
+
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     /* ─── Floating Nav ─── */

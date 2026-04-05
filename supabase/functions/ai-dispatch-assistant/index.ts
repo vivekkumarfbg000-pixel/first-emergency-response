@@ -19,6 +19,8 @@ serve(async (req: any) => {
     const { messages, context } = await req.json()
     const { patients, activeScan, activePatient } = context || {};
 
+    console.log(`[SehatAI Hub] Request received. GROQ_API_KEY is ${GROQ_API_KEY ? 'PRESENT' : 'MISSING'}.`);
+
     if (!GROQ_API_KEY) {
       console.warn("GROQ_API_KEY missing. Activating Tactical Fallback Engine.");
       const fallbackResponse = generateLocalTacticalResponse(context);
