@@ -52,12 +52,12 @@ const Auth = {
         console.log('[Auth] SignUp success:', data);
         
         // ─── NEW: Profile Claiming Logic ───
-        if (data.session && window.Storage) {
-            const pendingId = window.Storage.getPendingPatientId();
+        if (data.session && window.AppStorage) {
+            const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
                 console.log('[Auth] Claiming pending profile:', pendingId);
-                await window.Storage.claimProfile(pendingId);
-                window.Storage.clearPendingPatientId();
+                await window.AppStorage.claimProfile(pendingId);
+                window.AppStorage.clearPendingPatientId();
             }
         }
         
@@ -95,12 +95,12 @@ const Auth = {
         console.log('[Auth] SignIn success, user:', data?.user?.email);
         
         // ─── NEW: Profile Claiming Logic ───
-        if (data.session && window.Storage) {
-            const pendingId = window.Storage.getPendingPatientId();
+        if (data.session && window.AppStorage) {
+            const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
                 console.log('[Auth] Claiming pending profile during sign-in:', pendingId);
-                await window.Storage.claimProfile(pendingId);
-                window.Storage.clearPendingPatientId();
+                await window.AppStorage.claimProfile(pendingId);
+                window.AppStorage.clearPendingPatientId();
             }
         }
         

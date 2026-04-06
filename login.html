@@ -247,6 +247,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/storage.js"></script>
   <script src="js/auth.js"></script>
   <script>
     lucide.createIcons();
@@ -265,8 +266,8 @@
         await Auth.signIn(email.trim(), password);
         
         // ─── NEW: 0-Profile Detection ───
-        if (window.Storage) {
-            const profiles = await window.Storage.getAllPatients();
+        if (window.AppStorage) {
+            const profiles = await window.AppStorage.getAllPatients();
             if (!profiles || profiles.length === 0) {
                 console.log('[Auth] New user detected, fast-tracking to profile creation.');
                 window.location.href = 'register.html';

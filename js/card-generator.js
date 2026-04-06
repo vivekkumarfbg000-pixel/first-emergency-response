@@ -22,9 +22,9 @@ window.CardGenerator = {
     _generateQR: async function(patient, size, mode = 'vcard') {
         let payload = '';
         if (mode === 'url') {
-            payload = window.Storage.buildEmergencyUrl(patient);
+            payload = window.AppStorage.buildEmergencyUrl(patient);
         } else {
-            payload = window.Storage.buildQRPayload(patient);
+            payload = window.AppStorage.buildQRPayload(patient);
         }
 
         const canvas = document.createElement('canvas');
@@ -456,9 +456,9 @@ window.CardGenerator = {
         const qrCanvas = document.createElement('canvas');
         let content = '';
         if (mode === 'url') {
-            content = window.Storage.buildEmergencyUrl(p);
+            content = window.AppStorage.buildEmergencyUrl(p);
         } else {
-            content = window.Storage.buildQRPayload(p);
+            content = window.AppStorage.buildQRPayload(p);
         }
         
         if (typeof QRCode !== 'undefined') {

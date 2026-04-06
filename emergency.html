@@ -303,10 +303,10 @@
         const supabaseId = urlParams.get('sid');
 
         if (encodedData) {
-            patientData = window.Storage.decodeFromURL(encodedData);
+            patientData = window.AppStorage.decodeFromURL(encodedData);
             renderData(patientData);
         } else if (supabaseId) {
-            patientData = await window.Storage.getPatientById(supabaseId);
+            patientData = await window.AppStorage.getPatientById(supabaseId);
             renderData(patientData);
         } else {
             txt('val-name', 'No Profile Found');
@@ -335,21 +335,21 @@
                 try {
                     const position = await getGeo();
                     console.log('Location Acquired:', position.coords.latitude, position.coords.longitude);
-                    await window.Storage.triggerSOSAlert(patientData, position.coords.latitude, position.coords.longitude);
+                    await window.AppStorage.triggerSOSAlert(patientData, position.coords.latitude, position.coords.longitude);
                     
                     txt('nav-status', 'SOS Transmitted (GPS)');
                     if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
                     if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
                 } catch (err) {
                     console.warn('Geolocation failed:', err.message);
-                    await window.Storage.triggerSOSAlert(patientData, null, null);
+                    await window.AppStorage.triggerSOSAlert(patientData, null, null);
                     
                     txt('nav-status', 'SOS Sent (No GPS)');
                     if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
                     if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-red-500';
                 }
             } else {
-                await window.Storage.triggerSOSAlert(patientData, null, null);
+                await window.AppStorage.triggerSOSAlert(patientData, null, null);
                 txt('nav-status', 'SOS Sent (Browser No GPS)');
             }
         }

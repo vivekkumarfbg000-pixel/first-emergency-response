@@ -47,13 +47,13 @@
         
         // 1. Dependency Waiter (Harden to wait for Supabase Cloud)
         let retries = 0;
-        while ((!window.Storage || !window.Auth || !window.supabaseClient) && retries < 15) {
+        while ((!window.AppStorage || !window.Auth || !window.supabaseClient) && retries < 15) {
             console.log(`[MasterDispatch] Waiting for Tactical Cloud (${retries}/15)...`);
             await new Promise(r => setTimeout(r, 500));
             retries++;
         }
 
-        if (!window.Storage || !window.Auth || !window.supabaseClient) {
+        if (!window.AppStorage || !window.Auth || !window.supabaseClient) {
             logError('Cloud Failure', 'Supabase Client failed to mobilize. Check network/CDN.');
             return;
         }
@@ -63,7 +63,7 @@
             if (localStorage.getItem('master_bypass') === 'true') {
                 console.log('[MasterDispatch] Admin Clearance: BYPASS AUTHORIZED');
             } else {
-                const isAdmin = await window.Storage._isAdminUser();
+                const isAdmin = await window.AppStorage._isAdminUser();
                 console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
                 
                 if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
@@ -123,7 +123,7 @@
 
     // ─── Metrics ───
     async function refreshMetrics() {
-        const db = window.Storage.db();
+        const db = window.AppStorage.db();
         if (!db) return;
         try {
             const { count: userCount } = await db.from('patients').select('*', { count: 'exact', head: true });
@@ -138,22 +138,23 @@
             txt('user-count-badge', `${(userCount || 0).toLocaleString()} Total`);
         } catch (err) { console.error('[MasterDispatch] Sync Failure:', err); }
     }
+    window.refreshMetrics = refreshMetrics;
 
     // ─── Real-time SOS ───
     function setupRealtime() {
-        const db = window.Storage.db();
+        const db = window.AppStorage.db();
         if (!db) return;
 
         _realtimeChannel = db.channel('dispatch-incident-reporting')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, payload => {
                 pushAlertToFeed(payload.new);
-                window.refreshMetrics();
+                refreshMetrics();
                 renderAnalytics();
                 renderOperationsConsole(payload.new);
                 if (_audioEnabled) playAlertSound();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, payload => {
-                window.refreshMetrics();
+                refreshMetrics();
                 refreshLogs();
                 renderAnalytics();
                 
@@ -165,7 +166,7 @@
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
                 window.renderMasterTable();
-                window.refreshMetrics();
+                refreshMetrics();
                 renderAnalytics();
             })
             .subscribe();
@@ -277,7 +278,7 @@
 
         // Backup Server Lookup
         if (!patient) {
-            patient = await window.Storage.getPatientById(pId);
+            patient = await window.AppStorage.getPatientById(pId);
         }
         
         _activeConsolePatient = patient;
@@ -285,7 +286,8 @@
 
         if (patient) {
             // Identity Resolution: Immediate override
-            txt('console-name', (patient.fullName || 'UNKNOWN OPERATIVE').toUpperCase());
+            pName = (patient.fullName || 'UNKNOWN OPERATIVE');
+            txt('console-name', pName.toUpperCase());
             txt('console-id', `#ID-${(patient.id || pId).substring(0, 8).toUpperCase()}`);
 
             // Automated Notification Sync
@@ -316,9 +318,16 @@
             txt('console-contact', 'NO RECORD');
         }
 
-        if (btnMap && scan.gps_lat && scan.gps_long) {
-            btnMap.href = `https://www.google.com/maps/search/?api=1&query=${scan.gps_lat},${scan.gps_long}`;
-            updateTacticalRadar(scan.gps_lat, scan.gps_long, pName);
+        const btnMap = $('console-btn-map');
+        const lat = scan.gps_lat || scan.latitude || scan.lat;
+        const lon = scan.gps_long || scan.longitude || scan.long || scan.lon;
+
+        if (btnMap && lat && lon) {
+            btnMap.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+            updateTacticalRadar(lat, lon, pName);
+            
+            // Forces Leaflet to recalculate its container size in case it was hidden during init
+            if (_map) setTimeout(() => _map.invalidateSize(), 200);
         } else if (btnMap && scan.location) {
              btnMap.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scan.location)}`;
         }
@@ -537,7 +546,7 @@
         const body = $('admin-table-body');
         if (!body) return;
 
-        const all = await window.Storage.getAllPatients() || [];
+        const all = await window.AppStorage.getAllPatients() || [];
         const filtered = filter ? all.filter(p => p.fullName?.toLowerCase().includes(filter)) : all;
  
         if (filtered.length === 0) {
@@ -596,6 +605,9 @@
                             <button onclick="window.openEditModal('${p.id}')" class="p-2 border border-[#1E293B] text-[#64748b] hover:text-white hover:bg-slate-700 transition-all rounded-lg group/btn" title="Edit Profile">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>
+                            <button onclick="window.deletePatientProfile('${p.id}')" class="p-2 border border-[#1E293B] text-red-400 hover:text-white hover:bg-red-600 transition-all rounded-lg group/btn" title="Terminate Record">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -609,8 +621,8 @@
         const mini = $('admin-live-log-mini');
         
         try {
-            const scans = await window.Storage.getScanHistory() || [];
-            const patients = await window.Storage.getAllPatients() || [];
+            const scans = await window.AppStorage.getScanHistory() || [];
+            const patients = await window.AppStorage.getAllPatients() || [];
             
             const getName = (s) => {
                 if (s.patient_name && s.patient_name !== 'Unknown') return s.patient_name;
@@ -708,8 +720,8 @@
 
     async function renderAnalytics() {
         try {
-            const patients = await window.Storage.getAllPatients() || [];
-            const scans = await window.Storage.getScanHistory() || [];
+            const patients = await window.AppStorage.getAllPatients() || [];
+            const scans = await window.AppStorage.getScanHistory() || [];
  
             const critical = patients.filter(p => (p.conditions||'').toLowerCase().includes('heart') || (p.allergies||'').length > 5).length;
             const regular = patients.length - critical;
@@ -822,6 +834,11 @@
         if (tab === 'settings') {
             loadAdminProfileData();
         }
+
+        // Tactical Radar Fix: Ensure map adjusts to container visibility
+        if ((tab === 'overview' || tab === 'monitoring') && _map) {
+            setTimeout(() => _map.invalidateSize(), 300);
+        }
     };
 
     async function loadAdminProfileData() {
@@ -872,21 +889,21 @@
 
 
     window.generateCustomIDCard = async function(id) {
-        const patient = await window.Storage.getPatientById(id);
+        const patient = await window.AppStorage.getPatientById(id);
         if (patient && window.CardGenerator) {
             await window.CardGenerator.generateMedicalCard(patient);
         }
     };
 
     window.generateCustomWristband = async function(id) {
-        const patient = await window.Storage.getPatientById(id);
+        const patient = await window.AppStorage.getPatientById(id);
         if (patient && window.CardGenerator) {
             await window.CardGenerator.generateWristband(patient);
         }
     };
 
     window.generateHighFidelityBranding = async function(id) {
-        const patient = await window.Storage.getPatientById(id);
+        const patient = await window.AppStorage.getPatientById(id);
         if (patient && window.CardGenerator) {
             await window.CardGenerator.generateBrandedQR(patient, 'url');
         }
@@ -894,20 +911,20 @@
 
     window.deletePatientProfile = async function(id) {
         if(confirm('TERMINATE RECORD: Are you sure?')) {
-            const { success, error } = await window.Storage.deletePatient(id);
+            const { success, error } = await window.AppStorage.deletePatient(id);
             if (!success && error) {
                 console.error('[Admin] Delete Failure:', error);
                 alert('Deletion Failed: ' + (error.message || 'Check database permissions.'));
             } else {
-                renderMasterTable(); 
+                window.renderMasterTable(); 
                 refreshMetrics(); 
-                renderLogs();
+                refreshLogs();
             }
         }
     };
 
     window.openEditModal = async function(id) {
-        const patient = await window.Storage.getPatientById(id);
+        const patient = await window.AppStorage.getPatientById(id);
         if(!patient) return;
         
         $('edit-patient-id').value = patient.id;
@@ -1038,7 +1055,7 @@
         }
 
         try {
-            await window.Storage.savePatient(updateData);
+            await window.AppStorage.savePatient(updateData);
             btn.textContent = 'SUCCESS';
             setTimeout(() => {
                 btn.disabled = false;
@@ -1085,7 +1102,7 @@
         };
 
         try {
-            const result = await window.Storage.savePatient(patientData);
+            const result = await window.AppStorage.savePatient(patientData);
             if (result.error) throw new Error(result.error);
             
             btn.innerHTML = 'SUCCESS';

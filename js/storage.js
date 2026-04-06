@@ -4,7 +4,7 @@
              Automated SOS Triggering, and Admin Data Visibility.
    ============================================================ */
 
-const Storage = {
+const AppStorage = {
     SAVE_KEY: 'ems_patient_data_v2',
     SCAN_KEY: 'ems_scan_history',
     _cache: [],
@@ -334,7 +334,7 @@ END:VCARD`;
         if (this._cache) this._cache = this._cache.filter(p => p.patientId !== id && p.id !== id);
         if (localStorage.getItem('current_patient_id') === id) localStorage.removeItem('current_patient_id');
         
-        return { success: cloudSynced, error: lastError };
+        return { success: true, cloudSynced, error: lastError };
     },
 
     _getAssignedOwnerId: async function () {
@@ -519,5 +519,5 @@ END:VCARD`;
     }
 };
 
-Storage.seed();
-window.Storage = Storage;
+AppStorage.seed();
+window.AppStorage = AppStorage;

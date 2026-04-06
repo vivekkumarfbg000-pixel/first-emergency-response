@@ -24,12 +24,12 @@
         }
 
         // ─── NEW: Double-Tap Profile Claiming ───
-        if (window.Storage) {
-            const pendingId = window.Storage.getPendingPatientId();
+        if (window.AppStorage) {
+            const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
                 console.log('[PersonalCommand] Found pending profile context, claiming...', pendingId);
-                await window.Storage.claimProfile(pendingId);
-                window.Storage.clearPendingPatientId();
+                await window.AppStorage.claimProfile(pendingId);
+                window.AppStorage.clearPendingPatientId();
             }
         }
 
@@ -66,9 +66,9 @@
 
     async function loadDashboardData(sid = null) {
         if (sid) {
-            const isAdmin = await window.Storage._isAdminUser();
+            const isAdmin = await window.AppStorage._isAdminUser();
             if (isAdmin) {
-                const p = await window.Storage.getPatientById(sid);
+                const p = await window.AppStorage.getPatientById(sid);
                 if (p) {
                     _patients = [p];
                     console.log('[PersonalCommand] Admin override: Loading patient context', p.id);
@@ -77,7 +77,7 @@
         }
 
         if (_patients.length === 0) {
-            _patients = await window.Storage.getAllPatients();
+            _patients = await window.AppStorage.getAllPatients();
         }
         
         // Populate Registry Metrics
@@ -94,7 +94,7 @@
             const primary = _patients.find(p => p.isPrimary) || _patients[0];
             await switchPatient(primary.id);
         } else if (_patients.length === 0) {
-            const isAdmin = await window.Storage._isAdminUser();
+            const isAdmin = await window.AppStorage._isAdminUser();
             if (isAdmin) {
                 txt('welcome-msg', 'Admin Monitor');
                 return;
@@ -115,10 +115,18 @@
     }
 
     async function switchPatient(id) {
+        if (!id || _patients.length === 0) {
+            console.warn('[PersonalCommand] Switch failed: No profiles active.');
+            return;
+        }
+        
         _activePatient = _patients.find(p => p.id === id);
-        if (!_activePatient) return;
+        if (!_activePatient) {
+            _activePatient = _patients[0];
+            console.log('[PersonalCommand] Targeted ID not found, defaulting to primary.');
+        }
 
-        txt('welcome-msg', _activePatient.fullName.split(' ')[0]);
+        txt('welcome-msg', _activePatient.fullName ? _activePatient.fullName.split(' ')[0] : 'User');
         renderMedicalIDHub(_activePatient);
         
         // Update Session Meta
@@ -196,7 +204,7 @@
                     </div>
                 </td>
                 <td class="px-6 py-5 text-right">
-                    <button onclick="window.confirm('Delete this record?') && (window.Storage.deletePatient('${p.id}'), location.reload())" 
+                    <button onclick="window.confirm('Delete this record?') && (window.AppStorage.deletePatient('${p.id}'), location.reload())" 
                             class="text-slate-500 hover:text-red-500 transition-colors px-3 py-1">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
@@ -210,7 +218,7 @@
         const container = $('activity-list');
         if (!container) return;
 
-        const scans = await window.Storage.getScanHistory();
+        const scans = await window.AppStorage.getScanHistory();
         if (scans.length === 0) return;
 
         container.innerHTML = scans.map(s => {
@@ -251,7 +259,7 @@
     }
 
     async function refreshScanCount() {
-        const count = await window.Storage.getScanCount();
+        const count = await window.AppStorage.getScanCount();
         txt('stat-scans', count || 0);
     }
 
@@ -290,7 +298,7 @@
             if (btn) btn.disabled = true;
             
             try {
-                const { success, error } = await window.Storage.deletePatient(_activePatient.id);
+                const { success, error } = await window.AppStorage.deletePatient(_activePatient.id);
                 
                 if (!success && error) {
                     console.error('[PersonalCommand] Deletion Failed:', error);
@@ -299,13 +307,13 @@
                     return;
                 }
 
-                const isAdmin = await window.Storage._isAdminUser();
+                const isAdmin = await window.AppStorage._isAdminUser();
                 
                 if (isAdmin) {
                     window.location.href = 'admin.html';
                 } else {
                     // If user deleted their only profile or one of them, reload or logout if last
-                    const remaining = await window.Storage.getAllPatients() || [];
+                    const remaining = await window.AppStorage.getAllPatients() || [];
                     if (remaining.length === 0) {
                         window.Auth.signOut();
                     } else {

@@ -861,13 +861,13 @@
                 const editId = urlParams.get('edit');
 
                 if (editId) {
-                    await window.Storage.updatePatient(editId, patientData);
+                    await window.AppStorage.updatePatient(editId, patientData);
                     result = {
                         patient: { ...patientData, patientId: editId, id: editId },
-                        cloudSynced: window.Storage.db() !== null
+                        cloudSynced: window.AppStorage.db() !== null
                     };
                 } else {
-                    result = await window.Storage.savePatient(patientData);
+                    result = await window.AppStorage.savePatient(patientData);
                 }
 
                 if (result && result.patient) {
@@ -875,7 +875,7 @@
                     const finalId = result.supabaseId || result.patient.patientId;
                     
                     // ─── NEW: Store Pending ID for Claiming ───
-                    if (window.Storage) window.Storage.setPendingPatientId(finalId);
+                    if (window.AppStorage) window.AppStorage.setPendingPatientId(finalId);
 
                     // Update sync status message
                     const syncBox = document.getElementById('syncStatusBox');
@@ -912,9 +912,9 @@
         // ─── QR Code Generation ───
         function generateQRCode(patient) {
             const canvas = document.getElementById('qrCanvas');
-            if (!canvas || !window.Storage) return;
+            if (!canvas || !window.AppStorage) return;
 
-            const qrUrl = window.Storage.buildEmergencyUrl(patient);
+            const qrUrl = window.AppStorage.buildEmergencyUrl(patient);
 
             QRCode.toCanvas(canvas, qrUrl, {
                 width: 240,
@@ -984,7 +984,7 @@
         if (editId) {
             document.getElementById('submitBtn').innerHTML = '<i data-lucide="save" style="width:16px;"></i> Update Profile';
             setTimeout(async () => {
-                const patient = await Storage.getPatientById(editId);
+                const patient = await AppStorage.getPatientById(editId);
                 if (patient) {
                     document.getElementById('fullName').value = patient.fullName || '';
                     document.getElementById('bloodGroup').value = patient.bloodGroup || '';
