@@ -110,8 +110,10 @@ const AppStorage = {
     },
 
     _getAssignedOwnerId: async function () {
-        const userId = await this._getUserId();
-        return userId || this.MASTER_ADMIN_UUID;
+        try {
+            const uid = await this._getUserId();
+            return uid; // returns null for anon to allow claiming
+        } catch (e) { return null; }
     },
 
     buildEmergencyUrl: function (patient) {
@@ -337,12 +339,7 @@ END:VCARD`;
         return { success: true, cloudSynced, error: lastError };
     },
 
-    _getAssignedOwnerId: async function () {
-        try {
-            const uid = await this._getUserId();
-            return uid; // returns null for anon
-        } catch (e) { return null; }
-    },
+
 
     claimProfile: async function(patientId) {
         if (!this.db()) return { success: false, error: 'Cloud Unavailable' };

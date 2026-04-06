@@ -265,7 +265,7 @@
         
         if (data.session) {
           alert('Welcome! Your account has been created successfully. Redirecting to dashboard...');
-          window.location.href = 'dashboard.html';
+          window.location.href = 'dashboard.html?name=' + encodeURIComponent(fullName) + '&email=' + encodeURIComponent(email);
         } else {
           // Check if user was actually created despite email error
           if (data.user) {
@@ -273,7 +273,7 @@
              window.location.href = 'login.html?email=' + encodeURIComponent(email);
           } else {
              alert('Account created! Please check your email and click the confirmation link before signing in.');
-             window.location.href = 'login.html';
+             window.location.href = 'login.html?name=' + encodeURIComponent(fullName) + '&email=' + encodeURIComponent(email);
           }
         }
       } catch (err) {

@@ -102,8 +102,9 @@
             // NEW: Auto-Redirect to Registration for first-time users
             console.log('[PersonalCommand] No clinical profiles detected. Redirecting to initialization...');
             const user = await window.Auth.getUser();
-            const name = user?.user_metadata?.full_name || user?.user_metadata?.display_name || '';
-            const email = user?.email || '';
+            const urlParams = new URLSearchParams(window.location.search);
+            const name = urlParams.get('name') || user?.user_metadata?.full_name || user?.user_metadata?.display_name || '';
+            const email = urlParams.get('email') || user?.email || '';
             window.location.href = `register.html?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`;
             return;
         }

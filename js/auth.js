@@ -56,8 +56,12 @@ const Auth = {
             const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
                 console.log('[Auth] Claiming pending profile:', pendingId);
-                await window.AppStorage.claimProfile(pendingId);
-                window.AppStorage.clearPendingPatientId();
+                try {
+                    await window.AppStorage.claimProfile(pendingId);
+                    window.AppStorage.clearPendingPatientId();
+                } catch (e) {
+                    console.error('[Auth] Claiming failed:', e);
+                }
             }
         }
         
