@@ -392,7 +392,7 @@
 
         // Action Buttons
         const famCall = document.getElementById('btn-call-family');
-        famCall.href = `tel:${p.contact1_Phone || p.contact1_phone || ''}`;
+        famCall.href = `tel:${p.emergencyContact || p.contact1_Phone || p.contact1_phone || ''}`;
 
         lucide.createIcons();
         fetchAISummary(p);

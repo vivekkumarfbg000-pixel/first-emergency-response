@@ -748,6 +748,7 @@
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/card-generator.js"></script>
     <script>
         lucide.createIcons();
 
@@ -871,12 +872,23 @@
 
                 if (result && result.patient) {
                     generatedPatientData = result.patient;
-                    if (result.supabaseId) generatedPatientData.id = result.supabaseId;
+                    const finalId = result.supabaseId || result.patient.patientId;
+                    
+                    // ─── NEW: Store Pending ID for Claiming ───
+                    if (window.Storage) window.Storage.setPendingPatientId(finalId);
 
                     // Update sync status message
                     const syncBox = document.getElementById('syncStatusBox');
                     if (result.cloudSynced) {
-                        syncBox.innerHTML = '<strong>✅ Synced to Sehat Point Cloud</strong>Your profile is visible to the admin dashboard instantly. When anyone scans your QR code, your family will receive an emergency email at the address you provided.';
+                        syncBox.innerHTML = `
+                            <strong>✅ Profile Activated (Cloud Linked)</strong>
+                            Your life-saving record is now live and secured to your account.
+                            <br><br>
+                            <div style="background:rgba(255,255,255,0.1); padding:0.75rem; border-radius:12px; border:1px solid rgba(255,255,255,0.2);">
+                                <p style="font-size:0.8rem; margin-bottom:0.75rem; color:#fff;">Your data is permanently safe. You can access it anytime from your dashboard.</p>
+                                <a href="dashboard.html" class="btn btn-primary" style="font-size:0.8rem; padding:0.5rem 1rem; width:100%; display:inline-flex; justify-content:center;">Go to Dashboard <i data-lucide="layout-dashboard" style="width:14px; margin-left:8px;"></i></a>
+                            </div>
+                        `;
                     } else {
                         syncBox.style.borderColor = 'rgba(245,158,11,0.3)';
                         syncBox.style.background = 'rgba(245,158,11,0.05)';
@@ -902,36 +914,29 @@
             const canvas = document.getElementById('qrCanvas');
             if (!canvas || !window.Storage) return;
 
-            let qrContent = window.Storage.buildQRPayload(patient);
+            const qrUrl = window.Storage.buildEmergencyUrl(patient);
 
-            console.log('[QR] Generating QR for:', qrContent.substring(0, 80) + '...');
-
-            QRCode.toCanvas(canvas, qrContent, {
+            QRCode.toCanvas(canvas, qrUrl, {
                 width: 240,
-                margin: 2,
+                margin: 0,
                 color: { dark: '#000000', light: '#ffffff' },
                 errorCorrectionLevel: 'M'
-            }, (err) => {
-                if (err) {
-                    console.error('[QR] Generation error:', err);
-                    // Fallback: simple patient ID QR
-                    const fallbackUrl = new URL('emergency.html', window.location.href);
-                    fallbackUrl.searchParams.set('id', patient.patientId);
-                    QRCode.toCanvas(canvas, fallbackUrl.toString(), { width: 240, margin: 2 });
-                }
             });
         }
 
         // ─── Download QR ───
-        window.downloadQR = function() {
-            const canvas = document.getElementById('qrCanvas');
-            if (!canvas) return;
-
-            const link = document.createElement('a');
-            link.download = `sehat-point-qr-${generatedPatientData?.patientId || 'profile'}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            showToast('✅ QR Code downloaded!', 'success');
+        window.downloadQR = async function() {
+            if (!generatedPatientData || !window.CardGenerator) return;
+            const btn = document.querySelector('.btn-success');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" style="width:16px;" class="animate-spin"></i> Processing...';
+            lucide.createIcons();
+            
+            await window.CardGenerator.generateBrandedQR(generatedPatientData, 'url');
+            
+            btn.innerHTML = orig;
+            lucide.createIcons();
+            showToast('✅ High-Fidelity QR downloaded!', 'success');
         };
 
         // ─── Share QR ───

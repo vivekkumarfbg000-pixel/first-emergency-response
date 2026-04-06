@@ -207,7 +207,18 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-4 text-xs font-mono text-enterprise-muted">
+            <div class="flex items-center gap-6 text-xs font-mono text-enterprise-muted">
+                <!-- Tactical Audio Toggle -->
+                <div class="flex items-center gap-3 bg-[#1e293b] px-3 py-1.5 rounded-full border border-slate-700 shadow-inner group cursor-pointer" onclick="window.toggleTacticalAudio()" id="btn-audio-toggle">
+                    <div id="audio-toggle-bg" class="w-8 h-4 bg-slate-800 rounded-full relative transition-colors duration-300">
+                        <div id="audio-toggle-knob" class="absolute top-0.5 left-0.5 w-3 h-3 bg-slate-500 rounded-full transition-all duration-300"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="volume-x" id="audio-toggle-icon" class="w-3 h-3 text-slate-500"></i>
+                        <span id="audio-toggle-label" class="text-[9px] font-black uppercase tracking-widest text-slate-500">Audio: Muted</span>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
                     <span id="connection-status">OPERATIONAL SYNC</span>
@@ -412,6 +423,18 @@
                                         </div>
                                     </a>
                                 </div>
+                                
+                                <!-- ─── Tactical Radar (Leaflet.js) ─── -->
+                                <div id="admin-tactical-map-container" class="relative group">
+                                    <div id="admin-tactical-map" class="w-full h-48 md:h-64 rounded-xl border border-slate-700/50 bg-[#0B1120] relative z-20 shadow-inner overflow-hidden"></div>
+                                    <div class="absolute inset-0 z-30 pointer-events-none border border-amber-500/10 rounded-xl group-hover:border-amber-500/30 transition-colors"></div>
+                                    
+                                    <!-- Signal Badge Overlay -->
+                                    <div class="absolute top-4 right-4 z-40 bg-[#0B1120]/80 backdrop-blur-md border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-xl">
+                                        <div class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shadow-[0_0_8px_#f59e0b]"></div>
+                                        <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Tracking Signal Active</span>
+                                    </div>
+                                </div>
 
                                 <!-- AI Health Summary Box -->
                                 <div class="flex-1 bg-[#131B2F] border border-[#1E293B] rounded-xl p-6 md:p-8 relative overflow-hidden flex flex-col shadow-inner">
@@ -455,13 +478,9 @@
                     </div>
                     
                     <div class="flex items-center gap-6">
-                        <!-- QR Mode Toggle for Admin -->
                         <div class="hidden md:flex flex-col items-end gap-1.5">
-                            <span class="text-[9px] font-black text-enterprise-muted uppercase tracking-widest">QR Asset Mode</span>
-                            <div class="flex items-center bg-enterprise-bg border border-enterprise-border rounded-lg p-1 gap-1">
-                                <button id="admin-qr-vcard" onclick="window.setAdminQRMode('vcard')" class="px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white">Offline</button>
-                                <button id="admin-qr-url" onclick="window.setAdminQRMode('url')" class="px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white">URL Fast</button>
-                            </div>
+                            <span class="text-[9px] font-black text-enterprise-muted uppercase tracking-widest">Active Scan Protocol</span>
+                            <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">Direct URL Sync</span>
                         </div>
 
                         <div class="relative w-72">
@@ -636,9 +655,40 @@
                         <label class="text-[10px] text-enterprise-muted uppercase">Full Identity</label>
                         <input type="text" id="edit-fullName" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors" placeholder="John Doe">
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-enterprise-muted uppercase">Date of Birth</label>
-                        <input type="date" id="edit-dob" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-white focus:outline-none text-white transition-colors">
+                </div>
+
+                <!-- ─── NEW: Digital Access Provisioning ─── -->
+                <div class="mt-8 pt-6 border-t border-enterprise-border">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-amber-500"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-[11px] font-black text-white uppercase tracking-widest">Digital Access Terminal</h4>
+                            <p class="text-[9px] text-enterprise-muted uppercase tracking-tighter">Authorize Login Account for this Profile</p>
+                        </div>
+                    </div>
+                    
+                    <div id="account-status-container" class="mb-4 hidden p-3 bg-emerald-500/5 border border-emerald-500/10 rounded">
+                        <p class="text-[10px] text-emerald-400 font-mono tracking-tighter flex items-center gap-2">
+                             <i data-lucide="check-circle" class="w-3 h-3"></i> This profile has an active dashboard link.
+                        </p>
+                    </div>
+
+                    <div id="account-provision-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] text-enterprise-muted uppercase font-bold">User Email Address</label>
+                                <input type="email" id="edit-account-email" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="user@example.com">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] text-enterprise-muted uppercase font-bold">One-Time Password</label>
+                                <input type="text" id="edit-account-password" class="w-full bg-[#0B1120] border border-enterprise-border p-2 focus:border-amber-500 focus:outline-none text-white transition-colors" placeholder="TempPass123!">
+                            </div>
+                        </div>
+                        <button onclick="window.provisionUserAccount()" id="btn-provision-account" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest transition-all rounded shadow-lg shadow-amber-500/10">
+                             Authorize & Create Social Account
+                        </button>
                     </div>
                 </div>
 
@@ -883,6 +933,7 @@
              <i data-lucide="brain-circuit" class="w-6 h-6 text-white group-hover:scale-110 transition-transform"></i>
         </button>
     </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

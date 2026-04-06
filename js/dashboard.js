@@ -23,6 +23,16 @@
             return;
         }
 
+        // ─── NEW: Double-Tap Profile Claiming ───
+        if (window.Storage) {
+            const pendingId = window.Storage.getPendingPatientId();
+            if (pendingId) {
+                console.log('[PersonalCommand] Found pending profile context, claiming...', pendingId);
+                await window.Storage.claimProfile(pendingId);
+                window.Storage.clearPendingPatientId();
+            }
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const sid = urlParams.get('sid');
 
@@ -30,6 +40,12 @@
         await loadDashboardData(sid);
         
         // 3. Register Global Listeners
+        if (_patients.length === 0 && !sid) {
+            console.warn('[PersonalCommand] No medical context found. Redirecting to initialization wizard.');
+            window.location.href = 'register.html';
+            return;
+        }
+
         if ($('patientSwitcher')) {
             $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
         }
@@ -260,8 +276,7 @@
         btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Processing...';
         if (window.lucide) lucide.createIcons();
         
-        const mode = $('qr-mode-toggle')?.checked ? 'url' : 'vcard';
-        await window.CardGenerator.generateBrandedQR(_activePatient, mode);
+        await window.CardGenerator.generateBrandedQR(_activePatient, 'url');
         
         btn.innerHTML = origHtml;
         if (window.lucide) lucide.createIcons();
@@ -275,7 +290,15 @@
             if (btn) btn.disabled = true;
             
             try {
-                await window.Storage.deletePatient(_activePatient.id);
+                const { success, error } = await window.Storage.deletePatient(_activePatient.id);
+                
+                if (!success && error) {
+                    console.error('[PersonalCommand] Deletion Failed:', error);
+                    alert('Termination Failed: ' + (error.message || 'Check connection or permissions.'));
+                    if (btn) btn.disabled = false;
+                    return;
+                }
+
                 const isAdmin = await window.Storage._isAdminUser();
                 
                 if (isAdmin) {
@@ -290,8 +313,8 @@
                     }
                 }
             } catch (err) {
-                console.error('[PersonalCommand] Deletion Failed:', err);
-                alert('System Failure: Could not terminate record.');
+                console.error('[PersonalCommand] System Exception:', err);
+                alert('System Failure: Could not finalize record termination.');
                 if (btn) btn.disabled = false;
             }
         }

@@ -263,6 +263,17 @@
 
       try {
         await Auth.signIn(email.trim(), password);
+        
+        // ─── NEW: 0-Profile Detection ───
+        if (window.Storage) {
+            const profiles = await window.Storage.getAllPatients();
+            if (!profiles || profiles.length === 0) {
+                console.log('[Auth] New user detected, fast-tracking to profile creation.');
+                window.location.href = 'register.html';
+                return;
+            }
+        }
+        
         window.location.href = 'dashboard.html';
       } catch (err) {
         console.error('Login Failed:', err);

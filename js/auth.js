@@ -50,7 +50,18 @@ const Auth = {
         }
         
         console.log('[Auth] SignUp success:', data);
-        return data; // returns { user, session }
+        
+        // ─── NEW: Profile Claiming Logic ───
+        if (data.session && window.Storage) {
+            const pendingId = window.Storage.getPendingPatientId();
+            if (pendingId) {
+                console.log('[Auth] Claiming pending profile:', pendingId);
+                await window.Storage.claimProfile(pendingId);
+                window.Storage.clearPendingPatientId();
+            }
+        }
+        
+        return data; 
     },
 
     // ────── SIGN IN ──────
@@ -82,6 +93,17 @@ const Auth = {
         }
 
         console.log('[Auth] SignIn success, user:', data?.user?.email);
+        
+        // ─── NEW: Profile Claiming Logic ───
+        if (data.session && window.Storage) {
+            const pendingId = window.Storage.getPendingPatientId();
+            if (pendingId) {
+                console.log('[Auth] Claiming pending profile during sign-in:', pendingId);
+                await window.Storage.claimProfile(pendingId);
+                window.Storage.clearPendingPatientId();
+            }
+        }
+        
         return data;
     },
 

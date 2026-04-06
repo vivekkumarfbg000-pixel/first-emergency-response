@@ -31,6 +31,7 @@ const Storage = {
             contact2_name:     p.contact2_Name || '',
             contact2_relation: p.contact2_Relation || '',
             contact2_phone:    p.contact2_Phone || '',
+            emergencyContact:  p.emergencyContact || '',
             conditions:        p.conditions || '',
             allergies:         p.allergies || '',
             medications:       p.medications || '',
@@ -55,6 +56,7 @@ const Storage = {
             contact2_Name:     row.contact2_name,
             contact2_Relation: row.contact2_relation,
             contact2_Phone:    row.contact2_phone,
+            emergencyContact:  row.emergencyContact,
             conditions:        row.conditions,
             allergies:         row.allergies,
             medications:       row.medications,
@@ -114,14 +116,14 @@ const Storage = {
 
     buildEmergencyUrl: function (patient) {
         if (!patient) return '';
-        const baseUrl = window.SITE_BASE_URL || window.location.origin + '/';
+        const origin = window.location.origin;
         const identifier = patient.id || patient.patientId;
         if (identifier) {
-            return baseUrl + 'emergency.html?sid=' + encodeURIComponent(identifier);
+            return `${origin}/emergency.html?sid=${encodeURIComponent(identifier)}`;
         } else {
             const encoded = this.encodeForQR(patient);
-            if (encoded) return baseUrl + 'emergency.html?d=' + encoded;
-            return baseUrl + 'emergency.html';
+            if (encoded) return `${origin}/emergency.html?d=${encoded}`;
+            return `${origin}/emergency.html`;
         }
     },
 
@@ -129,7 +131,7 @@ const Storage = {
         if (!patient) return '';
         const url = this.buildEmergencyUrl(patient);
         const name = patient.fullName || 'Emergency Profile';
-        const phone = patient.contact1_Phone || patient.contact1_phone || '';
+        const phone = patient.emergencyContact || patient.contact1_Phone || patient.contact1_phone || '';
         const note = `Blood: ${patient.bloodGroup || 'Unspecified'}\\nAllergies: ${patient.allergies || 'None listed'}`;
         
         return `BEGIN:VCARD
@@ -280,6 +282,7 @@ END:VCARD`;
                 const mapping = {
                     fullName: 'full_name', bloodGroup: 'blood_group', age: 'age', gender: 'gender',
                     contact1_Name: 'contact1_name', contact1_Relation: 'contact1_relation', contact1_Phone: 'contact1_phone', contact1_Email: 'contact1_email',
+                    emergencyContact: 'emergencyContact',
                     conditions: 'conditions', allergies: 'allergies', medications: 'medications', medicalNotes: 'medical_notes', organDonor: 'organ_donor'
                 };
                 for (const [key, dbKey] of Object.entries(mapping)) {
@@ -313,17 +316,66 @@ END:VCARD`;
     },
 
     deletePatient: async function (id) {
+        let cloudSynced = false;
+        let lastError = null;
         if (this.db()) {
             try {
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
-                await this.db().from('patients').delete().eq(isUUID ? 'id' : 'patient_id', id);
-            } catch (err) { }
+                const { error } = await this.db().from('patients').delete().eq(isUUID ? 'id' : 'patient_id', id);
+                if (error) lastError = error;
+                cloudSynced = !error;
+            } catch (err) { lastError = err; }
         }
+        
+        // Optimistic UI/Local deletion still occurs if desired, 
+        // but we'll report the cloud state to the caller
         let patients = this.getAllPatientsLocal().filter(p => p.patientId !== id && p.id !== id);
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
         if (this._cache) this._cache = this._cache.filter(p => p.patientId !== id && p.id !== id);
         if (localStorage.getItem('current_patient_id') === id) localStorage.removeItem('current_patient_id');
-        return true;
+        
+        return { success: cloudSynced, error: lastError };
+    },
+
+    _getAssignedOwnerId: async function () {
+        try {
+            const uid = await this._getUserId();
+            return uid; // returns null for anon
+        } catch (e) { return null; }
+    },
+
+    claimProfile: async function(patientId) {
+        if (!this.db()) return { success: false, error: 'Cloud Unavailable' };
+        try {
+            const userId = await this._getUserId();
+            if (!userId) return { success: false, error: 'Not Logged In' };
+
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(patientId);
+            const queryField = isUUID ? 'id' : 'patient_id';
+
+            // Only update if currently NULL (security policy check)
+            const { error } = await this.db()
+                .from('patients')
+                .update({ user_id: userId })
+                .eq(queryField, patientId)
+                .is('user_id', null);
+
+            return { success: !error, error };
+        } catch (err) {
+            return { success: false, error: err };
+        }
+    },
+
+    setPendingPatientId: function(id) {
+        localStorage.setItem('pending_patient_id', id);
+    },
+
+    getPendingPatientId: function() {
+        return localStorage.getItem('pending_patient_id');
+    },
+
+    clearPendingPatientId: function() {
+        localStorage.removeItem('pending_patient_id');
     },
 
     encodeForQR: function (p) {

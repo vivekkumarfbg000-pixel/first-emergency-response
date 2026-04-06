@@ -11,6 +11,11 @@
     let _activeSection = 'overview';
     let _realtimeChannel = null;
     let _errorLogs = [];
+    let _audioEnabled = false;
+    
+    // ─── Tactical Radar State ───
+    let _map = null;
+    let _mapMarker = null;
 
     // ─── Diagnostic HUD ───
     function logError(msg, err) {
@@ -93,6 +98,9 @@
         // 3. (Map removed) Console initializes automatically on first signal
         setupRealtime();
 
+        // 4. Initialize Tactical Radar
+        initTacticalRadar();
+
         if (window.lucide) lucide.createIcons();
         if ($('db-search')) {
             $('db-search').addEventListener('input', (e) => renderMasterTable(e.target.value.toLowerCase()));
@@ -142,12 +150,18 @@
                 window.refreshMetrics();
                 renderAnalytics();
                 renderOperationsConsole(payload.new);
-                playAlertSound();
+                if (_audioEnabled) playAlertSound();
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, () => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'scans' }, payload => {
                 window.refreshMetrics();
                 refreshLogs();
                 renderAnalytics();
+                
+                // NEW: Auto-dispatch and alert sound if audio is enabled
+                if (_audioEnabled) {
+                    renderOperationsConsole(payload.new);
+                    playAlertSound();
+                }
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
                 window.renderMasterTable();
@@ -158,19 +172,72 @@
     }
 
     function playAlertSound() {
+        if (!_audioEnabled) return;
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-        } catch (e) {}
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'triangle';
+            const now = audioCtx.currentTime;
+            
+            // High-fidelity Siren Effect: Frequency oscillation
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.linearRampToValueAtTime(880, now + 0.5);
+            osc.frequency.linearRampToValueAtTime(440, now + 1.0);
+            osc.frequency.linearRampToValueAtTime(880, now + 1.5);
+            osc.frequency.linearRampToValueAtTime(440, now + 2.0);
+            
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+            gain.gain.linearRampToValueAtTime(0.2, now + 1.9);
+            gain.gain.linearRampToValueAtTime(0, now + 2.0);
+            
+            osc.start();
+            osc.stop(now + 2.0);
+            console.log('[TacticalAudio] Siren Broadcast Initiated.');
+        } catch (e) {
+            console.error('[TacticalAudio] Engine Failure:', e);
+        }
     }
+
+    window.toggleTacticalAudio = function() {
+        _audioEnabled = !_audioEnabled;
+        const bg = $('audio-toggle-bg');
+        const knob = $('audio-toggle-knob');
+        const icon = $('audio-toggle-icon');
+        const label = $('audio-toggle-label');
+        
+        if (_audioEnabled) {
+            bg.classList.remove('bg-slate-800');
+            bg.classList.add('bg-emerald-600');
+            knob.style.left = 'calc(100% - 14px)';
+            knob.classList.remove('bg-slate-500');
+            knob.classList.add('bg-white');
+            icon.classList.remove('text-slate-500');
+            icon.classList.add('text-emerald-400');
+            icon.setAttribute('data-lucide', 'volume-2');
+            label.textContent = 'Audio: Active';
+            label.classList.remove('text-slate-500');
+            label.classList.add('text-emerald-400');
+        } else {
+            bg.classList.add('bg-slate-800');
+            bg.classList.remove('bg-emerald-600');
+            knob.style.left = '2px';
+            knob.classList.add('bg-slate-500');
+            knob.classList.remove('bg-white');
+            icon.classList.add('text-slate-500');
+            icon.classList.remove('text-emerald-400');
+            icon.setAttribute('data-lucide', 'volume-x');
+            label.textContent = 'Audio: Muted';
+            label.classList.add('text-slate-500');
+            label.classList.remove('text-emerald-400');
+        }
+        if (window.lucide) lucide.createIcons();
+    };
 
     function pushAlertToFeed(alert) {
         // Redundant with Mini Log but kept for specific SOS focus if needed
@@ -249,9 +316,9 @@
             txt('console-contact', 'NO RECORD');
         }
 
-        const btnMap = $('console-btn-map');
         if (btnMap && scan.gps_lat && scan.gps_long) {
             btnMap.href = `https://www.google.com/maps/search/?api=1&query=${scan.gps_lat},${scan.gps_long}`;
+            updateTacticalRadar(scan.gps_lat, scan.gps_long, pName);
         } else if (btnMap && scan.location) {
              btnMap.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scan.location)}`;
         }
@@ -305,6 +372,75 @@
         } catch (err) {
             loader.classList.add('hidden');
             renderOfflineSummary(patient, textContainer);
+        }
+    }
+
+    // ─── Tactical Radar Methods ───
+    function initTacticalRadar() {
+        const mapEl = $('admin-tactical-map');
+        if (!mapEl || _map) return;
+
+        try {
+            // Initialize map with a default global view
+            _map = L.map('admin-tactical-map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([20, 0], 2);
+
+            // Add High-Contrast Dark Matter Tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(_map);
+
+            console.log('[TacticalRadar] System Initialized: High-Contrast Mode Active.');
+        } catch (e) {
+            logError('Radar Init Failed', e);
+        }
+    }
+
+    function updateTacticalRadar(lat, lon, label) {
+        if (!_map) initTacticalRadar();
+        if (!_map) return;
+
+        try {
+            const coords = [parseFloat(lat), parseFloat(lon)];
+            
+            // Clean up existing marker
+            if (_mapMarker) {
+                _map.removeLayer(_mapMarker);
+            }
+
+            // High-Visibility Pulse Marker (Custom HTML)
+            const pulseIcon = L.divIcon({
+                className: 'tactical-pulse-marker',
+                html: `<div class="relative flex h-8 w-8 -ml-3 -mt-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-8 w-8 bg-red-500/20 border border-red-500 shadow-[0_0_15px_#ef4444]"></span>
+                      </div>`,
+                iconSize: [32, 32]
+            });
+
+            _mapMarker = L.marker(coords, { icon: pulseIcon }).addTo(_map);
+            
+            if (label) {
+                _mapMarker.bindTooltip(`<span class="font-black text-xs uppercase tracking-widest">${label}</span>`, {
+                    permanent: true,
+                    direction: 'top',
+                    className: 'tactical-tooltip-dark'
+                });
+            }
+
+            // Smooth Pan & Zoom
+            _map.flyTo(coords, 14, {
+                animate: true,
+                duration: 1.5
+            });
+
+            // Trigger Resize Fix (Leaflet container bugs)
+            setTimeout(() => _map.invalidateSize(), 500);
+
+        } catch (e) {
+            logError('Radar Update Failed', e);
         }
     }
 
@@ -734,21 +870,6 @@
         }
     };
 
-    let _adminQRMode = 'vcard';
-    window.setAdminQRMode = function(mode) {
-        _adminQRMode = mode;
-        const vcardBtn = $('admin-qr-vcard');
-        const urlBtn = $('admin-qr-url');
-        if (vcardBtn && urlBtn) {
-            if (mode === 'vcard') {
-                vcardBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white';
-                urlBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white';
-            } else {
-                urlBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all bg-blue-500 text-white';
-                vcardBtn.className = 'px-3 py-1 text-[9px] font-black rounded uppercase transition-all text-enterprise-muted hover:text-white';
-            }
-        }
-    };
 
     window.generateCustomIDCard = async function(id) {
         const patient = await window.Storage.getPatientById(id);
@@ -767,14 +888,21 @@
     window.generateHighFidelityBranding = async function(id) {
         const patient = await window.Storage.getPatientById(id);
         if (patient && window.CardGenerator) {
-            await window.CardGenerator.generateBrandedQR(patient, _adminQRMode);
+            await window.CardGenerator.generateBrandedQR(patient, 'url');
         }
     };
 
     window.deletePatientProfile = async function(id) {
         if(confirm('TERMINATE RECORD: Are you sure?')) {
-            await window.Storage.deletePatient(id);
-            renderMasterTable(); refreshMetrics(); renderAnalytics();
+            const { success, error } = await window.Storage.deletePatient(id);
+            if (!success && error) {
+                console.error('[Admin] Delete Failure:', error);
+                alert('Deletion Failed: ' + (error.message || 'Check database permissions.'));
+            } else {
+                renderMasterTable(); 
+                refreshMetrics(); 
+                renderLogs();
+            }
         }
     };
 
@@ -794,13 +922,18 @@
         const modal = $('admin-edit-modal');
         if(modal) modal.classList.remove('hidden');
 
-        // Toggle Conversion Section
-        const convSection = $('conversion-section');
-        if (convSection) {
-            if (!patient.user_id) {
-                convSection.classList.remove('hidden');
+        // ─── NEW: Account Provisioning State ───
+        const provForm = $('account-provision-form');
+        const statusBox = $('account-status-container');
+        if (provForm && statusBox) {
+            if (patient.user_id) {
+                provForm.classList.add('hidden');
+                statusBox.classList.remove('hidden');
             } else {
-                convSection.classList.add('hidden');
+                provForm.classList.remove('hidden');
+                statusBox.classList.add('hidden');
+                $('edit-account-email').value = patient.email || '';
+                $('edit-account-password').value = '';
             }
         }
 
@@ -1027,5 +1160,43 @@
     } else {
         bootstrap();
     }
+
+    window.provisionUserAccount = async function() {
+        const patientId = $('edit-patient-id').value;
+        const email = $('edit-account-email').value.trim();
+        const password = $('edit-account-password').value.trim();
+        const fullName = $('edit-fullName').value;
+
+        if (!email || !password) {
+            alert('REQUIRED: Please provide both an email and temporary password.');
+            return;
+        }
+
+        const btn = $('btn-provision-account');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> PROVISIONING...';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const { data, error } = await window.supabaseClient.functions.invoke('create-user-account', {
+                body: { email, password, patientId, fullName }
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            alert('SUCCESS: Digital Access Authorized for ' + email);
+            closeEditModal();
+            renderMasterTable();
+        } catch (e) {
+            console.error('[Admin] Provisioning Failed:', e);
+            alert('PROVISIONING ERROR: ' + (e.message || 'Server rejected authorization request.'));
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            if (window.lucide) lucide.createIcons();
+        }
+    };
 
 })();

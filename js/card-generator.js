@@ -134,28 +134,28 @@ window.CardGenerator = {
         ctx.fillText(`Family Contact: ${p.emergencyContact || p.contact1_Phone || 'NOT SET'}`, 80, 515);
 
         // 4. QR Section (Right Side)
-        const qrSize = 300;
+        const qrSize = 380;
         const qrCanvas = await CardGenerator._generateQR(p, qrSize, mode);
         
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = 40;
         ctx.fillStyle = '#ffffff';
-        CardGenerator._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
+        CardGenerator._roundRect(ctx, 680, 160, qrSize + 40, qrSize + 40, 25);
         ctx.fill();
         ctx.restore();
         
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 4;
-        CardGenerator._roundRect(ctx, 730, 210, qrSize + 25, qrSize + 25, 10);
+        ctx.lineWidth = 10;
+        CardGenerator._roundRect(ctx, 680, 160, qrSize + 40, qrSize + 40, 25);
         ctx.stroke();
+        
+        ctx.drawImage(qrCanvas, 700, 180, qrSize, qrSize);
 
-        ctx.drawImage(qrCanvas, 742, 222, qrSize, qrSize);
-
-        ctx.fillStyle = '#ef4444';
-        ctx.font = 'bold 18px "Inter", sans-serif';
+        ctx.fillStyle = '#6B1C23';
+        ctx.font = 'bold 28px "Inter", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('SCAN TO VIEW MEDICAL REPORT', 742 + qrSize/2, 535);
+        ctx.fillText('SCAN FOR EMERGENCY REPORT', 700 + qrSize/2, 600);
 
         // 5. Footer (Teal Bar)
         ctx.fillStyle = teal;
@@ -450,6 +450,28 @@ window.CardGenerator = {
         ctx.fillRect(-plusSize/10, -plusSize/2, plusSize/5, plusSize);
         
         ctx.restore();
+    },
+
+    _generateQR: async function(p, size, mode) {
+        const qrCanvas = document.createElement('canvas');
+        let content = '';
+        if (mode === 'url') {
+            content = window.Storage.buildEmergencyUrl(p);
+        } else {
+            content = window.Storage.buildQRPayload(p);
+        }
+        
+        if (typeof QRCode !== 'undefined') {
+            await QRCode.toCanvas(qrCanvas, content, {
+                width: size,
+                margin: 0,
+                color: { dark: '#000000', light: '#ffffff' },
+                errorCorrectionLevel: 'H'
+            });
+        } else {
+            console.error('QRCode library not found');
+        }
+        return qrCanvas;
     },
 
     _download: function(canvas, filename) {
