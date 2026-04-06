@@ -108,8 +108,20 @@
 
             if (window.lucide) lucide.createIcons();
             
-            // FADE OUT SYNC OVERLAY
+            // ─── NEW: FADE OUT SYNC OVERLAY ───
             hideSyncOverlay();
+            
+            // ─── NEW: Diagnostic Key Listener ───
+            document.addEventListener('keydown', e => {
+                if (e.key.toLowerCase() === 'd') {
+                    console.info('[PersonalCommand] Diagnostic Snapshot:', {
+                        user: session.user,
+                        profiles: _patients,
+                        storage: window.AppStorage.getAllPatientsLocal(),
+                        activePatient: _activePatient
+                    });
+                }
+            });
 
         } catch (fatalErr) {
             console.error('[PersonalCommand] FATAL Initialization Failure:', fatalErr);

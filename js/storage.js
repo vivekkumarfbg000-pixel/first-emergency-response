@@ -383,26 +383,42 @@ END:VCARD`;
     claimProfilesByEmail: async function(email) {
         if (!this.db() || !email) return { success: false, error: 'Initialization Error' };
         try {
-            const userId = await this._getUserId();
-            if (!userId) return { success: false, error: 'Not Logged In' };
+            const user = await this._getCurrentUserObj();
+            if (!user) return { success: false, error: 'Not Logged In' };
 
-            console.log(`[Storage] Running Recovery: Searching for orphaned profiles for ${email}...`);
+            const normalizedEmail = email.trim().toLowerCase();
+            console.log(`[Storage] Recovery Mode: Searching for profiles for ${normalizedEmail}...`);
 
-            const { data, error } = await this.db()
+            // 1. Identify profiles that match this email and have NO user_id
+            // We use 'ilike' for case-insensitivity on the DB side
+            const { data: claimable, error: searchError } = await this.db()
                 .from('patients')
-                .update({ user_id: userId })
-                .ilike('email', email.trim())   // Matches "vivek@ex.com" with "VIVEK@ex.com"
-                .is('user_id', null)
+                .select('id, full_name, email, user_id')
+                .ilike('email', normalizedEmail);
+
+            if (searchError) throw searchError;
+
+            const orphans = (claimable || []).filter(p => !p.user_id);
+            if (orphans.length === 0) {
+                console.log('[Storage] Recovery: No orphaned profiles found.');
+                return { success: true, claimedCount: 0 };
+            }
+
+            console.log(`[Storage] Recovery: Found ${orphans.length} orphan(s). Linking to Account ${user.id}...`);
+
+            // 2. Perform the Claim (Update user_id)
+            const { data: linked, error: claimError } = await this.db()
+                .from('patients')
+                .update({ user_id: user.id })
+                .in('id', orphans.map(o => o.id))
                 .select();
 
-            if (error) throw error;
-            if (data && data.length > 0) {
-                console.log(`[Storage] Recovery Success: Claimed ${data.length} profiles by email.`);
-                return { success: true, claimedCount: data.length };
-            }
-            return { success: true, claimedCount: 0 };
+            if (claimError) throw claimError;
+
+            console.log(`[Storage] Recovery Success: Linked ${linked.length} profile(s).`);
+            return { success: true, claimedCount: linked.length };
         } catch (err) {
-            console.error('[Storage] Recovery Failure:', err);
+            console.error('[Storage] Recovery Critical Failure:', err);
             return { success: false, error: err };
         }
     },
