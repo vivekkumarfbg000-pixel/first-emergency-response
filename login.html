@@ -242,6 +242,9 @@
       <div class="auth-footer" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
         <div>New patient? <a href="signup.html" style="color: #0284c7;">Create Medical ID</a></div>
         <div style="font-size: 0.75rem; opacity: 0.6;">Are you an Admin? <a href="admin-login.html" style="font-weight: 800; text-decoration: underline;">Dispatcher Login</a></div>
+        <div style="margin-top: 1rem; font-size: 0.65rem; opacity: 0.4;">
+            Session stuck? <a href="javascript:void(0)" onclick="location.reload(true); localStorage.clear(); alert('Cache Purged. Please refresh again.')" style="text-decoration: underline;">Perform Hard Reset</a>
+        </div>
       </div>
     </div>
   </div>
@@ -266,17 +269,31 @@
       try {
         await Auth.signIn(email.trim(), password, 'user');
         
-        // ─── NEW: Secure Profile Recovery ───
+        // ─── NEW: Total Propagation & Sync Recovery ───
+        btn.innerHTML = '<i data-lucide="refresh-cw" class="animate-spin w-4 h-4"></i> Synchronizing Records...';
+        lucide.createIcons();
+        
+        // 1.5s Safety Window for Cloud Identity Propagation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         if (window.AppStorage) {
-            console.log('[Auth] Verifying Medical Registry after sign-in...');
+            console.log('[Auth] Verifying Medical Registry after propagation window...');
             
             // Force a deep cloud pull to see if any profiles were just claimed
             const profiles = await window.AppStorage.getAllPatients();
             
             if (!profiles || profiles.length === 0) {
-                console.log('[Auth] No existing records found. Advancing to clinical initialization.');
-                window.location.href = 'register.html';
-                return;
+                console.warn('[Auth] No existing records found. Attempting emergency recovery sweep...');
+                const recovery = await window.AppStorage.claimProfilesByEmail(email.trim());
+                
+                if (recovery.success && recovery.claimedCount > 0) {
+                   console.log('[Auth] Recovery Success: Claimed ' + recovery.claimedCount + ' profiles. Refreshing registry...');
+                   await window.AppStorage.getAllPatients(); // Re-fetch after recovery
+                } else {
+                   console.warn('[Auth] Clinical initialization required. Advancing to registration portal.');
+                   window.location.href = 'register.html';
+                   return;
+                }
             }
         }
         

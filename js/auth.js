@@ -4,6 +4,12 @@
 
 const Auth = {
     // ────── SESSION GETTER ──────
+    // ────── HELPER: Safe Redirect URL ──────
+    _getRedirectUrl() {
+        const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        return window.location.origin + path + 'dashboard.html';
+    },
+
     async getSession() {
         if (localStorage.getItem('master_bypass') === 'true') {
             return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
@@ -52,7 +58,7 @@ const Auth = {
                     full_name: fullName,
                     display_name: fullName 
                 },
-                emailRedirectTo: window.location.origin + '/dashboard.html'
+                emailRedirectTo: this._getRedirectUrl()
             }
         });
 
@@ -229,7 +235,7 @@ const Auth = {
             type: 'signup',
             email: email,
             options: {
-                emailRedirectTo: window.location.origin + '/dashboard.html'
+                emailRedirectTo: this._getRedirectUrl()
             }
         });
 

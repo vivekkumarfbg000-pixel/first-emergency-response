@@ -3,7 +3,7 @@
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
-const CACHE_NAME = 'sehat-point-v12-pro-final-rebrand';
+const CACHE_NAME = 'sehat-point-v13-sync-recovery-x';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

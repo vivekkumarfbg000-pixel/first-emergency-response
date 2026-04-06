@@ -51,6 +51,17 @@
             // 2. Initial Data Pull
             await loadDashboardData(sid);
             
+            // ─── NEW: Second-Chance Final Recovery ───
+            if (_patients.length === 0 && !sid && session.user?.email) {
+                console.warn('[PersonalCommand] Zero profile state. Attempting Final Stage Recovery...');
+                await new Promise(r => setTimeout(r, 400)); // Brief pause for cloud sync
+                const recovery = await window.AppStorage.claimProfilesByEmail(session.user.email);
+                if (recovery.success && recovery.claimedCount > 0) {
+                    console.log('[PersonalCommand] Recovery Successful. Re-initializing Medical Data...');
+                    await loadDashboardData(sid); // Re-pull data
+                }
+            }
+
             // 3. Register Global Listeners
             if (_patients.length === 0 && !sid) {
                 const isAdmin = await window.AppStorage._isAdminUser();
