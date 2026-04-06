@@ -87,12 +87,13 @@
         const switcher = $('patientSwitcher');
         if (switcher && _patients.length > 0) {
             switcher.innerHTML = _patients.map(p => `
-                <option value="${p.id}">${p.fullName.split(' ')[0]}</option>
+                <option value="${p.id || p.patientId}">${(p.fullName || 'User').split(' ')[0]}</option>
             `).join('');
 
             // Set Initial Active
             const primary = _patients.find(p => p.isPrimary) || _patients[0];
-            await switchPatient(primary.id);
+            const primaryId = primary.id || primary.patientId;
+            await switchPatient(primaryId);
         } else if (_patients.length === 0) {
             const isAdmin = await window.AppStorage._isAdminUser();
             if (isAdmin) {
@@ -127,7 +128,7 @@
             console.log('[PersonalCommand] Targeted ID not found, defaulting to primary.');
         }
 
-        txt('welcome-msg', _activePatient.fullName ? _activePatient.fullName.split(' ')[0] : 'User');
+        txt('welcome-msg', _activePatient.fullName ? _activePatient.fullName.split(' ')[0].toUpperCase() : 'USER');
         renderMedicalIDHub(_activePatient);
         
         // Update Session Meta

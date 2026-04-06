@@ -40,6 +40,8 @@
             min-height: 100vh;
         }
 
+
+
         .reg-wrapper {
             width: 100%;
             max-width: 640px;
@@ -145,6 +147,20 @@
 
         .wizard-step.active .step-label { color: white; }
         .wizard-step.completed .step-label { color: var(--accent); }
+
+        @media (max-width: 480px) {
+            .reg-layout { padding: 1.5rem 0.75rem 3rem; }
+            .reg-card { padding: 1.25rem 1rem; border-radius: 16px; }
+            .reg-header h1 { font-size: 1.35rem !important; letter-spacing: -0.02em; }
+            .reg-header p { font-size: 0.8125rem !important; }
+            .step-label { display: none; }
+            .wizard-steps { margin-bottom: 1.5rem; gap: 4px; }
+            .section-title { margin-bottom: 1.25rem; padding-bottom: 0.625rem; font-size: 0.7rem; }
+            .input-group { gap: 0.25rem; margin-bottom: 0.875rem !important; }
+            .input-group label { font-size: 0.75rem; }
+            .back-link { position: absolute; top: 0.75rem; left: 0.75rem; font-size: 0.75rem; }
+            .btn { padding: 0.625rem 1rem; font-size: 0.875rem; }
+        }
 
         /* ─── Card ─── */
         .reg-card {
@@ -487,19 +503,10 @@
     <div class="reg-layout">
         <div class="reg-wrapper">
 
-            <!-- Header -->
-            <header class="reg-header">
-            <div class="flex flex-col items-center justify-center mb-8">
-                <div class="w-16 h-16 bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex items-center justify-center p-3">
-                    <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain">
-                </div>
-                <div class="mt-4 text-center">
-                    <h1 class="text-2xl font-black italic tracking-tighter leading-none m-0 p-0 text-white uppercase tracking-tighter">SEHAT POINT</h1>
-                    <p class="text-[9px] font-bold text-slate-500 tracking-[0.2em] uppercase mt-2 leading-none">MEDICAL EMERGENCY HUB</p>
-                </div>
-            </div>
-            <h1>Create Emergency Profile</h1>
-            <p>Enter your medical details to generate your life-saving QR code.</p>
+            <!-- Simplified Header (Logo removed for mobile efficiency) -->
+            <header class="reg-header" style="margin-top: 1rem;">
+                <h1 style="font-size: 1.5rem;">Create Emergency Profile</h1>
+                <p style="font-size: 0.875rem;">Enter your medical details to generate your life-saving QR code.</p>
             </header>
 
             <!-- Wizard Steps -->

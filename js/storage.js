@@ -176,6 +176,8 @@ END:VCARD`;
                 const { data: row, error } = await this.db().from('patients').insert([dbRow]).select().single();
                 if (error) {
                     cloudError = error.message;
+                    console.warn('[Storage] Cloud sync failed, using local ID fallback:', error);
+                    patientData.id = id; 
                 } else if (row) {
                     patientData.id = row.id;
                     cloudId = row.id;

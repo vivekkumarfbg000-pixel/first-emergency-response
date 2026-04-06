@@ -316,9 +316,10 @@
         // Observe patient length after init to manage empty state
         setTimeout(() => {
             if(document.getElementById('patientSwitcher') && document.getElementById('patientSwitcher').options.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
+                const emptyState = document.getElementById('empty-state');
+                if (emptyState) emptyState.classList.remove('hidden');
             }
-        }, 1500);
+        }, 3000); // Increased to 3s for slower networks
     </script>
 </body>
 </html>
