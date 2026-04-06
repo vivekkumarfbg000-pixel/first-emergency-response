@@ -19,11 +19,17 @@
             // 1. Auth & Session Check
             const session = await window.Auth.getSession();
             if (!session) {
-                console.warn('[PersonalCommand] No valid session detected. Redirecting to login...');
+                console.warn('[PersonalCommand] No valid session detected. Redirecting to user login...');
                 window.location.href = 'login.html';
                 return;
             }
             console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
+
+            // ─── NEW: Total Recovery (Hard-Link by Email) ───
+            if (window.AppStorage && session.user?.email) {
+                console.log('[PersonalCommand] Running Medical Registry Recovery for:', session.user.email);
+                await window.AppStorage.claimProfilesByEmail(session.user.email).catch(console.error);
+            }
 
             // ─── NEW: Double-Tap Profile Claiming (Wrapped) ───
             if (window.AppStorage) {

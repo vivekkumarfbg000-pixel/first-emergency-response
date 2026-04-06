@@ -263,13 +263,17 @@
       lucide.createIcons();
 
       try {
-        await Auth.signIn(email.trim(), password);
+        await Auth.signIn(email.trim(), password, 'user');
         
-        // ─── NEW: 0-Profile Detection ───
+        // ─── NEW: Secure Profile Recovery ───
         if (window.AppStorage) {
+            console.log('[Auth] Verifying Medical Registry after sign-in...');
+            
+            // Force a deep cloud pull to see if any profiles were just claimed
             const profiles = await window.AppStorage.getAllPatients();
+            
             if (!profiles || profiles.length === 0) {
-                console.log('[Auth] New user detected, fast-tracking to profile creation.');
+                console.log('[Auth] No existing records found. Advancing to clinical initialization.');
                 window.location.href = 'register.html';
                 return;
             }

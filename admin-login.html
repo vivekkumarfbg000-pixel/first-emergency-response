@@ -263,7 +263,7 @@
       lucide.createIcons();
 
       try {
-        await Auth.signIn(email.trim(), password);
+        await Auth.signIn(email.trim(), password, 'admin');
         window.location.href = 'admin.html';
       } catch (err) {
         alert('SignIn Failed: ' + (err.message || 'Check your credentials and try again'));

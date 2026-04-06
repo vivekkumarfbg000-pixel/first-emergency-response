@@ -376,6 +376,37 @@ END:VCARD`;
         }
     },
 
+    /**
+     * ─── NEW: Total Recovery System ───
+     * Claims all orphaned profiles (user_id IS NULL) that match the provided email.
+     */
+    claimProfilesByEmail: async function(email) {
+        if (!this.db() || !email) return { success: false, error: 'Initialization Error' };
+        try {
+            const userId = await this._getUserId();
+            if (!userId) return { success: false, error: 'Not Logged In' };
+
+            console.log(`[Storage] Running Recovery: Searching for orphaned profiles for ${email}...`);
+
+            const { data, error } = await this.db()
+                .from('patients')
+                .update({ user_id: userId })
+                .ilike('email', email.trim())   // Matches "vivek@ex.com" with "VIVEK@ex.com"
+                .is('user_id', null)
+                .select();
+
+            if (error) throw error;
+            if (data && data.length > 0) {
+                console.log(`[Storage] Recovery Success: Claimed ${data.length} profiles by email.`);
+                return { success: true, claimedCount: data.length };
+            }
+            return { success: true, claimedCount: 0 };
+        } catch (err) {
+            console.error('[Storage] Recovery Failure:', err);
+            return { success: false, error: err };
+        }
+    },
+
     setPendingPatientId: function(id) {
         localStorage.setItem('pending_patient_id', id);
     },

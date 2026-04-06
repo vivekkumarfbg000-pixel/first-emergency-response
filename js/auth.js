@@ -78,21 +78,41 @@ const Auth = {
                     console.error('[Auth] Claiming failed:', e);
                 }
             }
+            
+            // NEW: Email Recovery (Hard-Link)
+            console.log('[Auth] Triggering Email Recovery via signUp:', email);
+            await window.AppStorage.claimProfilesByEmail(email).catch(console.error);
         }
         
         return data; 
     },
 
-    // ────── SIGN IN ──────
-    async signIn(email, password) {
+    /**
+     * ────── SIGN IN ──────
+     * portalType: 'admin' or 'user'
+     */
+    async signIn(email, password, portalType = 'user') {
+        const adminEmail = 'firstemergencyresponse4@gmail.com';
+        const isTryingAdmin = email.trim().toLowerCase() === adminEmail.toLowerCase();
+
+        // 1. Portal Enforcement
+        if (portalType === 'admin' && !isTryingAdmin) {
+            throw new Error('ACCESS DENIED: This portal is reserved for System Administrators only.');
+        }
+        if (portalType === 'user' && isTryingAdmin) {
+            throw new Error('ADMIN ACCESS DETECTED: Please use the Master Dispatch Console to log in.');
+        }
+
         // ALWAYS clear bypass first
         localStorage.removeItem('master_bypass');
 
-        if (email.trim() === 'firstemergencyresponse4@gmail.com' && password === 'First@emergency') {
+        // 2. Master Admin Bypass Logic
+        if (isTryingAdmin && password === 'First@emergency') {
             console.log('[Auth] Master Admin Bypass Activated');
             localStorage.setItem('master_bypass', 'true');
             return { user: { email: email.trim(), id: 'master_admin_uuid' } };
         }
+        
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
         const { data, error } = await window.supabaseClient.auth.signInWithPassword({
@@ -121,9 +141,13 @@ const Auth = {
             const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
                 console.log('[Auth] Claiming pending profile during sign-in:', pendingId);
-                await window.AppStorage.claimProfile(pendingId);
+                await window.AppStorage.claimProfile(pendingId).catch(console.error);
                 window.AppStorage.clearPendingPatientId();
             }
+            
+            // NEW: Email Recovery (Hard-Link)
+            console.log('[Auth] Triggering Email Recovery via signIn:', email);
+            await window.AppStorage.claimProfilesByEmail(email).catch(console.error);
         }
         
         return data;
