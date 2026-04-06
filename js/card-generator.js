@@ -41,10 +41,10 @@ window.CardGenerator = {
         return canvas;
     },
 
-    // ─── 1. USER: High-Fidelity Branded QR (Metallic Landscape Design) ───
+    // ─── 1. USER: High-Fidelity Branded QR (Compact Square Card - Metallic Design) ───
     generateBrandedQR: async function(p, mode = 'vcard') {
-        const cw = 1100;
-        const ch = 650;
+        const cw = 1000;
+        const ch = 1000;
         const canvas = document.createElement('canvas');
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext('2d');
@@ -54,7 +54,12 @@ window.CardGenerator = {
         const teal = '#064E3B';
         const brandGold = '#C5A059';
 
-        // 1. Metallic Background (Brushed Steel)
+        // 1. Base Card Shape (Clips all following draws)
+        ctx.save();
+        CardGenerator._roundRect(ctx, 0, 0, cw, ch, 60);
+        ctx.clip();
+
+        // 2. Metallic Background (Brushed Steel)
         const grad = ctx.createLinearGradient(0, 0, cw, ch);
         grad.addColorStop(0, '#e2e8f0');
         grad.addColorStop(0.2, '#ffffff');
@@ -64,137 +69,114 @@ window.CardGenerator = {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, cw, ch);
 
-        // Enhanced Brushed Texture
-        ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-        ctx.lineWidth = 0.5;
-        for(let i=0; i<ch; i+=2) {
+        // Enhanced Brushed Texture Lines
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 0.6;
+        for(let i=0; i<ch; i+=3) {
             ctx.beginPath();
             ctx.moveTo(0, i);
-            ctx.lineTo(cw, i + (Math.random()*0.5 - 0.25));
+            ctx.lineTo(cw, i + (Math.random()*1 - 0.5));
             ctx.stroke();
         }
 
-        // 2. Upper Section (Emergency - Burgundy)
+        // 3. Top Section (Emergency Header - Burgundy)
         ctx.fillStyle = burgundy;
-        CardGenerator._roundRect(ctx, 30, 30, 640, 140, 20);
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 10;
+        CardGenerator._roundRect(ctx, 40, 40, 920, 220, 30);
         ctx.fill();
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 36px "Inter", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('EMERGENCY', 85, 95);
+        ctx.restore(); // Stop clipping but keep layout logic
+        ctx.shadowBlur = 0;
 
-        // Gold prompter box (centered inside header)
+        // EMERGENCY Text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 68px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('EMERGENCY', 90, 135);
+
+        // Gold Prompt Box (स्कैन करें)
         ctx.fillStyle = burgundy;
-        CardGenerator._roundRect(ctx, 90, 110, 680, 80, 15);
+        CardGenerator._roundRect(ctx, 110, 165, 780, 100, 20);
         ctx.fill();
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 5;
         ctx.stroke();
 
+        // Text inside Prompt Box
         ctx.fillStyle = gold;
-        ctx.font = 'bold 54px "Hind", serif';
+        ctx.font = '900 64px "Hind", serif';
         ctx.textAlign = 'right';
-        ctx.fillText('स्कैन करें', 740, 172);
+        ctx.fillText('स्कैन करें', 860, 240);
         
-        // Lines inside prompter
         ctx.beginPath();
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 2;
-        ctx.moveTo(110, 160); ctx.lineTo(500, 160);
+        ctx.lineWidth = 3;
+        ctx.moveTo(140, 225); ctx.lineTo(550, 225);
         ctx.stroke();
 
-        // 3. Patient Info (Left Section)
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '900 64px "Inter", sans-serif';
-        const name = (p.fullName || 'NAME REDACTED').toUpperCase();
-        ctx.fillText(name, 80, 260);
-
-        ctx.font = 'bold 38px "Inter", sans-serif';
-        const displayId = (p.id || p.patientId || 'A0000000').substring(0, 8).toUpperCase();
-        ctx.fillText(`ID: ${displayId}`, 80, 320);
-
-        // Blood Group (Red)
-        ctx.fillStyle = '#ef4444';
-        ctx.font = '900 44px "Inter", sans-serif';
-        ctx.fillText(`BLOOD GROUP: ${p.bloodGroup || 'UNKNOWN'}`, 80, 385);
-
-        // Allergies
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 38px "Inter", sans-serif';
-        ctx.fillText(`Critical Allergies: `, 80, 450);
-        const allergies = p.allergies || 'NA';
-        ctx.fillStyle = (allergies === 'NA' || !allergies) ? '#334155' : '#ef4444';
-        ctx.fillText(allergies.toUpperCase(), 430, 450);
-
-        // Contact
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 38px "Inter", sans-serif';
-        ctx.fillText(`Family Contact: ${p.emergencyContact || p.contact1_Phone || 'NOT SET'}`, 80, 515);
-
-        // 4. QR Section (Right Side)
-        const qrSize = 380;
+        // 4. QR Section (Centered)
+        const qrSize = 580;
         const qrCanvas = await CardGenerator._generateQR(p, qrSize, mode);
         
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.2)';
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = 50;
+        ctx.shadowOffsetY = 15;
         ctx.fillStyle = '#ffffff';
-        CardGenerator._roundRect(ctx, 680, 160, qrSize + 40, qrSize + 40, 25);
+        CardGenerator._roundRect(ctx, (cw-qrSize)/2 - 20, 310, qrSize + 40, qrSize + 40, 30);
         ctx.fill();
         ctx.restore();
         
-        ctx.strokeStyle = gold;
-        ctx.lineWidth = 10;
-        CardGenerator._roundRect(ctx, 680, 160, qrSize + 40, qrSize + 40, 25);
+        // QR Border
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        CardGenerator._roundRect(ctx, (cw-qrSize)/2 - 20, 310, qrSize + 40, qrSize + 40, 30);
         ctx.stroke();
         
-        ctx.drawImage(qrCanvas, 700, 180, qrSize, qrSize);
-
-        ctx.fillStyle = '#6B1C23';
-        ctx.font = 'bold 28px "Inter", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('SCAN FOR EMERGENCY REPORT', 700 + qrSize/2, 600);
+        ctx.drawImage(qrCanvas, (cw-qrSize)/2, 330, qrSize, qrSize);
 
         // 5. Footer (Teal Bar)
         ctx.fillStyle = teal;
-        CardGenerator._roundRect(ctx, 30, 550, 1040, 110, 20);
+        CardGenerator._roundRect(ctx, 45, 830, 910, 140, 30);
         ctx.fill();
 
-        CardGenerator._drawMedicalShield(ctx, 130, 605, 45);
+        // Medical Shield Icon
+        CardGenerator._drawMedicalShield(ctx, 140, 900, 55);
 
-        // Brand Label
+        // Branding
         ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px "Inter", sans-serif';
+        ctx.fillText('Initiative:', 210, 895);
+
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
         ctx.shadowBlur = 4;
-        ctx.shadowOffsetY = 2;
         ctx.fillStyle = brandGold;
-        ctx.font = 'bold 54px "Hind", serif';
-        ctx.fillText('सेहत', 195, 618);
+        ctx.font = 'bold 74px "Hind", serif';
+        ctx.fillText('सेहत', 210, 955);
         ctx.restore();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 48px "Inter", sans-serif';
-        ctx.fillText('Point', 320, 618);
-
-        // Local Emergency Numbers (Right side of footer)
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 32px "Inter", sans-serif';
-        ctx.fillText('Emergency - 112', 1030, 595);
-        ctx.font = 'normal 28px "Inter", sans-serif';
-        ctx.fillText('sehat point - 9876543210', 1030, 635);
+        ctx.font = 'bold 68px "Inter", sans-serif';
+        ctx.fillText('Point', 375, 955);
 
         // Gold line separator
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(30, 550); ctx.lineTo(1070, 550);
+        ctx.moveTo(45, 833); ctx.lineTo(955, 833);
         ctx.stroke();
 
-        CardGenerator._download(canvas, `SehatPoint-QR-${p.fullName || 'User'}-${mode}.png`);
+        // High gloss effect
+        const gloss = ctx.createLinearGradient(0,0,cw,ch);
+        gloss.addColorStop(0, 'rgba(255,255,255,0.1)');
+        gloss.addColorStop(0.5, 'transparent');
+        gloss.addColorStop(1, 'rgba(0,0,0,0.05)');
+        ctx.fillStyle = gloss;
+        ctx.fillRect(0,0,cw,ch);
+
+        CardGenerator._download(canvas, `SehatPoint-QR-Square-${p.fullName || 'User'}-${mode}.png`);
     },
 
     // ─── 2. ADMIN: Premium Medical Identity Card ───

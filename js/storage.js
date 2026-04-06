@@ -225,17 +225,28 @@ END:VCARD`;
                 dbAvailable = true;
                 if (data) {
                     cloudPatients = data.map(r => this.mapFromDB(r));
-                    this._cache = cloudPatients;
                 }
-            } catch (err) { console.error('[Storage] GetPatients Error:', err.message); }
+            } catch (err) { 
+                console.error('[Storage] Cloud sync error (Falling back to local data):', err.message || err);
+                dbAvailable = false;
+            }
         }
 
         const localPatients = this.getAllPatientsLocal();
         const merged = [];
+        
+        // 1. Start with cloud patients
         cloudPatients.forEach(cp => merged.push({ ...cp, cloudSynced: true }));
+        
+        // 2. Add local patients not in cloud
         localPatients.forEach(lp => {
-            const inCloud = merged.find(cp => cp.patientId === lp.patientId || cp.id === lp.id);
-            if (!inCloud) merged.push({ ...lp, cloudSynced: dbAvailable ? false : (lp.cloudSynced || false) });
+            const inCloud = merged.find(cp => cp.id === lp.id || (lp.patientId && cp.patientId === lp.patientId));
+            if (!inCloud) {
+                merged.push({ 
+                    ...lp, 
+                    cloudSynced: dbAvailable ? false : (lp.cloudSynced || false) 
+                });
+            }
         });
 
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(merged));

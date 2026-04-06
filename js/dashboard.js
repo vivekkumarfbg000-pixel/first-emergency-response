@@ -15,53 +15,72 @@
     // ─── Initialization ───
     async function init() {
         console.log('[PersonalCommand] Initializing v9-pro Tactical Engine...');
-        
-        // 1. Auth & Session Check
-        const session = await window.Auth.getSession();
-        if (!session) {
-            window.location.href = 'login.html';
-            return;
-        }
-
-        // ─── NEW: Double-Tap Profile Claiming ───
-        if (window.AppStorage) {
-            const pendingId = window.AppStorage.getPendingPatientId();
-            if (pendingId) {
-                console.log('[PersonalCommand] Found pending profile context, claiming...', pendingId);
-                await window.AppStorage.claimProfile(pendingId);
-                window.AppStorage.clearPendingPatientId();
+        try {
+            // 1. Auth & Session Check
+            const session = await window.Auth.getSession();
+            if (!session) {
+                console.warn('[PersonalCommand] No valid session detected. Redirecting to login...');
+                window.location.href = 'login.html';
+                return;
             }
+            console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
+
+            // ─── NEW: Double-Tap Profile Claiming (Wrapped) ───
+            if (window.AppStorage) {
+                try {
+                    const pendingId = window.AppStorage.getPendingPatientId();
+                    if (pendingId) {
+                        console.log('[PersonalCommand] Claiming pending profile...', pendingId);
+                        await window.AppStorage.claimProfile(pendingId);
+                        window.AppStorage.clearPendingPatientId();
+                    }
+                } catch (err) {
+                    console.error('[PersonalCommand] Profile claiming failed (Non-terminal):', err);
+                }
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const sid = urlParams.get('sid');
+
+            // 2. Initial Data Pull
+            await loadDashboardData(sid);
+            
+            // 3. Register Global Listeners
+            if (_patients.length === 0 && !sid) {
+                const isAdmin = await window.AppStorage._isAdminUser();
+                if (!isAdmin) {
+                    console.warn('[PersonalCommand] No clinical context found. Redirecting to initialization wizard.');
+                    window.location.href = 'register.html';
+                    return;
+                }
+            }
+
+            if ($('patientSwitcher')) {
+                $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
+            }
+
+            if ($('qr-mode-toggle')) {
+                $('qr-mode-toggle').addEventListener('change', e => {
+                    const label = $('qr-mode-label');
+                    if (label) label.textContent = e.target.checked ? 'Fast URL Scan' : 'Offline vCard';
+                });
+            }
+
+            // 4. GPS & Sync Heartbeat (Non-terminal)
+            try {
+                setupGPS();
+                setInterval(() => txt('admin-time', new Date().toLocaleTimeString('en-GB') + ' UTC'), 1000);
+            } catch (err) {
+                console.warn('[PersonalCommand] GPS/Heartbeat initialization failed.', err);
+            }
+
+            if (window.lucide) lucide.createIcons();
+
+        } catch (fatalErr) {
+            console.error('[PersonalCommand] FATAL Initialization Failure:', fatalErr);
+            // Don't alert here to avoid UX blocking, just log. 
+            // The loading screen will stay up, letting user refresh.
         }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const sid = urlParams.get('sid');
-
-        // 2. Initial Data Pull
-        await loadDashboardData(sid);
-        
-        // 3. Register Global Listeners
-        if (_patients.length === 0 && !sid) {
-            console.warn('[PersonalCommand] No medical context found. Redirecting to initialization wizard.');
-            window.location.href = 'register.html';
-            return;
-        }
-
-        if ($('patientSwitcher')) {
-            $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
-        }
-
-        if ($('qr-mode-toggle')) {
-            $('qr-mode-toggle').addEventListener('change', e => {
-                const label = $('qr-mode-label');
-                if (label) label.textContent = e.target.checked ? 'Fast URL Scan' : 'Offline vCard';
-            });
-        }
-
-        // 4. GPS & Sync Heartbeat
-        setupGPS();
-        setInterval(() => txt('admin-time', new Date().toLocaleTimeString('en-GB') + ' UTC'), 1000);
-
-        if (window.lucide) lucide.createIcons();
     }
 
     async function loadDashboardData(sid = null) {

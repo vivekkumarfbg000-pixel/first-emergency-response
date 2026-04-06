@@ -10,9 +10,24 @@ const Auth = {
         }
         if (!window.supabaseClient) return null;
         try {
-            const { data: { session }, error } = await window.supabaseClient.auth.getSession();
-            if (error) { console.error('[Auth] getSession Error:', error); return null; }
-            return session;
+            const { data, error } = await window.supabaseClient.auth.getSession();
+            if (error) throw error;
+            
+            if (data.session) {
+                console.log('[Auth] Session detected:', data.session.user?.email);
+                return data.session;
+            }
+            
+            // ─── NEW: Retry Delay (Handle slow local persistence) ───
+            await new Promise(r => setTimeout(r, 150));
+            const retry = await window.supabaseClient.auth.getSession();
+            if (retry.data?.session) {
+                console.log('[Auth] Session detected on retry:', retry.data.session.user?.email);
+                return retry.data.session;
+            }
+            
+            console.warn('[Auth] No session found.');
+            return null;
         } catch (e) {
             console.error('[Auth] getSession Exception:', e);
             return null;
@@ -70,6 +85,9 @@ const Auth = {
 
     // ────── SIGN IN ──────
     async signIn(email, password) {
+        // ALWAYS clear bypass first
+        localStorage.removeItem('master_bypass');
+
         if (email.trim() === 'firstemergencyresponse4@gmail.com' && password === 'First@emergency') {
             console.log('[Auth] Master Admin Bypass Activated');
             localStorage.setItem('master_bypass', 'true');
@@ -122,6 +140,7 @@ const Auth = {
         const { error } = await window.supabaseClient.auth.signOut();
         if (error) console.error('[Auth] Sign Out Error:', error);
         localStorage.removeItem('current_patient_id');
+        localStorage.removeItem('master_bypass');
         window.location.href = 'index.html';
     },
 
