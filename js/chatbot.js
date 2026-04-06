@@ -160,7 +160,7 @@
 
     function handleAIAction(action) {
         if (action.type === 'view_patient' && action.id) {
-            if (window.switchTab) window.switchTab('registry');
+            if (typeof window.switchTab === 'function') window.switchTab('registry');
             if ($('db-search')) {
                 $('db-search').value = action.id;
                 $('db-search').dispatchEvent(new Event('input'));

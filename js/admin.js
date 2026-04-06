@@ -719,6 +719,7 @@
     };
 
     async function renderAnalytics() {
+        window.renderAnalytics = renderAnalytics;
         try {
             const patients = await window.AppStorage.getAllPatients() || [];
             const scans = await window.AppStorage.getScanHistory() || [];
