@@ -46,28 +46,40 @@
             }
 
             const urlParams = new URLSearchParams(window.location.search);
-            const sid = urlParams.get('sid');
-
-            // 2. Initial Data Pull
+                     // 2. Initial Data Pull
             await loadDashboardData(sid);
             
-            // ─── NEW: Second-Chance Final Recovery ───
+            // ─── NEW: Hardened Recovery Sweep (3-Retry Recursive) ───
             if (_patients.length === 0 && !sid && session.user?.email) {
-                console.warn('[PersonalCommand] Zero profile state. Attempting Final Stage Recovery...');
-                await new Promise(r => setTimeout(r, 400)); // Brief pause for cloud sync
-                const recovery = await window.AppStorage.claimProfilesByEmail(session.user.email);
-                if (recovery.success && recovery.claimedCount > 0) {
-                    console.log('[PersonalCommand] Recovery Successful. Re-initializing Medical Data...');
-                    await loadDashboardData(sid); // Re-pull data
+                console.warn('[PersonalCommand] Zero profile state. Exhausting Cloud Recovery Sweep...');
+                
+                const retryDelays = [400, 800, 1500]; // Increasing wait times
+                let recovered = false;
+
+                for (let i = 0; i < retryDelays.length; i++) {
+                    console.log(`[PersonalCommand] Recovery Attempt ${i+1}/${retryDelays.length} (Waiting ${retryDelays[i]}ms)...`);
+                    await new Promise(r => setTimeout(r, retryDelays[i]));
+                    
+                    const recovery = await window.AppStorage.claimProfilesByEmail(session.user.email);
+                    if (recovery.success && recovery.claimedCount > 0) {
+                        console.log('[PersonalCommand] Cloud Recovery SUCCESS. Re-loading Medical Hub...');
+                        await loadDashboardData(sid);
+                        recovered = true;
+                        break;
+                    }
+                }
+
+                if (!recovered) {
+                    console.error('[PersonalCommand] All recovery attempts exhausted. Finalizing registry check...');
                 }
             }
 
-            // 3. Register Global Listeners
+            // 3. Final Verification & Redirect
             if (_patients.length === 0 && !sid) {
                 const isAdmin = await window.AppStorage._isAdminUser();
                 if (!isAdmin) {
-                    console.warn('[PersonalCommand] No clinical context found. Redirecting to initialization wizard.');
-                    window.location.href = 'register.html';
+                    console.warn('[PersonalCommand] No medical context found after deep recovery. Redirecting to initialization wizard.');
+                    window.location.href = 'register.html?v=14-sync';
                     return;
                 }
             }
@@ -86,17 +98,30 @@
             // 4. GPS & Sync Heartbeat (Non-terminal)
             try {
                 setupGPS();
-                setInterval(() => txt('admin-time', new Date().toLocaleTimeString('en-GB') + ' UTC'), 1000);
+                setInterval(() => {
+                    const timeEl = $('admin-time');
+                    if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('en-GB') + ' UTC';
+                }, 1000);
             } catch (err) {
                 console.warn('[PersonalCommand] GPS/Heartbeat initialization failed.', err);
             }
 
             if (window.lucide) lucide.createIcons();
+            
+            // FADE OUT SYNC OVERLAY
+            hideSyncOverlay();
 
         } catch (fatalErr) {
             console.error('[PersonalCommand] FATAL Initialization Failure:', fatalErr);
-            // Don't alert here to avoid UX blocking, just log. 
-            // The loading screen will stay up, letting user refresh.
+            hideSyncOverlay();
+        }
+    }
+
+    function hideSyncOverlay() {
+        const overlay = $('sync-overlay');
+        if (overlay) {
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => overlay.remove(), 800);
         }
     }
 

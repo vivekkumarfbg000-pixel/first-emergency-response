@@ -172,36 +172,84 @@
             .subscribe();
     }
 
+    let _audioCtx = null;
+    let _sirenOsc = null;
+    let _sirenGain = null;
+
     function playAlertSound() {
         if (!_audioEnabled) return;
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+            // 1. Master Audio Context Initialization (Bypasses Browser Block)
+            if (!_audioCtx) {
+                _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
             
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            // Resume if suspended (browser security requirement)
+            if (_audioCtx.state === 'suspended') {
+                _audioCtx.resume();
+            }
+
+            // If a siren is already playing, don't overlap
+            if (_sirenOsc) return;
+
+            _sirenOsc = _audioCtx.createOscillator();
+            _sirenGain = _audioCtx.createGain();
             
-            osc.type = 'triangle';
-            const now = audioCtx.currentTime;
+            _sirenOsc.connect(_sirenGain);
+            _sirenGain.connect(_audioCtx.destination);
             
-            // High-fidelity Siren Effect: Frequency oscillation
-            osc.frequency.setValueAtTime(440, now);
-            osc.frequency.linearRampToValueAtTime(880, now + 0.5);
-            osc.frequency.linearRampToValueAtTime(440, now + 1.0);
-            osc.frequency.linearRampToValueAtTime(880, now + 1.5);
-            osc.frequency.linearRampToValueAtTime(440, now + 2.0);
+            _sirenOsc.type = 'triangle';
             
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
-            gain.gain.linearRampToValueAtTime(0.2, now + 1.9);
-            gain.gain.linearRampToValueAtTime(0, now + 2.0);
+            // Continuous High-Fidelity Siren (Looping)
+            const now = _audioCtx.currentTime;
             
-            osc.start();
-            osc.stop(now + 2.0);
-            console.log('[TacticalAudio] Siren Broadcast Initiated.');
+            // Use a looping frequency modulation for the tactical effect
+            _sirenOsc.frequency.setValueAtTime(440, now);
+            
+            // Create the signature Sehat Point "Wail"
+            const wailSpeed = 1.0; // Seconds per cycle
+            let timeOffset = 0;
+            for (let i = 0; i < 20; i++) { // Schedule 20 seconds of wail
+                _sirenOsc.frequency.linearRampToValueAtTime(880, now + timeOffset + (wailSpeed/2));
+                _sirenOsc.frequency.linearRampToValueAtTime(440, now + timeOffset + wailSpeed);
+                timeOffset += wailSpeed;
+            }
+            
+            _sirenGain.gain.setValueAtTime(0, now);
+            _sirenGain.gain.linearRampToValueAtTime(0.25, now + 0.1); // Quick fade in
+            
+            _sirenOsc.start();
+            
+            // Visual Sync: Start Pulse
+            if ($('btn-audio-toggle')) $('btn-audio-toggle').classList.add('siren-active');
+            
+            console.log('[TacticalAudio] Continuous Siren LOOPING...');
         } catch (e) {
             console.error('[TacticalAudio] Engine Failure:', e);
+        }
+    }
+
+    function stopSiren() {
+        if (_sirenOsc) {
+            try {
+                const now = _audioCtx ? _audioCtx.currentTime : 0;
+                if (_sirenGain) {
+                    _sirenGain.gain.linearRampToValueAtTime(0, now + 0.2); // Smooth fade out
+                }
+                setTimeout(() => {
+                    if (_sirenOsc) {
+                        _sirenOsc.stop();
+                        _sirenOsc.disconnect();
+                        _sirenOsc = null;
+                        
+                        // Visual Sync: Stop Pulse
+                        if ($('btn-audio-toggle')) $('btn-audio-toggle').classList.remove('siren-active');
+                    }
+                }, 250);
+                console.log('[TacticalAudio] Siren SILENCED.');
+            } catch (e) {
+                _sirenOsc = null;
+            }
         }
     }
 
@@ -212,6 +260,14 @@
         const icon = $('audio-toggle-icon');
         const label = $('audio-toggle-label');
         
+        // Initialize or Resume Audio Context on User Gesture
+        if (!_audioCtx) {
+            _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (_audioCtx.state === 'suspended') {
+            _audioCtx.resume();
+        }
+
         if (_audioEnabled) {
             bg.classList.remove('bg-slate-800');
             bg.classList.add('bg-emerald-600');
@@ -225,6 +281,7 @@
             label.classList.remove('text-slate-500');
             label.classList.add('text-emerald-400');
         } else {
+            stopSiren(); // SHUT DOWN ACTIVE SIREN IMMEDIATELY
             bg.classList.add('bg-slate-800');
             bg.classList.remove('bg-emerald-600');
             knob.style.left = '2px';
