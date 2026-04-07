@@ -12,7 +12,6 @@
     let _patients = [];
     let _activePatient = null;
 
-
     function hideSyncOverlay() {
         const overlay = $('sync-overlay');
         if (overlay) {
