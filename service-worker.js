@@ -3,7 +3,6 @@
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
-const CACHE_NAME = 'sehat-point-v22-nuclear-purge-final';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

@@ -1676,3 +1676,6 @@ textarea {
   .btn { padding: 0.625rem 1.125rem; font-size: 0.8125rem; }
   .p-btn { font-size: 0.6875rem; padding: 0.625rem 1rem; }
 }
+
+/* ────── FINAL EMERGENCY OVERRIDE ────── */
+#sync-overlay { display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; }
