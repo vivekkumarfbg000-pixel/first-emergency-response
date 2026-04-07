@@ -389,37 +389,86 @@ END:VCARD`;
             const normalizedEmail = email.trim().toLowerCase();
             console.log(`[Storage] Recovery Mode: Searching for profiles for ${normalizedEmail}...`);
 
-            // 1. Identify profiles that match this email and have NO user_id
-            // We use 'ilike' for case-insensitivity on the DB side
+            // 1. Identify profiles that match this email
             const { data: claimable, error: searchError } = await this.db()
                 .from('patients')
-                .select('id, full_name, email, user_id')
+                .select('id, patient_id, full_name, email, user_id')
                 .ilike('email', normalizedEmail);
 
             if (searchError) throw searchError;
 
+            // 2. Filter for those that are ORPHANED (user_id is null)
             const orphans = (claimable || []).filter(p => !p.user_id);
             if (orphans.length === 0) {
-                console.log('[Storage] Recovery: No orphaned profiles found.');
+                console.log('[Storage] Recovery: No unlinked profiles found for this email.');
                 return { success: true, claimedCount: 0 };
             }
 
-            console.log(`[Storage] Recovery: Found ${orphans.length} orphan(s). Linking to Account ${user.id}...`);
+            console.log(`[Storage] Recovery: Found ${orphans.length} unlinked profile(s). Linking to Account ${user.id}...`);
 
-            // 2. Perform the Claim (Update user_id)
-            const { data: linked, error: claimError } = await this.db()
-                .from('patients')
-                .update({ user_id: user.id })
-                .in('id', orphans.map(o => o.id))
-                .select();
+            // 3. Perform individual claims to avoid bulk policy failures
+            let successCount = 0;
+            for (const p of orphans) {
+                const { error: claimError } = await this.db()
+                    .from('patients')
+                    .update({ user_id: user.id })
+                    .eq('id', p.id)
+                    .is('user_id', null);
+                
+                if (!claimError) successCount++;
+                else console.warn(`[Storage] Failed to link profile ${p.patient_id}:`, claimError.message);
+            }
 
-            if (claimError) throw claimError;
-
-            console.log(`[Storage] Recovery Success: Linked ${linked.length} profile(s).`);
-            return { success: true, claimedCount: linked.length };
+            console.log(`[Storage] Recovery Success: Linked ${successCount} profile(s).`);
+            return { success: true, claimedCount: successCount };
         } catch (err) {
             console.error('[Storage] Recovery Critical Failure:', err);
             return { success: false, error: err };
+        }
+    },
+
+    /**
+     * ─── NEW: Manual Link System ───
+     * Allows a user to manually claim a profile by its Patient ID (e.g. EMS-XXXXXX).
+     */
+    claimProfileById: async function(patientId) {
+        if (!this.db() || !patientId) return { success: false, error: 'Initialization Error' };
+        try {
+            const user = await this._getCurrentUserObj();
+            if (!user) return { success: false, error: 'Not Logged In' };
+
+            const cleanId = patientId.trim().toUpperCase();
+            console.log(`[Storage] Manual Link: Attempting to claim ${cleanId}...`);
+
+            // 1. Find the target profile
+            const { data: target, error: findError } = await this.db()
+                .from('patients')
+                .select('id, patient_id, user_id, full_name')
+                .eq('patient_id', cleanId)
+                .single();
+
+            if (findError || !target) {
+                return { success: false, error: 'Profile not found. Please check the ID.' };
+            }
+
+            if (target.user_id) {
+                return { success: false, error: 'This profile is already linked to an account.' };
+            }
+
+            // 2. Perform the Link
+            const { error: claimError } = await this.db()
+                .from('patients')
+                .update({ user_id: user.id })
+                .eq('id', target.id)
+                .is('user_id', null);
+
+            if (claimError) throw claimError;
+
+            console.log(`[Storage] Manual Link Success: ${target.full_name} is now linked.`);
+            return { success: true, profile: target };
+        } catch (err) {
+            console.error('[Storage] Manual Link Failure:', err);
+            return { success: false, error: err.message || err };
         }
     },
 

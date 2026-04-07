@@ -70,6 +70,17 @@
         renderPatientRegistry();
         renderActivityLog();
         refreshScanCount();
+
+        // ─── NEW: Empty State Logic ───
+        const emptyState = $('empty-state');
+        if (emptyState) {
+            if (_patients.length === 0) {
+                emptyState.classList.remove('hidden');
+                console.log('[PersonalCommand] Terminal ready. Awaiting profile link.');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
     }
 
     async function switchPatient(id) {
@@ -331,6 +342,30 @@
     }
 
     window.switchTab = (tab) => console.log(`[Dashboard] Tab context preserved: ${tab}`);
+
+    /**
+     * ─── NEW: Manual Link UI Handler ───
+     * Triggers the identification & claiming process via Patient ID.
+     */
+    window.linkProfileManually = async function() {
+        const id = prompt("ENTER PATIENT ID\nPlease enter your Patient ID (e.g., EMS-XXXXXX) to link your profile to this account:");
+        if (!id) return;
+
+        console.log(`[PersonalCommand] Initializing manual link sequence for ${id}...`);
+        
+        try {
+            const result = await window.AppStorage.claimProfileById(id);
+            if (result.success) {
+                alert(`SUCCESS: Profile for ${result.profile.full_name} has been linked to your account.`);
+                window.location.reload();
+            } else {
+                alert(`ERROR: ${result.error}`);
+            }
+        } catch (err) {
+            console.error('[PersonalCommand] Manual link failure:', err);
+            alert("SYSTEM ERROR: Could not complete the link sequence.");
+        }
+    };
 
     document.addEventListener('DOMContentLoaded', init);
 })();
