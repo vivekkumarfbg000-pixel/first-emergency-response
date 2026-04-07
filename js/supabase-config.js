@@ -11,11 +11,3 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SITE_BASE_URL = 'https://first-emergency-response.vercel.app/';
 window.SITE_BASE_URL = SITE_BASE_URL;
 
-// Use a global supabase instance (with safety check for offline/CDN failure)
-if (typeof supabase !== 'undefined') {
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabaseClient = _supabase;
-} else {
-    console.warn('[Supabase Config] Supabase JS not loaded. Cloud features will be unavailable.');
-    window.supabaseClient = null;
-}

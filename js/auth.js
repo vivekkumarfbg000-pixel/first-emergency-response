@@ -3,39 +3,44 @@
    ============================================================ */
 
 const Auth = {
-    // ────── SESSION GETTER ──────
-    // ────── HELPER: Safe Redirect URL ──────
+    // ────── HELPERS ──────
     _getRedirectUrl() {
         const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
         return window.location.origin + path + 'dashboard.html';
     },
 
+    // ────── SESSION GETTER (HARDENED) ──────
     async getSession() {
         if (localStorage.getItem('master_bypass') === 'true') {
             return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
         }
-        if (!window.supabaseClient) return null;
+        if (!window.supabaseClient) {
+            console.warn('[Auth] Supabase client NOT found. Initialization failure?');
+            return null;
+        }
+
         try {
-            const { data, error } = await window.supabaseClient.auth.getSession();
-            if (error) throw error;
-            
-            if (data.session) {
-                console.log('[Auth] Session detected:', data.session.user?.email);
-                return data.session;
+            // 1. Immediate Check
+            const { data } = await window.supabaseClient.auth.getSession();
+            if (data?.session) return data.session;
+
+            // 2. Exponential Backoff Retry (Handle slow persistence)
+            const delays = [150, 450, 900]; 
+            for (let i = 0; i < delays.length; i++) {
+                console.warn(`[Auth] Session sync delay. Retry ${i+1}/${delays.length} in ${delays[i]}ms...`);
+                await new Promise(r => setTimeout(r, delays[i]));
+                if (!window.supabaseClient) return null;
+                const retry = await window.supabaseClient.auth.getSession();
+                if (retry.data?.session) {
+                    console.info('[Auth] Session recovered after sync delay.');
+                    return retry.data.session;
+                }
             }
             
-            // ─── NEW: Retry Delay (Handle slow local persistence) ───
-            await new Promise(r => setTimeout(r, 150));
-            const retry = await window.supabaseClient.auth.getSession();
-            if (retry.data?.session) {
-                console.log('[Auth] Session detected on retry:', retry.data.session.user?.email);
-                return retry.data.session;
-            }
-            
-            console.warn('[Auth] No session found.');
+            console.warn('[Auth] No session found after all recovery attempts.');
             return null;
         } catch (e) {
-            console.error('[Auth] getSession Exception:', e);
+            console.error('[Auth] getSession Critical Failure:', e);
             return null;
         }
     },
@@ -93,15 +98,10 @@ const Auth = {
         return data; 
     },
 
-    /**
-     * ────── SIGN IN ──────
-     * portalType: 'admin' or 'user'
-     */
     async signIn(email, password, portalType = 'user') {
         const adminEmail = 'firstemergencyresponse4@gmail.com';
         const isTryingAdmin = email.trim().toLowerCase() === adminEmail.toLowerCase();
 
-        // 1. Portal Enforcement
         if (portalType === 'admin' && !isTryingAdmin) {
             throw new Error('ACCESS DENIED: This portal is reserved for System Administrators only.');
         }
@@ -109,10 +109,8 @@ const Auth = {
             throw new Error('ADMIN ACCESS DETECTED: Please use the Master Dispatch Console to log in.');
         }
 
-        // ALWAYS clear bypass first
         localStorage.removeItem('master_bypass');
 
-        // 2. Master Admin Bypass Logic
         if (isTryingAdmin && password === 'First@emergency') {
             console.log('[Auth] Master Admin Bypass Activated');
             localStorage.setItem('master_bypass', 'true');
@@ -142,7 +140,6 @@ const Auth = {
 
         console.log('[Auth] SignIn success, user:', data?.user?.email);
         
-        // ─── NEW: Profile Claiming Logic ───
         if (data.session && window.AppStorage) {
             const pendingId = window.AppStorage.getPendingPatientId();
             if (pendingId) {
@@ -150,8 +147,6 @@ const Auth = {
                 await window.AppStorage.claimProfile(pendingId).catch(console.error);
                 window.AppStorage.clearPendingPatientId();
             }
-            
-            // NEW: Email Recovery (Hard-Link)
             console.log('[Auth] Triggering Email Recovery via signIn:', email);
             await window.AppStorage.claimProfilesByEmail(email).catch(console.error);
         }
@@ -159,7 +154,6 @@ const Auth = {
         return data;
     },
 
-    // ────── SIGN OUT ──────
     async signOut() {
         localStorage.removeItem('master_bypass');
         if (!window.supabaseClient) {
@@ -174,23 +168,18 @@ const Auth = {
         window.location.href = 'index.html';
     },
 
-    // ────── REQUIRE AUTH ──────
     async requireAuth() {
         const user = await this.getUser();
         if (!user) {
             const currentPath = window.location.pathname;
-            // Public pages that don't need auth anymore
             const isPublicPage = currentPath.includes('login.html') || 
                                 currentPath.includes('signup.html') || 
                                 currentPath.includes('register.html') ||
-                                currentPath.includes('profile-view.html') || // Assume view is public
                                 currentPath.endsWith('/') || 
                                 currentPath.includes('index.html');
 
             if (!isPublicPage) {
                 console.warn('[Auth] No session found, redirecting to login...');
-                
-                // If on admin.html, redirect to admin-login.html instead
                 if (currentPath.includes('admin.html')) {
                     window.location.href = 'admin-login.html';
                 } else {
@@ -201,16 +190,12 @@ const Auth = {
         return user;
     },
 
-    // ────── IS ADMIN ──────
     async isAdmin() {
         const user = await this.getUser();
         if (!user) return false;
 
-        // Hardcoded bypass for master admin
         const adminEmail = 'firstemergencyresponse4@gmail.com';
-        if (user.email.trim().toLowerCase() === adminEmail.toLowerCase()) {
-            return true;
-        }
+        if (user.email.trim().toLowerCase() === adminEmail.toLowerCase()) return true;
 
         try {
             const { data, error } = await window.supabaseClient
@@ -221,34 +206,17 @@ const Auth = {
 
             if (error) return false;
             return data && data.role === 'admin';
-        } catch (e) {
-            return false;
-        }
+        } catch (e) { return false; }
     },
 
-    // ────── RESEND CONFIRMATION ──────
     async resendConfirmation(email) {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
-        console.log('[Auth] Attempting to resend confirmation to:', email);
-        
         const { error } = await window.supabaseClient.auth.resend({
             type: 'signup',
             email: email,
-            options: {
-                emailRedirectTo: this._getRedirectUrl()
-            }
+            options: { emailRedirectTo: this._getRedirectUrl() }
         });
-
-        if (error) {
-            console.error('[Auth] Resend Error:', error);
-            if (error.status === 429) {
-                throw new Error('Too many requests. Please wait a few minutes before requesting another link.');
-            }
-            if (error.message.includes('not found')) {
-                throw new Error('User account not found for this email address.');
-            }
-            throw new Error(error.message || 'Error sending confirmation email. Please check your Supabase SMTP settings.');
-        }
+        if (error) throw error;
         return true;
     }
 };

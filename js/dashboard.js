@@ -15,6 +15,10 @@
     // ─── Initialization ───
     async function init() {
         console.log('[PersonalCommand] Initializing v9-pro Tactical Engine...');
+        
+        // ─── NEW: Settle Window (Eliminate Redirection Race Condition) ───
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         try {
             // 1. Auth & Session Check
             const session = await window.Auth.getSession();
@@ -31,29 +35,17 @@
                 await window.AppStorage.claimProfilesByEmail(session.user.email).catch(console.error);
             }
 
-            // ─── NEW: Double-Tap Profile Claiming (Wrapped) ───
-            if (window.AppStorage) {
-                try {
-                    const pendingId = window.AppStorage.getPendingPatientId();
-                    if (pendingId) {
-                        console.log('[PersonalCommand] Claiming pending profile...', pendingId);
-                        await window.AppStorage.claimProfile(pendingId);
-                        window.AppStorage.clearPendingPatientId();
-                    }
-                } catch (err) {
-                    console.error('[PersonalCommand] Profile claiming failed (Non-terminal):', err);
-                }
-            }
-
+            // ─── DATA PARAMETERS ───
             const urlParams = new URLSearchParams(window.location.search);
-                     // 2. Initial Data Pull
+            const sid = urlParams.get('sid');
+            
+            // 2. Initial Data Pull
             await loadDashboardData(sid);
             
             // ─── NEW: Hardened Recovery Sweep (3-Retry Recursive) ───
             if (_patients.length === 0 && !sid && session.user?.email) {
                 console.warn('[PersonalCommand] Zero profile state. Exhausting Cloud Recovery Sweep...');
-                
-                const retryDelays = [400, 800, 1500]; // Increasing wait times
+                const retryDelays = [400, 800, 1500];
                 let recovered = false;
 
                 for (let i = 0; i < retryDelays.length; i++) {
@@ -67,10 +59,6 @@
                         recovered = true;
                         break;
                     }
-                }
-
-                if (!recovered) {
-                    console.error('[PersonalCommand] All recovery attempts exhausted. Finalizing registry check...');
                 }
             }
 
@@ -86,13 +74,6 @@
 
             if ($('patientSwitcher')) {
                 $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
-            }
-
-            if ($('qr-mode-toggle')) {
-                $('qr-mode-toggle').addEventListener('change', e => {
-                    const label = $('qr-mode-label');
-                    if (label) label.textContent = e.target.checked ? 'Fast URL Scan' : 'Offline vCard';
-                });
             }
 
             // 4. GPS & Sync Heartbeat (Non-terminal)
@@ -111,18 +92,6 @@
             // ─── NEW: FADE OUT SYNC OVERLAY ───
             hideSyncOverlay();
             
-            // ─── NEW: Diagnostic Key Listener ───
-            document.addEventListener('keydown', e => {
-                if (e.key.toLowerCase() === 'd') {
-                    console.info('[PersonalCommand] Diagnostic Snapshot:', {
-                        user: session.user,
-                        profiles: _patients,
-                        storage: window.AppStorage.getAllPatientsLocal(),
-                        activePatient: _activePatient
-                    });
-                }
-            });
-
         } catch (fatalErr) {
             console.error('[PersonalCommand] FATAL Initialization Failure:', fatalErr);
             hideSyncOverlay();
