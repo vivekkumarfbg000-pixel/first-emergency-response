@@ -3,7 +3,7 @@
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
-const CACHE_NAME = 'sehat-point-v13-sync-recovery-x';
+const CACHE_NAME = 'sehat-point-v22-nuclear-purge-final';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -42,12 +42,12 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== CACHE_NAME) return caches.delete(key);
+                    console.log(`[SW] NUCLEAR PURGE: Deleting cache ${key}`);
+                    return caches.delete(key);
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
-    self.clients.claim();
 });
 
 // NETWORK-FIRST STRATEGY (Fallback to cache if signal lost)
