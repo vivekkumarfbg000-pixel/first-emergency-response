@@ -10,40 +10,6 @@ const Auth = {
     },
 
     // ────── SESSION GETTER (HARDENED) ──────
-    async getSession() {
-        if (localStorage.getItem('master_bypass') === 'true') {
-            return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
-        }
-        if (!window.supabaseClient) {
-            console.warn('[Auth] Supabase client NOT found. Initialization failure?');
-            return null;
-        }
-
-        try {
-            // 1. Immediate Check
-            const { data } = await window.supabaseClient.auth.getSession();
-            if (data?.session) return data.session;
-
-            // 2. Exponential Backoff Retry (Handle slow persistence)
-            const delays = [150, 450, 900]; 
-            for (let i = 0; i < delays.length; i++) {
-                console.warn(`[Auth] Session sync delay. Retry ${i+1}/${delays.length} in ${delays[i]}ms...`);
-                await new Promise(r => setTimeout(r, delays[i]));
-                if (!window.supabaseClient) return null;
-                const retry = await window.supabaseClient.auth.getSession();
-                if (retry.data?.session) {
-                    console.info('[Auth] Session recovered after sync delay.');
-                    return retry.data.session;
-                }
-            }
-            
-            console.warn('[Auth] No session found after all recovery attempts.');
-            return null;
-        } catch (e) {
-            console.error('[Auth] getSession Critical Failure:', e);
-            return null;
-        }
-    },
 
     async getUser() {
         const session = await this.getSession();

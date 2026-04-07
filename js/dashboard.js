@@ -286,6 +286,5 @@
         }
     };
 
-    window.switchTab = (tab) => console.log(`[Dashboard] Tab context preserved: ${tab}`);
     document.addEventListener('DOMContentLoaded', init);
 })();
