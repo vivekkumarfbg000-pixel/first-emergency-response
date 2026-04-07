@@ -1,8 +1,9 @@
 /* ============================================================
-   SEHAT POINT — ADVANCED SERVICE WORKER
+   SEHAT POINT — ADVANCED SERVICE WORKER (v24-Ultimate)
    Enables offline clinical report viewing and fast loads.
    ============================================================ */
 
+const CACHE_NAME = 'sehat-point-v24-ultimate-stable';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -41,6 +42,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
+                    // NUCLEAR: Delete ALL caches across all versions to ensure a fresh state
                     console.log(`[SW] NUCLEAR PURGE: Deleting cache ${key}`);
                     return caches.delete(key);
                 })
