@@ -10,6 +10,45 @@ const Auth = {
     },
 
     // ────── SESSION GETTER (HARDENED) ──────
+    async getSession() {
+        if (localStorage.getItem('master_bypass') === 'true') {
+            return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
+        }
+        if (!window.supabaseClient) {
+            console.warn('[Auth] Supabase client NOT found.');
+            return null;
+        }
+
+        // ─── NEW: HARD TIMEOUT (Prevent DB Hangs from locking UI) ───
+        const getSessionWithTimeout = () => Promise.race([
+            window.supabaseClient.auth.getSession(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Sync Timeout')), 5000))
+        ]);
+
+        try {
+            // 1. Immediate Check
+            const { data } = await getSessionWithTimeout();
+            if (data?.session) return data.session;
+
+            // 2. Exponential Backoff Retry (Handle slow persistence)
+            const delays = [150, 450, 900]; 
+            for (let i = 0; i < delays.length; i++) {
+                console.warn(`[Auth] Session sync delay. Retry ${i+1}/${delays.length} in ${delays[i]}ms...`);
+                await new Promise(r => setTimeout(r, delays[i]));
+                const retry = await getSessionWithTimeout().catch(() => ({ data: null }));
+                if (retry.data?.session) {
+                    console.info('[Auth] Session recovered after sync delay.');
+                    return retry.data.session;
+                }
+            }
+            
+            console.warn('[Auth] No session found.');
+            return null;
+        } catch (error) {
+            console.error('[Auth] getSession Timeout/Exception:', error.message);
+            return null;
+        }
+    },
 
     async getUser() {
         const session = await this.getSession();

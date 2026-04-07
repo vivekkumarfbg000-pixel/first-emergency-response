@@ -286,5 +286,56 @@
         }
     };
 
+    // ─── Initialization (v21-Absolute) ───
+    async function init() {
+        console.log('[PersonalCommand] Initializing v21-Absolute engine...');
+        
+        // ─── CRITICAL: Visual Emergency Reveal ───
+        // We reveal the UI immediately to ensure the user is NEVER stuck.
+        setTimeout(hideSyncOverlay, 100);
+
+        try {
+            // 1. Auth & Session Check
+            if (!window.Auth) {
+                console.error('[PersonalCommand] Auth Library MISSING.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const session = await window.Auth.getSession();
+            if (!session) {
+                console.warn('[PersonalCommand] No valid session detected. Redirecting to login...');
+                window.location.href = 'login.html';
+                return;
+            }
+            console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
+
+            // 2. Background Recovery (Does not block UI)
+            if (window.AppStorage && session.user?.email) {
+                console.log('[PersonalCommand] Syncing Cloud medical records...');
+                await window.AppStorage.claimProfilesByEmail(session.user.email).catch(e => console.warn('Recovery delayed:', e));
+            }
+
+            // 3. Load UI Data Sector
+            const urlParams = new URLSearchParams(window.location.search);
+            const sid = urlParams.get('sid');
+            await loadDashboardData(sid);
+
+            // 4. Environmental Monitoring
+            if ($('patientSwitcher')) {
+                $('patientSwitcher').addEventListener('change', e => switchPatient(e.target.value));
+            }
+
+            setupGPS();
+            if (window.lucide) lucide.createIcons();
+            
+        } catch (fatalErr) {
+            console.error('[PersonalCommand] FATAL Initialization Failure:', fatalErr);
+            hideSyncOverlay(); 
+        }
+    }
+
+    window.switchTab = (tab) => console.log(`[Dashboard] Tab context preserved: ${tab}`);
+
     document.addEventListener('DOMContentLoaded', init);
 })();
