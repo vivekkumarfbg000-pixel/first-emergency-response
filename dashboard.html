@@ -307,23 +307,5 @@
         #activity-list .text-slate-300 { color: #475569 !important; }
     </style>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('PWA Sync Alpha: Ready'))
-                    .catch(e => console.error('PWA Sync Alpha: Failed', e));
-            });
-        }
-    </script>
-    <script>
-        // Observe patient length after init to manage empty state
-        setTimeout(() => {
-            if(document.getElementById('patientSwitcher') && document.getElementById('patientSwitcher').options.length === 0) {
-                const emptyState = document.getElementById('empty-state');
-                if (emptyState) emptyState.classList.remove('hidden');
-            }
-        }, 3000); // Increased to 3s for slower networks
-    </script>
 </body>
 </html>
