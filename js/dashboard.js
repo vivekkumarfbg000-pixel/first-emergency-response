@@ -310,11 +310,6 @@
             }
             console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
 
-            // 2. Background Recovery (Does not block UI)
-            if (window.AppStorage && session.user?.email) {
-                console.log('[PersonalCommand] Syncing Cloud medical records...');
-                await window.AppStorage.claimProfilesByEmail(session.user.email).catch(e => console.warn('Recovery delayed:', e));
-            }
 
             // 3. Load UI Data Sector
             const urlParams = new URLSearchParams(window.location.search);
