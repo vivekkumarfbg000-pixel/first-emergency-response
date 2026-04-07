@@ -20,11 +20,7 @@ CREATE TABLE IF NOT EXISTS emergency_alerts (
 ALTER TABLE emergency_alerts ENABLE ROW LEVEL SECURITY;
 
 -- 3. Policies
-DROP POLICY IF EXISTS "public_insert_alerts" ON emergency_alerts;
-DROP POLICY IF EXISTS "admin_read_alerts" ON emergency_alerts;
-
-CREATE POLICY "public_insert_alerts" ON emergency_alerts FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "admin_read_alerts" ON emergency_alerts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "public_read_alerts" ON emergency_alerts FOR SELECT TO anon, authenticated USING (true);
 
 -- 4. Enable Realtime
 DO $$

@@ -73,6 +73,8 @@ self.addEventListener('fetch', (event) => {
                     if (event.request.mode === 'navigate') {
                         return caches.match('./index.html');
                     }
+                    // Return a valid 404 instead of undefined
+                    return new Response('Offline: Resource not available', { status: 404 });
                 });
             })
     );
