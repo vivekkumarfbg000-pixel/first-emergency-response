@@ -31,7 +31,7 @@ const AppStorage = {
             contact2_name:     p.contact2_Name || '',
             contact2_relation: p.contact2_Relation || '',
             contact2_phone:    p.contact2_Phone || '',
-            emergencyContact:  p.emergencyContact || '',
+            emergency_contact: p.emergencyContact || '',
             conditions:        p.conditions || '',
             allergies:         p.allergies || '',
             medications:       p.medications || '',
@@ -56,7 +56,7 @@ const AppStorage = {
             contact2_Name:     row.contact2_name,
             contact2_Relation: row.contact2_relation,
             contact2_Phone:    row.contact2_phone,
-            emergencyContact:  row.emergencyContact,
+            emergencyContact:  row.emergency_contact,
             conditions:        row.conditions,
             allergies:         row.allergies,
             medications:       row.medications,
@@ -85,17 +85,17 @@ const AppStorage = {
     },
 
     _isAdminUser: async function () {
-        // Check for master bypass first (for session persistence)
+        // 1. Check for master bypass first (for session persistence)
         if (localStorage.getItem('master_bypass') === 'true') return true;
         
         const user = await this._getCurrentUserObj();
         if (!user) return false;
         
-        // 1. Direct Email Match
+        // 2. Direct Email Match (Configured Master Admin)
         const email = (user.email || '').trim().toLowerCase();
         if (email === this.MASTER_ADMIN_EMAIL.toLowerCase()) return true;
 
-        // 2. Database Check (Fallback)
+        // 3. Database Check (Fallback for assigned admin roles)
         if (this.db()) {
             try {
                 const { data, error } = await this.db()
@@ -112,7 +112,7 @@ const AppStorage = {
     _getAssignedOwnerId: async function () {
         try {
             const uid = await this._getUserId();
-            return uid; // returns null for anon to allow claiming
+            return uid; 
         } catch (e) { return null; }
     },
 
@@ -206,28 +206,31 @@ END:VCARD`;
     getAllPatients: async function () {
         let cloudPatients = [];
         let dbAvailable = false;
+        const userId = await this._getUserId();
+        const isAdmin = await this._isAdminUser();
+
         if (this.db()) {
             try {
-                const userId = await this._getUserId();
                 let query = this.db().from('patients').select('*');
-                const isAdmin = await this._isAdminUser();
 
                 if (isAdmin) {
-                    // Admin sees all
+                    console.log('[Storage] Master Dispatch: Fetching all global records...');
                 } else if (userId) {
                     query = query.eq('user_id', userId);
                 } else {
+                    // Logged out: Show only local profiles
                     return this.getAllPatientsLocal();
                 }
                 
                 const { data, error } = await query.order('created_at', { ascending: false });
                 if (error) throw error;
+                
                 dbAvailable = true;
                 if (data) {
                     cloudPatients = data.map(r => this.mapFromDB(r));
                 }
             } catch (err) { 
-                console.error('[Storage] Cloud sync error (Falling back to local data):', err.message || err);
+                console.error('[Storage] Cloud sync critical failure:', err.message || err);
                 dbAvailable = false;
             }
         }
@@ -235,7 +238,7 @@ END:VCARD`;
         const localPatients = this.getAllPatientsLocal();
         const merged = [];
         
-        // 1. Start with cloud patients
+        // 1. Start with cloud patients (Source of Truth)
         cloudPatients.forEach(cp => merged.push({ ...cp, cloudSynced: true }));
         
         // 2. Add local patients not in cloud
@@ -294,12 +297,24 @@ END:VCARD`;
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
                 const queryField = isUUID ? 'id' : 'patient_id';
                 const dbUpdate = {};
+                
                 const mapping = {
-                    fullName: 'full_name', bloodGroup: 'blood_group', age: 'age', gender: 'gender',
-                    contact1_Name: 'contact1_name', contact1_Relation: 'contact1_relation', contact1_Phone: 'contact1_phone', contact1_Email: 'contact1_email',
-                    emergencyContact: 'emergencyContact',
-                    conditions: 'conditions', allergies: 'allergies', medications: 'medications', medicalNotes: 'medical_notes', organDonor: 'organ_donor'
+                    fullName: 'full_name', 
+                    bloodGroup: 'blood_group', 
+                    age: 'age', 
+                    gender: 'gender',
+                    contact1_Name: 'contact1_name', 
+                    contact1_Relation: 'contact1_relation', 
+                    contact1_Phone: 'contact1_phone', 
+                    contact1_Email: 'contact1_email',
+                    emergencyContact: 'emergency_contact',
+                    conditions: 'conditions', 
+                    allergies: 'allergies', 
+                    medications: 'medications', 
+                    medicalNotes: 'medical_notes', 
+                    organDonor: 'organ_donor'
                 };
+
                 for (const [key, dbKey] of Object.entries(mapping)) {
                     if (updatedData[key] !== undefined) {
                         let val = updatedData[key];
@@ -308,6 +323,7 @@ END:VCARD`;
                         dbUpdate[dbKey] = val;
                     }
                 }
+
                 if (Object.keys(dbUpdate).length > 0) {
                     const { error } = await this.db().from('patients').update(dbUpdate).eq(queryField, id);
                     if (error && (error.code === '42501' || error.status === 403)) {
@@ -342,8 +358,6 @@ END:VCARD`;
             } catch (err) { lastError = err; }
         }
         
-        // Optimistic UI/Local deletion still occurs if desired, 
-        // but we'll report the cloud state to the caller
         let patients = this.getAllPatientsLocal().filter(p => p.patientId !== id && p.id !== id);
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
         if (this._cache) this._cache = this._cache.filter(p => p.patientId !== id && p.id !== id);
@@ -351,8 +365,6 @@ END:VCARD`;
         
         return { success: true, cloudSynced, error: lastError };
     },
-
-
 
     claimProfile: async function(patientId) {
         if (!this.db()) return { success: false, error: 'Cloud Unavailable' };
@@ -363,7 +375,6 @@ END:VCARD`;
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(patientId);
             const queryField = isUUID ? 'id' : 'patient_id';
 
-            // Only update if currently NULL (security policy check)
             const { error } = await this.db()
                 .from('patients')
                 .update({ user_id: userId })
@@ -376,10 +387,6 @@ END:VCARD`;
         }
     },
 
-    /**
-     * ─── NEW: Total Recovery System ───
-     * Claims all orphaned profiles (user_id IS NULL) that match the provided email.
-     */
     claimProfilesByEmail: async function(email) {
         if (!this.db() || !email) return { success: false, error: 'Initialization Error' };
         try {
@@ -389,7 +396,6 @@ END:VCARD`;
             const normalizedEmail = email.trim().toLowerCase();
             console.log(`[Storage] Recovery Mode: Searching for profiles for ${normalizedEmail}...`);
 
-            // 1. Identify profiles that match this email
             const { data: claimable, error: searchError } = await this.db()
                 .from('patients')
                 .select('id, patient_id, full_name, email, user_id')
@@ -397,16 +403,12 @@ END:VCARD`;
 
             if (searchError) throw searchError;
 
-            // 2. Filter for those that are ORPHANED (user_id is null)
             const orphans = (claimable || []).filter(p => !p.user_id);
             if (orphans.length === 0) {
                 console.log('[Storage] Recovery: No unlinked profiles found for this email.');
                 return { success: true, claimedCount: 0 };
             }
 
-            console.log(`[Storage] Recovery: Found ${orphans.length} unlinked profile(s). Linking to Account ${user.id}...`);
-
-            // 3. Perform individual claims to avoid bulk policy failures
             let successCount = 0;
             for (const p of orphans) {
                 const { error: claimError } = await this.db()
@@ -416,7 +418,6 @@ END:VCARD`;
                     .is('user_id', null);
                 
                 if (!claimError) successCount++;
-                else console.warn(`[Storage] Failed to link profile ${p.patient_id}:`, claimError.message);
             }
 
             console.log(`[Storage] Recovery Success: Linked ${successCount} profile(s).`);
@@ -427,10 +428,6 @@ END:VCARD`;
         }
     },
 
-    /**
-     * ─── NEW: Manual Link System ───
-     * Allows a user to manually claim a profile by its Patient ID (e.g. EMS-XXXXXX).
-     */
     claimProfileById: async function(patientId) {
         if (!this.db() || !patientId) return { success: false, error: 'Initialization Error' };
         try {
@@ -440,7 +437,6 @@ END:VCARD`;
             const cleanId = patientId.trim().toUpperCase();
             console.log(`[Storage] Manual Link: Attempting to claim ${cleanId}...`);
 
-            // 1. Find the target profile
             const { data: target, error: findError } = await this.db()
                 .from('patients')
                 .select('id, patient_id, user_id, full_name')
@@ -455,7 +451,6 @@ END:VCARD`;
                 return { success: false, error: 'This profile is already linked to an account.' };
             }
 
-            // 2. Perform the Link
             const { error: claimError } = await this.db()
                 .from('patients')
                 .update({ user_id: user.id })
@@ -464,7 +459,6 @@ END:VCARD`;
 
             if (claimError) throw claimError;
 
-            console.log(`[Storage] Manual Link Success: ${target.full_name} is now linked.`);
             return { success: true, profile: target };
         } catch (err) {
             console.error('[Storage] Manual Link Failure:', err);
@@ -519,8 +513,6 @@ END:VCARD`;
         scans.unshift({ patientId, patient_name: patientName, type, device, location, latitude: lat, longitude: long, timestamp });
         localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
 
-        console.log(`[Storage] Logging event: ${type} for ${patientId} (${patientName || 'Unknown'})`);
-
         if (this.db()) {
             try {
                 const logData = { 
@@ -566,8 +558,6 @@ END:VCARD`;
         const safeLat = typeof lat === 'number' ? lat : null;
         const safeLong = typeof long === 'number' ? long : null;
         
-        console.log(`[Storage] Triggering SOS for ${patientId} at`, lat, long);
-
         await this.logScan(patientId, 'emergency_scan', navigator.userAgent || 'Rescuer Device', safeLat ? 'GPS' : 'Restricted', safeLat, safeLong, patientName);
         
         if (this.db() && typeof patient === 'object') {
@@ -586,17 +576,10 @@ END:VCARD`;
 
                 const { error: insertError } = await this.db().from('emergency_alerts').insert([alertData]);
                 
-                if (insertError) {
-                    console.error('[Storage] Emergency Alert Insert Failed:', insertError.message);
-                } else {
-                    console.log('[Storage] Emergency Alert Registered in DB (Real-time trigger fired)');
+                if (!insertError) {
                     try {
-                        const { data, error: funcError } = await this.db().functions.invoke('send-sos-email', { body: alertData });
-                        if (funcError) throw funcError;
-                        console.log('[Storage] Edge Function email success:', data);
-                    } catch (e) {
-                         console.warn('[Storage] Email Service Unavailable. (Requires Supabase Edge Function "send-sos-email" to be deployed)');
-                    }
+                        await this.db().functions.invoke('send-sos-email', { body: alertData });
+                    } catch (e) { }
                 }
             } catch (err) { console.error('[Storage] SOS Alert Exception:', err); }
         }
@@ -605,7 +588,7 @@ END:VCARD`;
 
     getProfileCompletion: function (patient) {
         if (!patient) return 0;
-        const fields = ['fullName', 'bloodGroup', 'age', 'gender', 'contact1_Name', 'contact1_Phone', 'conditions', 'allergies', 'medications'];
+        const fields = ['fullName', 'bloodGroup', 'age', 'gender', 'contact1Name', 'contact1Phone', 'conditions', 'allergies', 'medications'];
         const filled = fields.filter(f => patient[f] && String(patient[f]).trim() !== '').length;
         return Math.round((filled / fields.length) * 100);
     },
