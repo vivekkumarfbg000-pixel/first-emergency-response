@@ -542,7 +542,8 @@ END:VCARD`;
                     location: lat && long ? `${location || 'GPS'} (${lat.toFixed(4)}, ${long.toFixed(4)})` : (location || 'Global Search'),
                     latitude: lat || null, 
                     longitude: long || null, 
-                    timestamp: timestamp 
+                    timestamp: timestamp,
+                    created_at: timestamp // For compatibility
                 };
                 
                 const { error } = await this.db().from('scans').insert([logData]);

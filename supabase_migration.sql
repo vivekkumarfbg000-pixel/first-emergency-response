@@ -15,11 +15,13 @@ ALTER TABLE patients ADD COLUMN IF NOT EXISTS medications TEXT;
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS bloodGroup TEXT;
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS fullName TEXT;
 
--- ── STEP 2: Add missing columns to scans table ────────────
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS is_emergency BOOLEAN DEFAULT FALSE;
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS patient_name TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS device TEXT;
 
 -- ── STEP 3: Drop any existing conflicting RLS policies ─────
 DROP POLICY IF EXISTS "allow_anon_insert" ON patients;

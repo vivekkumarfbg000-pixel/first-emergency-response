@@ -309,8 +309,10 @@
     };
 
     function pushAlertToFeed(alert) {
-        // Redundant with Mini Log but kept for specific SOS focus if needed
         console.log('[MasterDispatch] SOS RECEIVED', alert);
+        // Instant priority update: render console immediately
+        window.renderOperationsConsole(alert);
+        // Refresh feed to ensure sync
         refreshLogs();
     }
 
@@ -337,7 +339,8 @@
         txt('console-notification-status', 'SEARCHING FAMILY...');
         txt('console-contact', 'SEARCHING...');
         
-        const timeStr = new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timestamp = scan.timestamp || scan.created_at || scan.scan_time || new Date().toISOString();
+        const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         txt('console-time', `INCIDENT DETECTED AT ${timeStr}`);
 
         // Instant Registry Cache Sync (Fastest)
@@ -609,6 +612,13 @@
         }
     };
 
+    window.dispatchFromPayload = function(encoded) {
+        try {
+            const data = JSON.parse(atob(encoded));
+            window.renderOperationsConsole(data);
+        } catch (e) { console.error('Payload dispatch failed:', e); }
+    };
+
     // ─── Data Rendering ───
     window.renderMasterTable = async function(filter = '') {
         const body = $('admin-table-body');
@@ -690,21 +700,43 @@
         
         try {
             const scans = await window.AppStorage.getScanHistory() || [];
+            const alerts = await window.supabaseClient.from('emergency_alerts').select('*').order('created_at', { ascending: false }).limit(20);
+            const alertData = alerts.data || [];
+
             const patients = await window.AppStorage.getAllPatients() || [];
             
+            // Merge sources for the live feed
+            let unifiedScans = [...scans];
+            alertData.forEach(a => {
+                const alreadyInScans = unifiedScans.some(s => s.timestamp === (a.scan_time || a.created_at) || s.patient_id === a.patient_id);
+                if (!alreadyInScans) {
+                    unifiedScans.push({
+                        ...a,
+                        type: 'emergency_scan',
+                        timestamp: a.scan_time || a.created_at,
+                        location: a.google_maps_link ? 'GPS SIGNAL' : (a.location || 'EMERGENCY')
+                    });
+                }
+            });
+            unifiedScans.sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
+
             const getName = (s) => {
                 if (s.patient_name && s.patient_name !== 'Unknown') return s.patient_name;
                 const p = patients.find(p => p.id === s.patient_id || p.patientId === s.patient_id);
                 return p ? p.fullName : 'Unknown';
             };
 
-            if (scans.length === 0) {
-                if(mini) mini.innerHTML = `<div class="py-6 text-center opacity-20 text-[8px] uppercase font-black tracking-widest">Awaiting Scanner Signals...</div>`;
+            if (unifiedScans.length === 0) {
+                if(mini) mini.innerHTML = `<div class="py-16 text-center opacity-30 text-[10px] uppercase font-black tracking-widest flex flex-col items-center">
+                    <i data-lucide="radar" class="w-8 h-8 mb-4 animate-pulse text-emerald-500"></i>
+                    Awaiting Scanner Signals...
+                </div>`;
+                if (window.lucide) lucide.createIcons();
                 return;
             }
  
-            const html = scans.map(s => {
-                const time = new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const html = unifiedScans.map(s => {
+                const time = new Date(s.timestamp || s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const isEmergency = s.type === 'emergency_scan';
                 return `
                     <tr class="border-b border-[#1E293B] hover:bg-[#0B1120]">
@@ -723,13 +755,16 @@
             if(body) body.innerHTML = html;
 
             if(mini) {
-                mini.innerHTML = scans.slice(0, 15).map(s => {
-                    const isEmergency = s.type === 'emergency_scan';
-                    const timeStr = new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                mini.innerHTML = unifiedScans.slice(0, 15).map(s => {
+                    const isEmergency = s.type === 'emergency_scan' || s.type === 'emergency_alert';
+                    const timeStr = new Date(s.timestamp || s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                     
+                    // Fixed: Use Base64 encoding for JSON to avoid attribute escaping issues
+                    const scanPayload = btoa(JSON.stringify(s));
+
                     if (isEmergency) {
                         return `
-                        <div class="bg-[#240A0A] border-l-4 border-red-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#330F0F] transition-colors relative overflow-hidden group shadow-md" onclick='window.renderOperationsConsole(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                        <div class="bg-[#240A0A] border-l-4 border-red-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#330F0F] transition-colors relative overflow-hidden group shadow-md" onclick="window.dispatchFromPayload('${scanPayload}')">
                             <div class="absolute right-0 top-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl">JUST NOW</div>
                             
                             <div class="flex items-start gap-3">
@@ -750,9 +785,8 @@
                             </div>
                         </div>`;
                     } else {
-                        // Standard / Yellow Theme
                         return `
-                        <div class="bg-[#1C160C] border-l-4 border-amber-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#2A2011] transition-colors shadow-md" onclick='window.renderOperationsConsole(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                        <div class="bg-[#1C160C] border-l-4 border-amber-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#2A2011] transition-colors shadow-md" onclick="window.dispatchFromPayload('${scanPayload}')">
                             <div class="flex items-start gap-3">
                                 <div class="w-8 h-8 rounded shrink-0 bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center justify-center shrink-0">
                                     <i data-lucide="alert-circle" class="w-4 h-4"></i>
@@ -775,11 +809,9 @@
                 if (window.lucide) lucide.createIcons();
             }
 
-            // Automatically load the latest scan into the Console widget
-            // if it's empty, or if a new scan has arrived.
-            if (scans.length > 0) {
-                const latest = scans[0];
-                if (!_activeConsoleScan || _activeConsoleScan.timestamp !== latest.timestamp) {
+            if (unifiedScans.length > 0) {
+                const latest = unifiedScans[0];
+                if (!_activeConsoleScan || (_activeConsoleScan.timestamp || _activeConsoleScan.created_at) !== (latest.timestamp || latest.created_at)) {
                     window.renderOperationsConsole(latest);
                 }
             }
