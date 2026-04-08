@@ -41,6 +41,7 @@ const AppStorage = {
     },
 
     mapFromDB: function (row) {
+        if (!row) return null;
         return {
             id:                row.id,
             patientId:         row.patient_id,
@@ -86,25 +87,33 @@ const AppStorage = {
 
     _isAdminUser: async function () {
         // 1. Check for master bypass first (for session persistence)
-        if (localStorage.getItem('master_bypass') === 'true') return true;
+        if (localStorage.getItem('master_bypass') === 'true') {
+            return true;
+        }
         
-        const user = await this._getCurrentUserObj();
-        if (!user) return false;
-        
-        // 2. Direct Email Match (Configured Master Admin)
-        const email = (user.email || '').trim().toLowerCase();
-        if (email === this.MASTER_ADMIN_EMAIL.toLowerCase()) return true;
+        try {
+            const user = await this._getCurrentUserObj();
+            if (!user) return false;
+            
+            // 2. Direct Email Match (Configured Master Admin)
+            const email = (user.email || '').trim().toLowerCase();
+            if (email === this.MASTER_ADMIN_EMAIL.toLowerCase()) {
+                return true;
+            }
 
-        // 3. Database Check (Fallback for assigned admin roles)
-        if (this.db()) {
-            try {
+            // 3. Database Check (Fallback for assigned admin roles)
+            if (this.db()) {
                 const { data, error } = await this.db()
                     .from('user_roles')
                     .select('role')
                     .eq('user_id', user.id)
-                    .single();
-                if (!error && data?.role === 'admin') return true;
-            } catch (e) {}
+                    .maybeSingle(); // Better than single() if no role assigned
+                if (!error && data?.role === 'admin') {
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.error('[Storage] Admin check failed:', e);
         }
         return false;
     },
@@ -267,8 +276,18 @@ END:VCARD`;
         if (!id) return null;
         if (this.db()) {
             try {
+                const isAdmin = await this._isAdminUser();
+                const userId = await this._getUserId();
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
-                const { data, error } = await this.db().from('patients').select('*').eq(isUUID ? 'id' : 'patient_id', id).single();
+                
+                let query = this.db().from('patients').select('*').eq(isUUID ? 'id' : 'patient_id', id);
+                
+                // Security: Restrict to user's own profiles if not an admin
+                if (!isAdmin && userId) {
+                    query = query.eq('user_id', userId);
+                }
+                
+                const { data, error } = await query.single();
                 if (data) return this.mapFromDB(data);
             } catch (err) { }
         }
@@ -535,8 +554,25 @@ END:VCARD`;
     getScanHistory: async function (patientId) {
         if (this.db()) {
             try {
+                const isAdmin = await this._isAdminUser();
+                const userId = await this._getUserId();
+                
                 let query = this.db().from('scans').select('*').order('timestamp', { ascending: false }).limit(50);
-                if (patientId) query = query.eq('patient_id', patientId);
+                
+                if (patientId) {
+                    query = query.eq('patient_id', patientId);
+                } else if (!isAdmin && userId) {
+                    // Filter scans to only those belonging to the user's patients
+                    const patients = await this.getAllPatients();
+                    // Use patientId (the EMS-XXXX format) as that's what's stored in the scans table
+                    const patientIds = patients.map(p => p.patientId).filter(id => !!id);
+                    if (patientIds.length > 0) {
+                        query = query.in('patient_id', patientIds);
+                    } else {
+                        return []; // No patients, no scans
+                    }
+                }
+                
                 const { data } = await query;
                 if (data) return data.map(s => ({ ...s, patientId: s.patient_id }));
             } catch (err) { }
@@ -596,7 +632,22 @@ END:VCARD`;
     getTotalScans: async function () {
         if (this.db()) {
             try {
-                const { count } = await this.db().from('scans').select('*', { count: 'exact', head: true });
+                const isAdmin = await this._isAdminUser();
+                const userId = await this._getUserId();
+                
+                let query = this.db().from('scans').select('*', { count: 'exact', head: true });
+                
+                if (!isAdmin && userId) {
+                    const patients = await this.getAllPatients();
+                    const patientIds = patients.map(p => p.patientId).filter(id => !!id);
+                    if (patientIds.length > 0) {
+                        query = query.in('patient_id', patientIds);
+                    } else {
+                        return 0;
+                    }
+                }
+                
+                const { count } = await query;
                 return count || 0;
             } catch (err) { }
         }

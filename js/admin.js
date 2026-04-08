@@ -74,12 +74,15 @@
             }
             
             // Populate Settings Profile
-            const user = (await window.Auth.getUser());
+            const user = await window.Auth.getUser();
             if (user) {
+                console.log('[MasterDispatch] User Profile metadata retrieved:', user.email);
                 txt('admin-profile-email', user.email);
                 if ($('admin-display-name')) {
-                    $('admin-display-name').value = user.user_metadata?.display_name || user.user_metadata?.full_name || '';
+                    $('admin-display-name').value = user.user_metadata?.display_name || user.user_metadata?.full_name || 'MASTER_ADMIN';
                 }
+            } else {
+                console.warn('[MasterDispatch] No user session found during profile population.');
             }
         } catch (e) { logError('Clearance Protocol Error', e); }
 
@@ -169,7 +172,15 @@
                 refreshMetrics();
                 renderAnalytics();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[MasterDispatch] Real-time SOS Subscription:', status);
+                if (status === 'SUBSCRIBED') {
+                    updateConnectionStatus('connected');
+                } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                    updateConnectionStatus('error');
+                    logError('Signal Error', `Real-time channel ${status}.`);
+                }
+            });
     }
 
     let _audioCtx = null;
@@ -901,11 +912,13 @@
 
     async function loadAdminProfileData() {
         try {
-            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            const user = await window.Auth.getUser();
             if (user) {
                 txt('admin-profile-email', user.email);
-                const displayName = user.user_metadata?.display_name || '';
-                $('admin-display-name').value = displayName;
+                const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name || 'MASTER_ADMIN';
+                if ($('admin-display-name')) {
+                    $('admin-display-name').value = displayName;
+                }
             }
         } catch (e) { logError('Profile Fetch Error', e); }
     }

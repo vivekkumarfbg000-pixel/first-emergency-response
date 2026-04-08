@@ -231,6 +231,25 @@
             </div>
         </div>
 
+        <!-- ─── ACTIVITY LOG SECTION ─── -->
+        <div class="mt-8 section-reveal">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i data-lucide="activity" class="w-5 h-5 text-emerald-500"></i> Recent Activity Log
+                </h3>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time Sync Active</span>
+            </div>
+            
+            <div id="activity-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Populated by JS -->
+                <div class="col-span-full py-12 flex flex-col items-center justify-center opacity-30 border-2 border-dashed border-slate-200 rounded-3xl">
+                    <i data-lucide="radar" class="w-8 h-8 mb-3"></i>
+                    <p class="text-sm font-semibold tracking-wide uppercase">Monitoring Scanner Streams...</p>
+                </div>
+            </div>
+        </div>
+
+
         <!-- ─── SETTINGS SECTION ─── -->
         <div id="settings-section" class="mt-8 pt-8 border-t border-slate-200 section-reveal">
             <h3 class="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
