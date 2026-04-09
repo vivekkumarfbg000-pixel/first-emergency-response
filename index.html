@@ -14,17 +14,9 @@
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#0B1120">
   
-  <script>
-      // High-Priority Redirect for Session Persistence
-      (function() {
-          if (localStorage.getItem('master_bypass') === 'true') {
-              console.log('[SehatAuth] Persistent session detected, redirecting to Admin Console...');
-              window.location.href = 'admin.html';
-          }
-      })();
-  </script>
+  <!-- ✅ SECURITY FIX: master_bypass backdoor removed. Auth handled via Supabase sessions. -->
 
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.460.0"></script>
   <style>
     /* ─── Floating Nav ─── */
     .glass-nav {

@@ -8,6 +8,14 @@
     const $ = (id) => document.getElementById(id);
     const txt = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
+    // ✅ XSS Protection: Escape user data before innerHTML injection
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+
     let _currentView = 'tab-overview';
     let _patients = [];
     let _activePatient = null;

@@ -8,6 +8,14 @@
     const $ = (id) => document.getElementById(id);
     const txt = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
+    // ✅ XSS Protection: Escape user data before innerHTML injection
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+
     let _activeSection = 'overview';
     let _realtimeChannel = null;
     let _errorLogs = [];
@@ -59,18 +67,14 @@
         }
 
         try {
-            // Check for master bypass first (prevents race condition redirects)
-            if (localStorage.getItem('master_bypass') === 'true') {
-                console.log('[MasterDispatch] Admin Clearance: BYPASS AUTHORIZED');
-            } else {
-                const isAdmin = await window.AppStorage._isAdminUser();
-                console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
-                
-                if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
-                    console.warn('[MasterDispatch] Unauthorized access detected, evacuating...');
-                    window.location.href = 'admin-login.html';
-                    return;
-                }
+            // ✅ SECURITY FIX: No master_bypass backdoor. Admin status checked via DB.
+            const isAdmin = await window.AppStorage._isAdminUser();
+            console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
+            
+            if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+                console.warn('[MasterDispatch] Unauthorized access detected, evacuating...');
+                window.location.href = 'admin-login.html';
+                return;
             }
             
             // Populate Settings Profile
@@ -361,14 +365,28 @@
             txt('console-name', pName.toUpperCase());
             txt('console-id', `#ID-${(patient.id || pId).substring(0, 8).toUpperCase()}`);
 
-            // Automated Notification Sync
-            const familyEmail = patient.contact1_email || patient.email;
+            // ✅ FIX: Actually send the SOS email via Edge Function instead of faking it
+            const familyEmail = patient.contact1_email || patient.contact1_Email || patient.email;
             if (familyEmail) {
                 txt('console-notification-status', 'SENDING ALERT...');
-                // Trigger actual email dispatch via Edge Function (Manual Trigger for now)
-                setTimeout(() => {
+                try {
+                    const lat = scan.gps_lat || scan.latitude;
+                    const lon = scan.gps_long || scan.longitude;
+                    const mapsLink = lat && lon ? `https://www.google.com/maps?q=${lat},${lon}` : '';
+                    await window.supabaseClient.functions.invoke('send-sos-email', {
+                        body: {
+                            patient_name: pName,
+                            patient_blood: patient.bloodGroup || 'UNK',
+                            family_email: familyEmail,
+                            family_name: patient.contact1_Name || patient.contact1_name || 'Family Contact',
+                            google_maps_link: mapsLink
+                        }
+                    });
                     txt('console-notification-status', `SENT TO ${familyEmail.toUpperCase()}`);
-                }, 1500);
+                } catch (emailErr) {
+                    console.error('[MasterDispatch] Email dispatch failed:', emailErr);
+                    txt('console-notification-status', `SEND FAILED - ${familyEmail.toUpperCase()}`);
+                }
             } else {
                 txt('console-notification-status', 'NO FAMILY EMAIL FOUND');
             }
@@ -588,17 +606,23 @@
         btn.disabled = true;
 
         try {
-            // If contact is a phone, note it. Ideally we need family email. The DB stores 'emergencyContact' which is usually a phone string.
-            // If the user meant phone here, we just spoof it for the demo or use their email if we had it.
-            // For now, we will execute the API call and if it fails, simulate it.
+            // ✅ FIX: Use the patient's actual family email, not the hardcoded admin email
+            const familyEmail = _activeConsolePatient.contact1_email || _activeConsolePatient.contact1_Email || _activeConsolePatient.email;
+            if (!familyEmail) {
+                alert('Patient does not have a family email on file. Cannot send email alert.');
+                btn.innerHTML = origContent;
+                if(window.lucide) lucide.createIcons();
+                btn.disabled = false;
+                return;
+            }
             const mapsLink = `https://www.google.com/maps/search/?api=1&query=${_activeConsoleScan.gps_lat},${_activeConsoleScan.gps_long}`;
             
             await window.supabaseClient.functions.invoke('send-sos-email', {
                 body: {
                     patient_name: _activeConsolePatient.fullName,
                     patient_blood: _activeConsolePatient.bloodGroup || 'UNK',
-                    family_email: 'firstemergencyresponse4@gmail.com', // fallback/demo email
-                    family_name: 'Emergency Contact',
+                    family_email: familyEmail,
+                    family_name: _activeConsolePatient.contact1_Name || _activeConsolePatient.contact1_name || 'Emergency Contact',
                     google_maps_link: mapsLink
                 }
             });
@@ -843,10 +867,21 @@
  
             const chart = $('chart-velocity');
             if (chart) {
-                const seed = [15, 25, 10, 35, 45, 30, ((scans.length || 0) % 50) + 20];
-                chart.innerHTML = seed.map(c => `
-                    <div class="flex-1 rounded-t-sm transition-all duration-1000 ${c > 40 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-slate-800'}" style="height: ${c}%"></div>
-                `).join('');
+                // ✅ FIX: Use real scan data grouped by recency instead of fake seed data
+                const now = new Date();
+                const dayBuckets = [0, 0, 0, 0, 0, 0, 0]; // Last 7 days
+                scans.forEach(s => {
+                    const scanDate = new Date(s.timestamp || s.created_at);
+                    const daysAgo = Math.floor((now - scanDate) / (1000 * 60 * 60 * 24));
+                    if (daysAgo >= 0 && daysAgo < 7) dayBuckets[6 - daysAgo]++;
+                });
+                const maxVal = Math.max(...dayBuckets, 1);
+                chart.innerHTML = dayBuckets.map(c => {
+                    const pct = Math.max((c / maxVal) * 100, 3); // minimum 3% height for visual
+                    return `
+                    <div class="flex-1 rounded-t-sm transition-all duration-1000 ${c > 0 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-slate-800'}" style="height: ${pct}%"></div>
+                `;
+                }).join('');
             }
         } catch (e) { logError('Analytics Failed', e); }
     }
@@ -955,40 +990,6 @@
         } catch (e) { logError('Profile Fetch Error', e); }
     }
 
-    window.updateAdminProfile = async function() {
-        const newName = $('admin-display-name').value;
-        try {
-            const { error } = await window.supabaseClient.auth.updateUser({
-                data: { display_name: newName }
-            });
-            if (error) throw error;
-            alert('Admin Profile Synchronized Successfully');
-        } catch (e) {
-            logError('Profile Update Failed', e);
-            alert('System failed to sync profile data.');
-        }
-    };
-
-    window.triggerPasswordReset = async function() {
-        try {
-            const { data: { user } } = await window.supabaseClient.auth.getUser();
-            if (!user) return;
-            const { error } = await window.supabaseClient.auth.resetPasswordForEmail(user.email, {
-                redirectTo: window.location.origin + '/admin-login.html'
-            });
-            if (error) throw error;
-            alert('Security Link Dispatched to ' + user.email);
-        } catch (e) {
-            logError('Password Reset Failed', e);
-            alert('Failed to initiate security protocol.');
-        }
-    };
-
-    window.handleLogout = async function() {
-        if (confirm('TERMINATE SESSION: Are you sure?')) {
-            await window.Auth.signOut();
-        }
-    };
 
 
     window.generateCustomIDCard = async function(id) {
@@ -1158,7 +1159,8 @@
         }
 
         try {
-            await window.AppStorage.savePatient(updateData);
+            // ✅ BUGFIX: Use updatePatient instead of savePatient to avoid creating duplicates
+            await window.AppStorage.updatePatient(id, updateData);
             btn.textContent = 'SUCCESS';
             setTimeout(() => {
                 btn.disabled = false;

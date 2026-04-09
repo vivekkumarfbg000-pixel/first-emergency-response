@@ -42,9 +42,11 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    // NUCLEAR: Delete ALL caches across all versions to ensure a fresh state
-                    console.log(`[SW] NUCLEAR PURGE: Deleting cache ${key}`);
-                    return caches.delete(key);
+                    // ✅ FIX: Only delete old caches, preserve the current version
+                    if (key !== CACHE_NAME) {
+                        console.log(`[SW] Purging stale cache: ${key}`);
+                        return caches.delete(key);
+                    }
                 })
             );
         }).then(() => self.clients.claim())

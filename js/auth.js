@@ -11,9 +11,6 @@ const Auth = {
 
     // ────── SESSION GETTER (HARDENED) ──────
     async getSession() {
-        if (localStorage.getItem('master_bypass') === 'true') {
-            return { user: { email: 'firstemergencyresponse4@gmail.com', id: 'master_admin_uuid' } };
-        }
         if (!window.supabaseClient) {
             console.warn('[Auth] Supabase client NOT found.');
             return null;
@@ -104,23 +101,8 @@ const Auth = {
     },
 
     async signIn(email, password, portalType = 'user') {
-        const adminEmail = 'firstemergencyresponse4@gmail.com';
-        const isTryingAdmin = email.trim().toLowerCase() === adminEmail.toLowerCase();
-
-        if (portalType === 'admin' && !isTryingAdmin) {
-            throw new Error('ACCESS DENIED: This portal is reserved for System Administrators only.');
-        }
-        if (portalType === 'user' && isTryingAdmin) {
-            throw new Error('ADMIN ACCESS DETECTED: Please use the Master Dispatch Console to log in.');
-        }
-
+        // ✅ SECURITY FIX: No hardcoded credentials. All auth goes through Supabase.
         localStorage.removeItem('master_bypass');
-
-        if (isTryingAdmin && password === 'First@emergency') {
-            console.log('[Auth] Master Admin Bypass Activated');
-            localStorage.setItem('master_bypass', 'true');
-            return { user: { email: email.trim(), id: 'master_admin_uuid' } };
-        }
         
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
@@ -160,7 +142,6 @@ const Auth = {
     },
 
     async signOut() {
-        localStorage.removeItem('master_bypass');
         if (!window.supabaseClient) {
             localStorage.removeItem('current_patient_id');
             window.location.href = 'index.html';
@@ -169,7 +150,6 @@ const Auth = {
         const { error } = await window.supabaseClient.auth.signOut();
         if (error) console.error('[Auth] Sign Out Error:', error);
         localStorage.removeItem('current_patient_id');
-        localStorage.removeItem('master_bypass');
         window.location.href = 'index.html';
     },
 
@@ -198,10 +178,10 @@ const Auth = {
     async isAdmin() {
         const user = await this.getUser();
         if (!user) return false;
+        if (!window.supabaseClient) return false;
 
-        const adminEmail = 'firstemergencyresponse4@gmail.com';
-        if (user.email.trim().toLowerCase() === adminEmail.toLowerCase()) return true;
-
+        // ✅ SECURITY FIX: Admin status determined solely by user_roles table + is_admin() DB function.
+        // No hardcoded email checks in client-side code.
         try {
             const { data, error } = await window.supabaseClient
                 .from('user_roles')

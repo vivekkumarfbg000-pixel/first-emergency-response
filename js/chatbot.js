@@ -4,6 +4,14 @@
              Rescue Optimization & Mission Support.
    ============================================================ */(function() {
     const $ = (id) => document.getElementById(id);
+
+    // ✅ XSS Protection
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
     let _isOpen = false;
     let _messages = []; 
     let _isCheckingStatus = false;
@@ -116,9 +124,9 @@
     }
 
     async function runDiagnosticCheck() {
-        const bypass = localStorage.getItem('master_bypass');
+        const isAdmin = await window.AppStorage._isAdminUser();
         let statusText = `### 🛰️ SEHAT TACTICAL DIAGNOSTICS\n\n`;
-        statusText += `- **Auth Mode**: ${bypass === 'true' ? 'Master Bypass' : 'Standard Session'}\n`;
+        statusText += `- **Auth Mode**: ${isAdmin ? 'Admin Session' : 'Standard Session'}\n`;
         statusText += `- **Cloud Client**: ${window.supabaseClient ? '📡 ONLINE' : '❌ OFFLINE'}\n`;
         
         try {

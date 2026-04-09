@@ -22,7 +22,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.460.0"></script>
 
   <script>
     tailwind.config = {
@@ -294,6 +294,14 @@
 
     const txt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
+    // ✅ XSS Protection
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+
     async function init() {
         lucide.createIcons();
         setLang('en');
@@ -309,7 +317,20 @@
             patientData = await window.AppStorage.getPatientById(supabaseId);
             renderData(patientData);
         } else {
-            txt('val-name', 'No Profile Found');
+            // ✅ FIX: Show prominent error with emergency numbers instead of tiny text
+            document.querySelector('.flex-1.overflow-y-auto').innerHTML = `
+                <div class="px-5 pt-16 pb-6 text-center">
+                    <div class="bg-red-50 border-2 border-red-200 rounded-3xl p-8 mx-auto max-w-xs">
+                        <i data-lucide="alert-triangle" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+                        <h1 class="text-2xl font-black text-red-700 uppercase mb-3">Profile Not Found</h1>
+                        <p class="text-sm text-slate-600 mb-6">This QR code may be expired or invalid. If this is a real emergency, call emergency services immediately.</p>
+                        <a href="tel:112" class="flex items-center justify-center gap-2 bg-red-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg">
+                            <i data-lucide="phone" class="w-6 h-6"></i> Call 112
+                        </a>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
             return;
         }
 

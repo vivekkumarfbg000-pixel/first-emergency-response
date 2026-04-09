@@ -8,8 +8,6 @@ const AppStorage = {
     SAVE_KEY: 'ems_patient_data_v2',
     SCAN_KEY: 'ems_scan_history',
     _cache: [],
-    MASTER_ADMIN_EMAIL: 'firstemergencyresponse4@gmail.com',
-    MASTER_ADMIN_UUID: '0438c434-b85c-4eca-96d1-b2b692576d53',
 
     // ────── HELPERS ──────
     db: function () {
@@ -86,28 +84,19 @@ const AppStorage = {
     },
 
     _isAdminUser: async function () {
-        // 1. Check for master bypass first (for session persistence)
-        if (localStorage.getItem('master_bypass') === 'true') {
-            return true;
-        }
-        
+        // ✅ SECURITY FIX: Admin check now relies solely on Supabase user_roles table.
+        // No master_bypass backdoor, no hardcoded email checks.
         try {
             const user = await this._getCurrentUserObj();
             if (!user) return false;
-            
-            // 2. Direct Email Match (Configured Master Admin)
-            const email = (user.email || '').trim().toLowerCase();
-            if (email === this.MASTER_ADMIN_EMAIL.toLowerCase()) {
-                return true;
-            }
 
-            // 3. Database Check (Fallback for assigned admin roles)
+            // Database Check via user_roles
             if (this.db()) {
                 const { data, error } = await this.db()
                     .from('user_roles')
                     .select('role')
                     .eq('user_id', user.id)
-                    .maybeSingle(); // Better than single() if no role assigned
+                    .maybeSingle();
                 if (!error && data?.role === 'admin') {
                     return true;
                 }
@@ -160,7 +149,25 @@ END:VCARD`;
     },
 
     savePatient: async function (data) {
-        const id = data.patientId || ('EMS-' + Math.random().toString(36).substr(2, 6).toUpperCase());
+        // ✅ Use crypto.randomUUID for collision-safe IDs
+        const id = data.patientId || ('EMS-' + (crypto.randomUUID ? crypto.randomUUID().substring(0, 8).toUpperCase() : Math.random().toString(36).substr(2, 8).toUpperCase()));
+        // ✅ INPUT VALIDATION: Sanitize and validate before saving
+        const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        if (data.bloodGroup && !validBloodGroups.includes(data.bloodGroup.toUpperCase().trim())) {
+            data.bloodGroup = data.bloodGroup.toUpperCase().trim(); // Keep but warn
+            console.warn('[Storage] Non-standard blood group:', data.bloodGroup);
+        }
+        if (data.age !== undefined) {
+            data.age = Math.max(0, Math.min(150, parseInt(data.age) || 0));
+        }
+        // Strip HTML tags from text fields
+        const textFields = ['fullName', 'conditions', 'allergies', 'medications', 'emergencyContact', 'medicalNotes'];
+        textFields.forEach(f => {
+            if (data[f] && typeof data[f] === 'string') {
+                data[f] = data[f].replace(/<[^>]*>/g, '').trim();
+            }
+        });
+
         const patientData = {
             ...data,
             patientId:  id,
@@ -625,7 +632,8 @@ END:VCARD`;
 
     getProfileCompletion: function (patient) {
         if (!patient) return 0;
-        const fields = ['fullName', 'bloodGroup', 'age', 'gender', 'contact1Name', 'contact1Phone', 'conditions', 'allergies', 'medications'];
+        // ✅ BUGFIX: Use correct field names that match the mapped object properties
+        const fields = ['fullName', 'bloodGroup', 'age', 'gender', 'contact1_Name', 'contact1_Phone', 'conditions', 'allergies', 'medications'];
         const filled = fields.filter(f => patient[f] && String(patient[f]).trim() !== '').length;
         return Math.round((filled / fields.length) * 100);
     },

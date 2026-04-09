@@ -1,8 +1,6 @@
 // ─── Supabase Edge Function: generate-medical-summary ───
 // Deployment: supabase functions deploy generate-medical-summary
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
 // Initialize headers for CORS support
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +9,7 @@ const corsHeaders = {
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
 
-serve(async (req: any) => {
+Deno.serve(async (req: any) => {
   // Handle CORS preflight options
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });

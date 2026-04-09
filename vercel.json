@@ -9,12 +9,6 @@
   ],
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" },
-    { "src": "/dashboard.html", "dest": "/dashboard.html" },
-    { "src": "/admin.html", "dest": "/admin.html" },
-    { "src": "/emergency.html", "dest": "/emergency.html" },
-    { "src": "/login.html", "dest": "/login.html" },
-    { "src": "/signup.html", "dest": "/signup.html" },
-    { "src": "/admin-login.html", "dest": "/admin-login.html" }
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
