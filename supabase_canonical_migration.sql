@@ -97,6 +97,9 @@ DROP POLICY IF EXISTS "user_delete_own" ON patients;
 DROP POLICY IF EXISTS "responder_read_access" ON patients;
 DROP POLICY IF EXISTS "owner_manage_access" ON patients;
 DROP POLICY IF EXISTS "admin_manage_all" ON patients;
+DROP POLICY IF EXISTS "public_insert_access" ON patients;
+DROP POLICY IF EXISTS "responder_read_access" ON patients;
+DROP POLICY IF EXISTS "owner_delete_access" ON patients;
 
 -- Scans
 DROP POLICY IF EXISTS "allow_anon_scan_insert" ON scans;
@@ -114,6 +117,7 @@ DROP POLICY IF EXISTS "allow_admin_alert_read" ON emergency_alerts;
 DROP POLICY IF EXISTS "alert_admin_manage" ON emergency_alerts;
 DROP POLICY IF EXISTS "alert_public_insert" ON emergency_alerts;
 DROP POLICY IF EXISTS "alert_auth_read" ON emergency_alerts;
+DROP POLICY IF EXISTS "alert_admin_read" ON emergency_alerts;
 
 -- ═══════════════════════════════════════════════════════════════
 -- STEP 5: ENABLE RLS ON ALL TABLES
