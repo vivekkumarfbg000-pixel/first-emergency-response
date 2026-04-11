@@ -114,6 +114,13 @@
         }
 
 
+        // 5. Apply Saved Theme
+        const savedTheme = localStorage.getItem('admin-theme');
+        if (savedTheme === 'white') {
+            document.body.classList.add('white-theme');
+            updateThemeUI(true);
+        }
+
         window.switchTab('overview');
     }
 
@@ -315,12 +322,18 @@
     window.toggleWhiteTheme = function() {
         document.body.classList.toggle('white-theme');
         const isWhite = document.body.classList.contains('white-theme');
-        
+        localStorage.setItem('admin-theme', isWhite ? 'white' : 'dark');
+        updateThemeUI(isWhite);
+    };
+
+    function updateThemeUI(isWhite) {
         const bg = $('theme-toggle-bg');
         const knob = $('theme-toggle-knob');
         const icon = $('theme-toggle-icon');
         const label = $('theme-toggle-label');
         
+        if (!bg || !knob || !icon || !label) return;
+
         if (isWhite) {
             bg.classList.remove('bg-slate-800');
             bg.classList.add('bg-amber-500');
@@ -347,7 +360,7 @@
             label.classList.remove('text-amber-500');
         }
         if (window.lucide) lucide.createIcons();
-    };
+    }
 
     function pushAlertToFeed(alert) {
         console.log('[MasterDispatch] SOS RECEIVED', alert);

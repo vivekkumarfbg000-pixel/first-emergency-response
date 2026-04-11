@@ -43,20 +43,72 @@
     
     
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #F8FAFC; }
+        :root {
+            --bg-screen: #0B1120;
+            --bg-surface: #0F172A;
+            --bg-elevated: #131B2F;
+            --text-main: #F8FAFC;
+            --text-secondary: #CBD5E1;
+            --text-muted: #64748B;
+            --border-main: #1E293B;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --accent-emerald: #10b981;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        body.white-theme {
+            --bg-screen: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-elevated: #F1F5F9;
+            --text-main: #0F172A;
+            --text-secondary: #334155;
+            --text-muted: #64748B;
+            --border-main: #E2E8F0;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-screen); 
+            color: var(--text-main); 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .bg-enterprise-bg { background-color: var(--bg-screen) !important; }
+        .bg-enterprise-surface { background-color: var(--bg-surface) !important; }
+        .text-enterprise-text { color: var(--text-main) !important; }
+        .text-enterprise-muted { color: var(--text-muted) !important; }
+        .border-enterprise-border { border-color: var(--border-main) !important; }
+
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
         /* Map tuning */
-        .leaflet-container { background: #0B1120 !important; }
+        .leaflet-container { background: var(--bg-screen) !important; }
+        .white-theme .leaflet-layer {
+            filter: grayscale(0.5) contrast(1.1) brightness(1.1);
+        }
+        .dark .leaflet-layer,
         .leaflet-layer,
         .leaflet-control-zoom-in,
         .leaflet-control-zoom-out,
         .leaflet-control-attribution {
             filter: invert(100%) hue-rotate(180deg) brightness(0.7) contrast(1.2);
         }
+        .white-theme .leaflet-control-zoom-in,
+        .white-theme .leaflet-control-zoom-out,
+        .white-theme .leaflet-control-attribution {
+            filter: none;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1E293B; }
+        ::-webkit-scrollbar-thumb { background: var(--border-main); }
 
         /* Floating AI Button & Chat Interface Styles */
         .ai-floater {
@@ -74,6 +126,9 @@
             width: 380px;
             max-width: calc(100vw - 40px);
             z-index: 1000;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-main);
+            box-shadow: var(--shadow-lg);
         }
         .message-bubble {
             max-width: 85%;
@@ -84,9 +139,9 @@
             margin-bottom: 8px;
         }
         .message-ai {
-            background: #1e293b;
-            color: #f1f5f9;
-            border: 1px solid #334155;
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-main);
             border-bottom-left-radius: 2px;
         }
         .message-user {
@@ -98,19 +153,20 @@
         /* AI Tables & Alerts */
         .ai-table { 
             width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px;
-            background: rgba(0,0,0,0.2); border-radius: 6px; overflow: hidden;
+            background: rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden;
         }
-        .ai-table th { background: rgba(59,130,246,0.2); text-align: left; padding: 6px; border-bottom: 1px solid #334155; }
-        .ai-table td { padding: 6px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .white-theme .ai-table { background: rgba(0,0,0,0.02); }
+        .ai-table th { background: rgba(59,130,246,0.1); text-align: left; padding: 6px; border-bottom: 1px solid var(--border-main); color: var(--text-main); }
+        .ai-table td { padding: 6px; border-bottom: 1px solid var(--border-main); color: var(--text-main); }
         .ai-alert {
             padding: 8px 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #ef4444;
-            background: rgba(239, 68, 68, 0.1); color: #fecaca; font-size: 11px;
+            background: rgba(239, 68, 68, 0.05); color: var(--text-main); font-size: 11px;
         }
         .ai-chip {
-            padding: 4px 10px; border-radius: 99px; background: #1e293b; border: 1px solid #334155;
-            color: #94a3b8; font-size: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            padding: 4px 10px; border-radius: 99px; background: var(--bg-elevated); border: 1px solid var(--border-main);
+            color: var(--text-muted); font-size: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
         }
-        .ai-chip:hover { border-color: #3b82f6; color: white; background: #334155; }
+        .ai-chip:hover { border-color: var(--accent-blue); color: var(--text-main); background: var(--bg-surface); }
 
         /* Colorful SEHAT POINT Branding */
         /* High-Fidelity SEHAT POINT Branding */
@@ -142,6 +198,9 @@
         .header-glow {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
+        .white-theme .header-glow {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
         @keyframes siren-pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
@@ -152,43 +211,61 @@
             border-color: #ef4444 !important;
             background: rgba(239, 68, 68, 0.1) !important;
         }
-        /* --- WHITE THEME OVERRIDES --- */
-        body.white-theme {
-            background-color: #F1F5F9 !important;
-            color: #0F172A !important;
-        }
-        body.white-theme .bg-enterprise-surface, 
+
+        /* --- THEME OVERRIDES FOR HARDCODED CLASSES --- */
         body.white-theme .bg-\[\#0B1120\],
         body.white-theme .bg-\[\#0D1525\],
         body.white-theme .bg-\[\#131B2F\],
         body.white-theme .bg-\[\#111827\],
-        body.white-theme .bg-\[\#1e293b\] {
-            background-color: #FFFFFF !important;
-            color: #0F172A !important;
-            border-color: #E2E8F0 !important;
+        body.white-theme .bg-\[\#1e293b\],
+        body.white-theme .bg-enterprise-surface {
+            background-color: var(--bg-surface) !important;
+            color: var(--text-main) !important;
+            border-color: var(--border-main) !important;
         }
+        
         body.white-theme .text-white,
         body.white-theme .text-slate-200,
         body.white-theme .text-slate-300 {
-            color: #0F172A !important;
+            color: var(--text-main) !important;
         }
+        
         body.white-theme .text-enterprise-muted,
         body.white-theme .text-slate-400,
         body.white-theme .text-slate-500 {
-            color: #475569 !important;
+            color: var(--text-muted) !important;
         }
+        
         body.white-theme .border-enterprise-border,
+        body.white-theme .border-slate-700,
         body.white-theme .border-\[\#1E293B\] {
-            border-color: #E2E8F0 !important;
+            border-color: var(--border-main) !important;
         }
-        body.white-theme th, body.white-theme td {
-            border-bottom-color: #E2E8F0 !important;
+
+        body.white-theme tr.group:hover {
+            background-color: var(--bg-elevated) !important;
         }
+
         body.white-theme input, body.white-theme textarea, body.white-theme select {
-            background-color: #F8FAFC !important;
-            color: #0F172A !important;
-            border-color: #CBD5E1 !important;
+            background-color: var(--bg-elevated) !important;
+            color: var(--text-main) !important;
+            border-color: var(--border-main) !important;
         }
+
+        /* Crisis UI Redesign for Light Mode */
+        body.white-theme #console-active .bg-\[\#240A0A\] {
+            background-color: #FEF2F2 !important;
+            border-left-color: #EF4444 !important;
+            color: #991B1B !important;
+        }
+        body.white-theme #console-active .bg-gradient-to-r {
+            background-image: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent) !important;
+        }
+        body.white-theme #console-active h1.text-black { color: #000 !important; }
+        
+        /* AI Intelligence UI Redesign for Light Mode */
+        body.white-theme #console-health-body { color: var(--text-secondary) !important; }
+        body.white-theme #console-health-loader { background-color: rgba(255, 255, 255, 0.8) !important; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-enterprise-bg text-enterprise-text selection:bg-blue-500/30">
