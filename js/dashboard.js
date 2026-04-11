@@ -195,8 +195,12 @@
         const container = $('activity-list');
         if (!container) return;
 
-        const scans = await window.AppStorage.getScanHistory();
-        if (scans.length === 0) return;
+        const allScans = await window.AppStorage.getScanHistory();
+        const scans = allScans.filter(s => s.patient_id === _activePatient.id);
+        if (scans.length === 0) {
+            container.innerHTML = '<p class="text-[10px] uppercase font-bold text-slate-500 tracking-widest p-4">No scan history recorded for this profile.</p>';
+            return;
+        }
 
         container.innerHTML = scans.map(s => {
             const time = new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

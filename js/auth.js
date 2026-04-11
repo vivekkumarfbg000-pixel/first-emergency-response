@@ -19,7 +19,7 @@ const Auth = {
         // ─── NEW: HARD TIMEOUT (Prevent DB Hangs from locking UI) ───
         const getSessionWithTimeout = () => Promise.race([
             window.supabaseClient.auth.getSession(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Sync Timeout')), 5000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Sync Timeout')), 15000))
         ]);
 
         try {

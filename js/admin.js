@@ -224,7 +224,7 @@
             // Create the signature Sehat Point "Wail"
             const wailSpeed = 1.0; // Seconds per cycle
             let timeOffset = 0;
-            for (let i = 0; i < 20; i++) { // Schedule 20 seconds of wail
+            for (let i = 0; i < 3600; i++) { // Schedule 1 hour of wail
                 _sirenOsc.frequency.linearRampToValueAtTime(880, now + timeOffset + (wailSpeed/2));
                 _sirenOsc.frequency.linearRampToValueAtTime(440, now + timeOffset + wailSpeed);
                 timeOffset += wailSpeed;
@@ -308,6 +308,43 @@
             label.textContent = 'Audio: Muted';
             label.classList.add('text-slate-500');
             label.classList.remove('text-emerald-400');
+        }
+        if (window.lucide) lucide.createIcons();
+    };
+
+    window.toggleWhiteTheme = function() {
+        document.body.classList.toggle('white-theme');
+        const isWhite = document.body.classList.contains('white-theme');
+        
+        const bg = $('theme-toggle-bg');
+        const knob = $('theme-toggle-knob');
+        const icon = $('theme-toggle-icon');
+        const label = $('theme-toggle-label');
+        
+        if (isWhite) {
+            bg.classList.remove('bg-slate-800');
+            bg.classList.add('bg-amber-500');
+            knob.style.left = 'calc(100% - 14px)';
+            knob.classList.remove('bg-slate-500');
+            knob.classList.add('bg-white');
+            icon.classList.remove('text-slate-500');
+            icon.classList.add('text-white');
+            icon.setAttribute('data-lucide', 'sun');
+            label.textContent = 'Light';
+            label.classList.remove('text-slate-500');
+            label.classList.add('text-amber-500');
+        } else {
+            bg.classList.add('bg-slate-800');
+            bg.classList.remove('bg-amber-500');
+            knob.style.left = '2px';
+            knob.classList.add('bg-slate-500');
+            knob.classList.remove('bg-white');
+            icon.classList.add('text-slate-500');
+            icon.classList.remove('text-white');
+            icon.setAttribute('data-lucide', 'moon');
+            label.textContent = 'Dark';
+            label.classList.add('text-slate-500');
+            label.classList.remove('text-amber-500');
         }
         if (window.lucide) lucide.createIcons();
     };

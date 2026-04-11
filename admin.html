@@ -152,6 +152,43 @@
             border-color: #ef4444 !important;
             background: rgba(239, 68, 68, 0.1) !important;
         }
+        /* --- WHITE THEME OVERRIDES --- */
+        body.white-theme {
+            background-color: #F1F5F9 !important;
+            color: #0F172A !important;
+        }
+        body.white-theme .bg-enterprise-surface, 
+        body.white-theme .bg-\[\#0B1120\],
+        body.white-theme .bg-\[\#0D1525\],
+        body.white-theme .bg-\[\#131B2F\],
+        body.white-theme .bg-\[\#111827\],
+        body.white-theme .bg-\[\#1e293b\] {
+            background-color: #FFFFFF !important;
+            color: #0F172A !important;
+            border-color: #E2E8F0 !important;
+        }
+        body.white-theme .text-white,
+        body.white-theme .text-slate-200,
+        body.white-theme .text-slate-300 {
+            color: #0F172A !important;
+        }
+        body.white-theme .text-enterprise-muted,
+        body.white-theme .text-slate-400,
+        body.white-theme .text-slate-500 {
+            color: #475569 !important;
+        }
+        body.white-theme .border-enterprise-border,
+        body.white-theme .border-\[\#1E293B\] {
+            border-color: #E2E8F0 !important;
+        }
+        body.white-theme th, body.white-theme td {
+            border-bottom-color: #E2E8F0 !important;
+        }
+        body.white-theme input, body.white-theme textarea, body.white-theme select {
+            background-color: #F8FAFC !important;
+            color: #0F172A !important;
+            border-color: #CBD5E1 !important;
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-enterprise-bg text-enterprise-text selection:bg-blue-500/30">
@@ -218,6 +255,17 @@
             </div>
             
             <div class="flex items-center gap-6 text-xs font-mono text-enterprise-muted">
+                <!-- Theme Toggle -->
+                <div class="flex items-center gap-3 bg-[#1e293b] px-3 py-1.5 rounded-full border border-slate-700 shadow-inner group cursor-pointer" onclick="window.toggleWhiteTheme()" id="btn-theme-toggle">
+                    <div id="theme-toggle-bg" class="w-8 h-4 bg-slate-800 rounded-full relative transition-colors duration-300">
+                        <div id="theme-toggle-knob" class="absolute top-0.5 left-0.5 w-3 h-3 bg-slate-500 rounded-full transition-all duration-300"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="moon" id="theme-toggle-icon" class="w-3 h-3 text-slate-500"></i>
+                        <span id="theme-toggle-label" class="text-[9px] font-black uppercase tracking-widest text-slate-500 hidden md:inline">Dark</span>
+                    </div>
+                </div>
+
                 <!-- Tactical Audio Toggle -->
                 <div class="flex items-center gap-3 bg-[#1e293b] px-3 py-1.5 rounded-full border border-slate-700 shadow-inner group cursor-pointer" onclick="window.toggleTacticalAudio()" id="btn-audio-toggle">
                     <div id="audio-toggle-bg" class="w-8 h-4 bg-slate-800 rounded-full relative transition-colors duration-300">
@@ -225,7 +273,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <i data-lucide="volume-x" id="audio-toggle-icon" class="w-3 h-3 text-slate-500"></i>
-                        <span id="audio-toggle-label" class="text-[9px] font-black uppercase tracking-widest text-slate-500">Audio: Muted</span>
+                        <span id="audio-toggle-label" class="text-[9px] font-black uppercase tracking-widest text-slate-500 hidden md:inline">Audio: Muted</span>
                     </div>
                 </div>
 
@@ -946,6 +994,7 @@
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/card-generator.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/chatbot.js"></script>
 </body>

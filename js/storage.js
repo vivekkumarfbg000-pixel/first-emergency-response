@@ -8,6 +8,16 @@ const AppStorage = {
     SAVE_KEY: 'ems_patient_data_v2',
     SCAN_KEY: 'ems_scan_history',
     _cache: [],
+    
+    // ────── SECURITY HELPERS (Data Scrambling) ──────
+    _scramble: function(str) {
+        if (!str) return '';
+        try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return str; }
+    },
+    _unscramble: function(str) {
+        if (!str) return '';
+        try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; }
+    },
 
     // ────── HELPERS ──────
     db: function () {
@@ -208,7 +218,7 @@ END:VCARD`;
         if (idx !== -1) patients[idx] = patientData;
         else patients.push(patientData);
 
-        localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
+        localStorage.setItem(this.SAVE_KEY, this._scramble(JSON.stringify(patients)));
         localStorage.setItem('current_patient_id', id);
         
         try {
@@ -268,14 +278,14 @@ END:VCARD`;
             }
         });
 
-        localStorage.setItem(this.SAVE_KEY, JSON.stringify(merged));
+        localStorage.setItem(this.SAVE_KEY, this._scramble(JSON.stringify(merged)));
         return merged;
     },
 
     getAllPatientsLocal: function () {
         try {
             const data = localStorage.getItem(this.SAVE_KEY);
-            return data ? JSON.parse(data) : [];
+            return data ? JSON.parse(this._unscramble(data)) : [];
         } catch (e) { return []; }
     },
 
@@ -367,7 +377,7 @@ END:VCARD`;
         const idx = patients.findIndex(p => p.patientId === id || p.id === id);
         if (idx !== -1) {
             patients[idx] = { ...patients[idx], ...updatedData, cloudSynced: cloudSynced || !!patients[idx].cloudSynced };
-            localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
+            localStorage.setItem(this.SAVE_KEY, this._scramble(JSON.stringify(patients)));
         }
         return { success: true, cloudSynced };
     },
@@ -385,7 +395,7 @@ END:VCARD`;
         }
         
         let patients = this.getAllPatientsLocal().filter(p => p.patientId !== id && p.id !== id);
-        localStorage.setItem(this.SAVE_KEY, JSON.stringify(patients));
+        localStorage.setItem(this.SAVE_KEY, this._scramble(JSON.stringify(patients)));
         if (this._cache) this._cache = this._cache.filter(p => p.patientId !== id && p.id !== id);
         if (localStorage.getItem('current_patient_id') === id) localStorage.removeItem('current_patient_id');
         
@@ -537,7 +547,7 @@ END:VCARD`;
         const timestamp = new Date().toISOString();
         const scans = this.getScanHistoryLocal();
         scans.unshift({ patientId, patient_name: patientName, type, device, location, latitude: lat, longitude: long, timestamp });
-        localStorage.setItem(this.SCAN_KEY, JSON.stringify(scans.slice(0, 50)));
+        localStorage.setItem(this.SCAN_KEY, this._scramble(JSON.stringify(scans.slice(0, 50))));
 
         if (this.db()) {
             try {
@@ -591,7 +601,7 @@ END:VCARD`;
     getScanHistoryLocal: function (patientId) {
         try {
             const data = localStorage.getItem(this.SCAN_KEY);
-            const scans = data ? JSON.parse(data) : [];
+            const scans = data ? JSON.parse(this._unscramble(data)) : [];
             return patientId ? scans.filter(s => s.patientId === patientId) : scans;
         } catch (e) { return []; }
     },

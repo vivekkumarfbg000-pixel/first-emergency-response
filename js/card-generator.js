@@ -41,7 +41,6 @@ window.CardGenerator = {
         return canvas;
     },
 
-    // ─── 1. USER: High-Fidelity Branded QR (Compact Square Card - Metallic Design) ───
     generateBrandedQR: async function(p, mode = 'vcard') {
         const cw = 1000;
         const ch = 1000;
@@ -49,9 +48,9 @@ window.CardGenerator = {
         canvas.width = cw; canvas.height = ch;
         const ctx = canvas.getContext('2d');
 
-        const burgundy = '#6B1C23';
+        const burgundy = '#8B1E30';
         const gold = '#D4A017';
-        const teal = '#064E3B';
+        const teal = '#115E59';
         const brandGold = '#C5A059';
 
         // 1. Base Card Shape (Clips all following draws)
@@ -81,92 +80,94 @@ window.CardGenerator = {
 
         // 3. Top Section (Emergency Header - Burgundy)
         ctx.fillStyle = burgundy;
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
-        ctx.shadowBlur = 10;
-        CardGenerator._roundRect(ctx, 40, 40, 920, 220, 30);
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 5;
+        CardGenerator._roundRect(ctx, 50, 40, 580, 150, 25);
         ctx.fill();
-        ctx.restore(); // Stop clipping but keep layout logic
         ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
 
         // EMERGENCY Text
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 68px "Inter", sans-serif';
+        ctx.font = '800 68px "Inter", sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('EMERGENCY', 90, 135);
+        ctx.fillText('EMERGENCY', 110, 115);
 
         // Gold Prompt Box (स्कैन करें)
         ctx.fillStyle = burgundy;
-        CardGenerator._roundRect(ctx, 110, 165, 780, 100, 20);
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 5;
+        CardGenerator._roundRect(ctx, 120, 125, 650, 95, 12);
         ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // Gold Border stroke
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 6;
         ctx.stroke();
 
         // Text inside Prompt Box
         ctx.fillStyle = gold;
-        ctx.font = '900 64px "Hind", serif';
+        ctx.font = '800 64px "Hind", serif';
         ctx.textAlign = 'right';
-        ctx.fillText('स्कैन करें', 860, 240);
+        ctx.fillText('स्कैन करें', 740, 195);
         
+        // Horizontal Gold Line inside the Prompt Box
         ctx.beginPath();
         ctx.strokeStyle = gold;
-        ctx.lineWidth = 3;
-        ctx.moveTo(140, 225); ctx.lineTo(550, 225);
+        ctx.lineWidth = 5;
+        ctx.moveTo(170, 175); ctx.lineTo(470, 175);
         ctx.stroke();
 
-        // 4. QR Section (Centered)
-        const qrSize = 580;
-        const qrCanvas = await CardGenerator._generateQR(p, qrSize, mode);
+        // 4. QR Section (Centered with transparent background on brushed metal)
+        const qrSize = 500;
+        const topY = 245;
+        const qrCanvas = await CardGenerator._generateQR(p, qrSize, mode, '#00000000');
         
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.2)';
-        ctx.shadowBlur = 50;
-        ctx.shadowOffsetY = 15;
-        ctx.fillStyle = '#ffffff';
-        CardGenerator._roundRect(ctx, (cw-qrSize)/2 - 20, 310, qrSize + 40, qrSize + 40, 30);
-        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 3;
+        ctx.shadowOffsetY = 2;
+        // Draw the QR squares directly on metallic background with slight emboss shadow
+        ctx.drawImage(qrCanvas, (cw-qrSize)/2, topY, qrSize, qrSize);
         ctx.restore();
-        
-        // QR Border
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 2;
-        CardGenerator._roundRect(ctx, (cw-qrSize)/2 - 20, 310, qrSize + 40, qrSize + 40, 30);
-        ctx.stroke();
-        
-        ctx.drawImage(qrCanvas, (cw-qrSize)/2, 330, qrSize, qrSize);
 
-        // 5. Footer (Teal Bar)
+        // 5. Footer (Teal Bar) covers bottom
+        const footerY = 760;
         ctx.fillStyle = teal;
-        CardGenerator._roundRect(ctx, 45, 830, 910, 140, 30);
-        ctx.fill();
+        ctx.fillRect(0, footerY, cw, 240);
+
+        // Gold line separator on top of Teal Bar
+        ctx.strokeStyle = gold;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(0, footerY); ctx.lineTo(cw, footerY);
+        ctx.stroke();
 
         // Medical Shield Icon
-        CardGenerator._drawMedicalShield(ctx, 140, 900, 55);
+        CardGenerator._drawMedicalShield(ctx, 190, 850, 55);
 
-        // Branding
+        // Branding Initiative Label
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 36px "Inter", sans-serif';
-        ctx.fillText('Initiative:', 210, 895);
+        ctx.fillText('Initiative:', 280, 820);
 
+        // सेहत Point
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.shadowBlur = 4;
         ctx.fillStyle = brandGold;
-        ctx.font = 'bold 74px "Hind", serif';
-        ctx.fillText('सेहत', 210, 955);
+        ctx.font = 'bold 84px "Hind", serif';
+        ctx.fillText('सेहत', 480, 920);
         ctx.restore();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 68px "Inter", sans-serif';
-        ctx.fillText('Point', 375, 955);
-
-        // Gold line separator
-        ctx.strokeStyle = gold;
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(45, 833); ctx.lineTo(955, 833);
-        ctx.stroke();
+        ctx.font = 'bold 74px "Inter", sans-serif';
+        ctx.fillText('Point', 690, 920);
 
         // High gloss effect
         const gloss = ctx.createLinearGradient(0,0,cw,ch);
@@ -434,7 +435,7 @@ window.CardGenerator = {
         ctx.restore();
     },
 
-    _generateQR: async function(p, size, mode) {
+    _generateQR: async function(p, size, mode, lightColor = '#ffffff') {
         const qrCanvas = document.createElement('canvas');
         let content = '';
         if (mode === 'url') {
@@ -447,7 +448,7 @@ window.CardGenerator = {
             await QRCode.toCanvas(qrCanvas, content, {
                 width: size,
                 margin: 0,
-                color: { dark: '#000000', light: '#ffffff' },
+                color: { dark: '#111111', light: lightColor },
                 errorCorrectionLevel: 'H'
             });
         } else {

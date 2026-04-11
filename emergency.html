@@ -345,10 +345,11 @@
                 if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-500';
                 
                 // Use a promise-based timeout for geolocation to be more robust
+                // Faster Geolocation: 8s timeout for emergency response
                 const getGeo = () => new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(resolve, reject, { 
                         enableHighAccuracy: true, 
-                        timeout: 15000, 
+                        timeout: 8000, 
                         maximumAge: 0 
                     });
                 });
@@ -362,10 +363,10 @@
                     if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
                     if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
                 } catch (err) {
-                    console.warn('Geolocation failed:', err.message);
+                    console.warn('Geolocation fallback triggered:', err.message);
                     await window.AppStorage.triggerSOSAlert(patientData, null, null);
                     
-                    txt('nav-status', 'SOS Sent (No GPS)');
+                    txt('nav-status', 'SOS Sent (Network Only)');
                     if(ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
                     if(ind) ind.className = 'relative inline-flex rounded-full h-2 w-2 bg-red-500';
                 }

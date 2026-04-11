@@ -129,6 +129,7 @@ ALTER TABLE emergency_alerts ENABLE ROW LEVEL SECURITY;
 
 -- ── PATIENTS ──
 -- A. Rescuers/Anonymous can READ profiles (for emergency response)
+-- SECURITY NOTE: This allows row-level access during scans.
 CREATE POLICY "responder_read_access" ON patients
   FOR SELECT TO anon, authenticated
   USING (true);
@@ -180,10 +181,10 @@ CREATE POLICY "alert_public_insert" ON emergency_alerts
   FOR INSERT TO anon, authenticated
   WITH CHECK (true);
 
--- B. Authenticated users can read all alerts (for admin dashboard)
-CREATE POLICY "alert_auth_read" ON emergency_alerts
+-- B. Only admins can read alerts (Prevent regular users from seeing other people's emergencies)
+CREATE POLICY "alert_admin_read" ON emergency_alerts
   FOR SELECT TO authenticated
-  USING (true);
+  USING (public.is_admin());
 
 -- C. Admin can manage (acknowledge, update) alerts
 CREATE POLICY "alert_admin_manage" ON emergency_alerts
