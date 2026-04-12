@@ -1093,20 +1093,28 @@
         const modal = $('admin-edit-modal');
         if(modal) modal.classList.remove('hidden');
 
-        // ─── NEW: Account Provisioning State ───
+        // ─── Account Provisioning State ───
         const provForm = $('account-provision-form');
         const statusBox = $('account-status-container');
+        const statusEmail = $('account-status-email');
         if (provForm && statusBox) {
             if (patient.user_id) {
+                // Account exists — show status badge with linked email
                 provForm.classList.add('hidden');
                 statusBox.classList.remove('hidden');
+                if (statusEmail) statusEmail.textContent = patient.email || '(email not on record)';
             } else {
+                // No account yet — show provision form
                 provForm.classList.remove('hidden');
                 statusBox.classList.add('hidden');
                 $('edit-account-email').value = patient.email || '';
                 $('edit-account-password').value = '';
             }
         }
+
+        // Guard: DOB field (may not exist in all HTML versions)
+        const dobEl = $('edit-dob');
+        if (dobEl) dobEl.value = patient.dob || '';
 
         // Groq AI Profile Intelligence Fetch
         const aiWrapper = $('ai-profile-insights');
@@ -1197,16 +1205,9 @@
             medications: $('edit-medications').value
         };
 
-        // Handle Conversion if relevant
-        const email = $('convert-email')?.value;
-        const password = $('convert-password')?.value;
-        if (email && password) {
-            updateData.email = email;
-            // Note: Password can't be stored in 'patients' for security.
-            // In a real app, this would trigger an Edge Function to create the auth account.
-            // For now, we save the email so the user can 'claim' it via signup.
-            alert('SYSTEM NOTE: Digital Wallet enabled. Personnel must now Signup at the portal using this email to finalize activation.');
-        }
+        // Also save DOB if the field exists
+        const dobEl = $('edit-dob');
+        if (dobEl) updateData.dob = dobEl.value;
 
         try {
             // ✅ BUGFIX: Use updatePatient instead of savePatient to avoid creating duplicates
@@ -1340,14 +1341,18 @@
         const fullName = $('edit-fullName').value;
 
         if (!email || !password) {
-            alert('REQUIRED: Please provide both an email and temporary password.');
+            alert('REQUIRED: Please provide both an email and a temporary password.');
+            return;
+        }
+        if (password.length < 6) {
+            alert('SECURITY: Password must be at least 6 characters.');
             return;
         }
 
         const btn = $('btn-provision-account');
         const origText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> PROVISIONING...';
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin inline mr-1"></i> PROVISIONING...';
         if (window.lucide) lucide.createIcons();
 
         try {
@@ -1358,17 +1363,61 @@
             if (error) throw error;
             if (data?.error) throw new Error(data.error);
 
-            alert('SUCCESS: Digital Access Authorized for ' + email);
-            closeEditModal();
+            // ─── Success: update status UI inline instead of closing modal ───
+            const provForm = $('account-provision-form');
+            const statusBox = $('account-status-container');
+            const statusEmail = $('account-status-email');
+
+            if (provForm) provForm.classList.add('hidden');
+            if (statusBox) statusBox.classList.remove('hidden');
+            if (statusEmail) statusEmail.textContent = email;
+
+            // Visual confirmation inside the button area
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 inline mr-1 text-emerald-400"></i> <span class="text-emerald-400">ACCOUNT ACTIVE</span>';
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+                if (window.lucide) lucide.createIcons();
+            }, 2500);
+
+            // Refresh the registry table in background
             renderMasterTable();
+
         } catch (e) {
             console.error('[Admin] Provisioning Failed:', e);
-            alert('PROVISIONING ERROR: ' + (e.message || 'Server rejected authorization request.'));
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = origText;
+            // Show error inline in the button for clarity
+            btn.innerHTML = '<i data-lucide="x-circle" class="w-3 h-3 inline mr-1 text-red-400"></i> <span class="text-red-400">' + (e.message || 'Server error') + '</span>';
             if (window.lucide) lucide.createIcons();
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+                if (window.lucide) lucide.createIcons();
+            }, 4000);
         }
+    };
+
+    /**
+     * showReprovisionForm — Lets admin re-open the credential form 
+     * even after a user_id is already linked (change email / reset password).
+     */
+    window.showReprovisionForm = function() {
+        const provForm = $('account-provision-form');
+        const statusBox = $('account-status-container');
+        if (!provForm || !statusBox) return;
+
+        // Keep the status badge visible as context, show form below it
+        statusBox.classList.remove('hidden');
+        provForm.classList.remove('hidden');
+
+        // Clear the password field (keep email pre-filled for convenience)
+        const passwordEl = $('edit-account-password');
+        if (passwordEl) passwordEl.value = '';
+        if (passwordEl) passwordEl.focus();
+
+        // Update button label to signal update vs create
+        const btn = $('btn-provision-account');
+        if (btn) btn.textContent = 'Update Credentials';
     };
 
 })();
