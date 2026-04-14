@@ -9,42 +9,66 @@ const Auth = {
         return window.location.origin + path + 'dashboard.html';
     },
 
+    // ────── INTERNAL STATE ──────
+    _session: null,
+    _initialized: false,
+    _initPromise: null,
+
+    /**
+     * initializes the auth state listener.
+     * Returns a promise that resolves when the initial session check is complete.
+     */
+    async init() {
+        if (this._initPromise) return this._initPromise;
+
+        this._initPromise = new Promise((resolve) => {
+            if (!window.supabaseClient) {
+                console.warn('[Auth] Supabase client NOT found during init.');
+                this._initialized = true;
+                resolve(null);
+                return;
+            }
+
+            console.log('[Auth] Initializing session observer...');
+            
+            // Listen for auth state changes (including INITIAL_SESSION)
+            const { data: { subscription } } = window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                console.info(`[Auth] State Change: ${event}`, session?.user?.email || 'No Session');
+                
+                this._session = session;
+                this._initialized = true;
+
+                // Resolve the promise on key events that indicate state is "settled"
+                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+                    resolve(session);
+                }
+            });
+
+            // Failsafe: If no event fires in 3 seconds, try a manual getSession
+            setTimeout(async () => {
+                if (!this._initialized) {
+                    console.warn('[Auth] Initialization timeout. Performing manual sync...');
+                    try {
+                        const { data } = await window.supabaseClient.auth.getSession();
+                        this._session = data?.session || null;
+                        this._initialized = true;
+                        resolve(this._session);
+                    } catch (e) {
+                        this._initialized = true;
+                        resolve(null);
+                    }
+                }
+            }, 3000);
+        });
+
+        return this._initPromise;
+    },
+
     // ────── SESSION GETTER (HARDENED) ──────
     async getSession() {
-        if (!window.supabaseClient) {
-            console.warn('[Auth] Supabase client NOT found.');
-            return null;
-        }
-
-        // ─── NEW: HARD TIMEOUT (Prevent DB Hangs from locking UI) ───
-        const getSessionWithTimeout = () => Promise.race([
-            window.supabaseClient.auth.getSession(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Sync Timeout')), 15000))
-        ]);
-
-        try {
-            // 1. Immediate Check
-            const { data } = await getSessionWithTimeout();
-            if (data?.session) return data.session;
-
-            // 2. Exponential Backoff Retry (Handle slow persistence)
-            const delays = [150, 450, 900]; 
-            for (let i = 0; i < delays.length; i++) {
-                console.warn(`[Auth] Session sync delay. Retry ${i+1}/${delays.length} in ${delays[i]}ms...`);
-                await new Promise(r => setTimeout(r, delays[i]));
-                const retry = await getSessionWithTimeout().catch(() => ({ data: null }));
-                if (retry.data?.session) {
-                    console.info('[Auth] Session recovered after sync delay.');
-                    return retry.data.session;
-                }
-            }
-            
-            console.warn('[Auth] No session found.');
-            return null;
-        } catch (error) {
-            console.error('[Auth] getSession Timeout/Exception:', error.message);
-            return null;
-        }
+        // Ensure we are initialized first
+        await this.init();
+        return this._session;
     },
 
     async getUser() {
