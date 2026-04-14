@@ -394,8 +394,10 @@
         txt('console-contact', 'SEARCHING...');
         
         const timestamp = scan.timestamp || scan.created_at || scan.scan_time || new Date().toISOString();
-        const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        txt('console-time', `INCIDENT DETECTED AT ${timeStr}`);
+        const scanDate = new Date(timestamp);
+        const timeStr = scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const dateStr = scanDate.toLocaleDateString([], { day: '2-digit', month: 'short' }).toUpperCase();
+        txt('console-time', `INCIDENT DETECTED AT ${timeStr} | ${dateStr}`);
 
         // Instant Registry Cache Sync (Fastest)
         const localRegistry = window.allPatients || [];
@@ -831,7 +833,9 @@
             if(mini) {
                 mini.innerHTML = unifiedScans.slice(0, 15).map(s => {
                     const isEmergency = s.type === 'emergency_scan' || s.type === 'emergency_alert';
-                    const timeStr = new Date(s.timestamp || s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    const scanDate = new Date(s.timestamp || s.created_at);
+                    const timeStr = scanDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    const fullTimeStr = scanDate.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
                     
                     // Fixed: Use Base64 encoding for JSON to avoid attribute escaping issues
                     const scanPayload = btoa(JSON.stringify(s));
@@ -839,7 +843,7 @@
                     if (isEmergency) {
                         return `
                         <div class="bg-[#240A0A] border-l-4 border-red-500 rounded p-3 mb-3 cursor-pointer hover:bg-[#330F0F] transition-colors relative overflow-hidden group shadow-md" onclick="window.dispatchFromPayload('${scanPayload}')">
-                            <div class="absolute right-0 top-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl">JUST NOW</div>
+                            <div class="absolute right-0 top-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl">${fullTimeStr}</div>
                             
                             <div class="flex items-start gap-3">
                                 <div class="w-8 h-8 rounded shrink-0 bg-red-500 text-white flex items-center justify-center shrink-0">
@@ -870,7 +874,7 @@
                                     <p class="text-xs font-bold text-slate-200 truncate font-sans">Patient: ${getName(s)}</p>
                                     <p class="text-[10px] text-slate-500 font-mono mb-1">ID: #PT-${(s.patient_id||'').substring(0,8)}</p>
                                     <p class="text-[10px] text-slate-400 flex items-center gap-1 mb-2 truncate">
-                                        <i data-lucide="clock" class="w-3 h-3 text-slate-500 shrink-0"></i> ${timeStr} • Loc: ${s.location||'N/A'}
+                                        <i data-lucide="clock" class="w-3 h-3 text-slate-500 shrink-0"></i> ${fullTimeStr} • Loc: ${s.location||'N/A'}
                                     </p>
                                     <button class="bg-[#1E293B] hover:bg-[#334155] border border-slate-700 text-slate-300 text-[10px] font-bold px-3 py-1.5 rounded transition-colors uppercase tracking-wider w-auto inline-block">
                                         ACKNOWLEDGE
