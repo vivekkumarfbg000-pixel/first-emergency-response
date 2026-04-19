@@ -166,15 +166,19 @@ const Auth = {
     },
 
     async signOut() {
+        const currentPath = window.location.pathname;
+        const isAdminPage = currentPath.includes('admin.html') || currentPath.includes('admin-login.html');
+        const redirectUrl = isAdminPage ? 'admin-login.html' : 'index.html';
+
         if (!window.supabaseClient) {
             localStorage.removeItem('current_patient_id');
-            window.location.href = 'index.html';
+            window.location.href = redirectUrl;
             return;
         }
         const { error } = await window.supabaseClient.auth.signOut();
         if (error) console.error('[Auth] Sign Out Error:', error);
         localStorage.removeItem('current_patient_id');
-        window.location.href = 'index.html';
+        window.location.href = redirectUrl;
     },
 
     async requireAuth() {

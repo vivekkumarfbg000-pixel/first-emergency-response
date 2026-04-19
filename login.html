@@ -248,6 +248,20 @@
   <script>
     lucide.createIcons();
 
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const session = await window.Auth.getSession();
+            if (session) {
+                const isAdmin = await window.AppStorage._isAdminUser();
+                if (!isAdmin) {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        } catch (e) {
+            console.error("Auto login check failed:", e);
+        }
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
