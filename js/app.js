@@ -14,6 +14,14 @@
 
         if (user) {
             const isAdmin = await window.Auth.isAdmin();
+            
+            // Auto-redirect to dashboard when opening the app/landing page
+            const path = window.location.pathname;
+            if (path === '/' || path.endsWith('/index.html') || path.endsWith('/')) {
+                window.location.href = isAdmin ? 'admin.html' : 'dashboard.html';
+                return;
+            }
+
             const dashLink = isAdmin ? 'admin.html' : 'dashboard.html';
             const dashLabel = isAdmin ? 'Admin Console' : 'Go to Dashboard';
             
