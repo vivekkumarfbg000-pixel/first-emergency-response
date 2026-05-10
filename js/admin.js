@@ -276,12 +276,6 @@
     }
 
     window.toggleTacticalAudio = function() {
-        _audioEnabled = !_audioEnabled;
-        const bg = $('audio-toggle-bg');
-        const knob = $('audio-toggle-knob');
-        const icon = $('audio-toggle-icon');
-        const label = $('audio-toggle-label');
-        
         // Initialize or Resume Audio Context on User Gesture
         if (!_audioCtx) {
             _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -290,6 +284,19 @@
             _audioCtx.resume();
         }
 
+        // If the siren is currently actively ringing, clicking the toggle should JUST silence the siren.
+        // It should NOT disarm the entire audio system.
+        if (_sirenOsc) {
+            stopSiren();
+            return;
+        }
+
+        _audioEnabled = !_audioEnabled;
+        const bg = $('audio-toggle-bg');
+        const knob = $('audio-toggle-knob');
+        const icon = $('audio-toggle-icon');
+        const label = $('audio-toggle-label');
+        
         if (_audioEnabled) {
             bg.classList.remove('bg-slate-800');
             bg.classList.add('bg-emerald-600');
@@ -379,6 +386,11 @@
         _activeConsoleScan = scan;
         window.activeConsoleScan = scan;
         
+        // ─── NEW: Console Force-Reveal ───
+        if (_activeSection !== 'overview' && typeof window.switchTab === 'function') {
+            window.switchTab('overview');
+        }
+        
         const placeholder = $('console-placeholder');
         const activeContainer = $('console-active');
         if (placeholder) placeholder.classList.add('hidden');
@@ -420,25 +432,31 @@
             // ✅ FIX: Actually send the SOS email via Edge Function instead of faking it
             const familyEmail = patient.contact1_email || patient.contact1_Email || patient.email;
             if (familyEmail) {
-                txt('console-notification-status', 'SENDING ALERT...');
-                try {
-                    const lat = scan.gps_lat || scan.latitude;
-                    const lon = scan.gps_long || scan.longitude;
-                    const mapsLink = lat && lon ? `https://www.google.com/maps?q=${lat},${lon}` : '';
-                    await window.supabaseClient.functions.invoke('send-sos-email', {
-                        body: {
-                            patient_name: pName,
-                            patient_blood: patient.bloodGroup || 'UNK',
-                            family_email: familyEmail,
-                            family_name: patient.contact1_Name || patient.contact1_name || 'Family Contact',
-                            google_maps_link: mapsLink
-                        }
-                    });
-                    txt('console-notification-status', `SENT TO ${familyEmail.toUpperCase()}`);
-                } catch (emailErr) {
-                    console.error('[MasterDispatch] Email dispatch failed:', emailErr);
-                    txt('console-notification-status', `SEND FAILED - ${familyEmail.toUpperCase()}`);
-                }
+                txt('console-notification-status', 'PREPARING SIGNAL...');
+                // Slight delay to ensure scan record is committed in DB
+                setTimeout(async () => {
+                    try {
+                        txt('console-notification-status', 'SENDING ALERT...');
+                        const lat = scan.gps_lat || scan.latitude || scan.lat;
+                        const lon = scan.gps_long || scan.longitude || scan.long || scan.lon;
+                        const mapsLink = lat && lon ? `https://www.google.com/maps?q=${lat},${lon}` : '';
+                        
+                        await window.supabaseClient.functions.invoke('send-sos-email', {
+                            body: {
+                                patient_id: patient.id,
+                                patient_name: pName,
+                                patient_blood: patient.bloodGroup || 'UNK',
+                                family_email: familyEmail,
+                                family_name: patient.contact1_Name || patient.contact1_name || 'Family Contact',
+                                google_maps_link: mapsLink
+                            }
+                        });
+                        txt('console-notification-status', `SENT TO ${familyEmail.toUpperCase()}`);
+                    } catch (emailErr) {
+                        console.error('[MasterDispatch] Email dispatch failed:', emailErr);
+                        txt('console-notification-status', `SEND FAILED - ${familyEmail.toUpperCase()}`);
+                    }
+                }, 1500);
             } else {
                 txt('console-notification-status', 'NO FAMILY EMAIL FOUND');
             }

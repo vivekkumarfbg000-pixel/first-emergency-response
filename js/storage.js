@@ -295,18 +295,32 @@ END:VCARD`;
             try {
                 const isAdmin = await this._isAdminUser();
                 const userId = await this._getUserId();
-                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
                 
-                let query = this.db().from('patients').select('*').eq(isUUID ? 'id' : 'patient_id', id);
-                
-                // Security: Restrict to user's own profiles if not an admin
-                if (!isAdmin && userId) {
-                    query = query.eq('user_id', userId);
+                // If the user is unauthenticated, they MUST use the RPC to fetch the emergency profile
+                // because the public RLS policy has been revoked to prevent data breaches.
+                if (!userId) {
+                    const { data, error } = await this.db().rpc('get_emergency_patient_by_id', { p_id: id }).single();
+                    if (data) return this.mapFromDB(data);
+                } else {
+                    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
+                    let query = this.db().from('patients').select('*').eq(isUUID ? 'id' : 'patient_id', id);
+                    
+                    // Security: Restrict to user's own profiles if not an admin
+                    if (!isAdmin) {
+                        query = query.eq('user_id', userId);
+                    }
+                    
+                    const { data, error } = await query.single();
+                    if (data) return this.mapFromDB(data);
+                    
+                    // Fallback to RPC if they are an authenticated user scanning someone ELSE's code
+                    // (e.g. an EMT logged into their own dashboard)
+                    if (!data) {
+                        const rpcRes = await this.db().rpc('get_emergency_patient_by_id', { p_id: id }).single();
+                        if (rpcRes.data) return this.mapFromDB(rpcRes.data);
+                    }
                 }
-                
-                const { data, error } = await query.single();
-                if (data) return this.mapFromDB(data);
-            } catch (err) { }
+            } catch (err) { console.warn('[Storage] getPatientById Error:', err.message); }
         }
         return this.getAllPatientsLocal().find(p => p.patientId === id || p.id === id) || null;
     },
@@ -416,6 +430,17 @@ END:VCARD`;
                 .update({ user_id: userId })
                 .eq(queryField, patientId)
                 .is('user_id', null);
+
+            if (!error) {
+                // Also update local cache
+                const patients = this.getAllPatientsLocal();
+                const idx = patients.findIndex(p => p.id === patientId || p.patientId === patientId);
+                if (idx !== -1) {
+                    patients[idx].user_id = userId;
+                    patients[idx].cloudSynced = true;
+                    localStorage.setItem(this.SAVE_KEY, this._scramble(JSON.stringify(patients)));
+                }
+            }
 
             return { success: !error, error };
         } catch (err) {
@@ -606,7 +631,17 @@ END:VCARD`;
         } catch (e) { return []; }
     },
 
+    _lastSOSTime: 0,
+
     triggerSOSAlert: async function(patient, lat, long) {
+        // Prevent SOS spam (10-second debounce)
+        const now = Date.now();
+        if (now - this._lastSOSTime < 10000) {
+            console.warn('[Storage] SOS Alert ignored (debounce active)');
+            return true;
+        }
+        this._lastSOSTime = now;
+
         const patientId = typeof patient === 'string' ? patient : (patient.id || patient.patientId);
         const patientName = typeof patient === 'object' ? patient.fullName : null;
         const safeLat = typeof lat === 'number' ? lat : null;
@@ -625,15 +660,19 @@ END:VCARD`;
                     gps_lat: safeLat, 
                     gps_long: safeLong, 
                     google_maps_link: safeLat ? `https://www.google.com/maps?q=${safeLat},${safeLong}` : '', 
-                    email_sent: false
+                    email_sent: false,
+                    device_info: navigator.userAgent || 'Unknown'
                 };
 
                 const { error: insertError } = await this.db().from('emergency_alerts').insert([alertData]);
                 
                 if (!insertError) {
                     try {
-                        await this.db().functions.invoke('send-sos-email', { body: alertData });
-                    } catch (e) { }
+                        // ✅ CONNECTION: Trigger the Edge Function dispatch immediately
+                        await window.supabaseClient.functions.invoke('send-sos-email', { body: alertData });
+                    } catch (e) { 
+                        console.error('[Storage] Edge Function trigger failed:', e);
+                    }
                 }
             } catch (err) { console.error('[Storage] SOS Alert Exception:', err); }
         }

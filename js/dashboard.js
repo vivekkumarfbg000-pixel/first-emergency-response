@@ -110,6 +110,31 @@
         console.log(`[PersonalCommand] Switched to Frequency: ${_activePatient.fullName}`);
     }
 
+    /**
+     * ─── NEW: Auto-Claim Protocol ───
+     * This connects Guest Registration to the User Account.
+     */
+    async function claimPendingProfile() {
+        const pendingId = window.AppStorage.getPendingPatientId();
+        if (!pendingId) return;
+
+        console.log(`[PersonalCommand] Detected pending profile ${pendingId}. Initiating claim sequence...`);
+        
+        try {
+            const result = await window.AppStorage.claimProfile(pendingId);
+            if (result.success) {
+                console.log('[PersonalCommand] Profile claimed successfully. Clearing pending ID.');
+                window.AppStorage.clearPendingPatientId();
+                // Refresh data to show the newly claimed profile
+                await loadDashboardData();
+            } else {
+                console.warn('[PersonalCommand] Claim sequence deferred:', result.error);
+            }
+        } catch (err) {
+            console.error('[PersonalCommand] Claim Exception:', err);
+        }
+    }
+
     // ─── Tactical UI Rendering (v9-pro Style) ───
     function renderMedicalIDHub(p) {
         const container = $('emergency-card-preview');
@@ -332,6 +357,9 @@
                 return;
             }
             console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
+
+            // 2. Interconnection: Claim any profile created while logged out
+            await claimPendingProfile();
 
 
             // 3. Load UI Data Sector

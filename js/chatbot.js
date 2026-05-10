@@ -149,12 +149,26 @@
 
     async function getTacticalContext() {
         const patients = await window.AppStorage.getAllPatients() || [];
+        
+        // NEW: Fetch recent alerts for AI context
+        let recentAlerts = [];
+        try {
+            const { data } = await window.supabaseClient
+                .from('emergency_alerts')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(5);
+            recentAlerts = data || [];
+        } catch (e) {}
+
         return {
             patients: patients.slice(0, 30),
             systemMetrics: { totalUsers: $('metric-users')?.textContent || '0', totalScans: $('metric-scans')?.textContent || '0' },
             activeScan: window.activeConsoleScan || null,
             activePatient: window.activeConsolePatient || null,
-            registryCount: patients.length
+            recentAlerts: recentAlerts,
+            registryCount: patients.length,
+            sessionType: (await window.AppStorage._isAdminUser()) ? 'ADMIN' : 'USER'
         };
     }
 
@@ -172,6 +186,21 @@
             if ($('db-search')) {
                 $('db-search').value = action.id;
                 $('db-search').dispatchEvent(new Event('input'));
+            }
+        }
+        
+        // NEW: Direct Dispatch Control via AI
+        if (action.type === 'send_sos_alert' || action.type === 'dispatch_email') {
+            console.log('[SehatAI] AI Triggering SOS Dispatch...');
+            if (typeof window.consoleActionEmail === 'function') {
+                window.consoleActionEmail();
+            }
+        }
+
+        if (action.type === 'dispatch_ops' && action.id) {
+            console.log(`[SehatAI] AI Opening Ops Console for ID: ${action.id}`);
+            if (typeof window.viewUserDashboard === 'function') {
+                window.viewUserDashboard(action.id);
             }
         }
     }
