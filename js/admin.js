@@ -51,7 +51,7 @@
 
     // ─── Initialization ───
     async function init() {
-        console.log('[MasterDispatch] v12.3 Stability Mode: Recovering HUD...');
+        console.log('[MasterDispatch] v12.4 Stability Mode: Recovering HUD...');
         
         // 1. Dependency Waiter (Harden to wait for Supabase Cloud)
         let retries = 0;
@@ -66,9 +66,26 @@
             return;
         }
 
+        // ─── CTO TASK FORCE: Reactive Session Watcher ───
+        // Evacuate immediately if session is terminated elsewhere
+        window.supabaseClient.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                console.warn('[MasterDispatch] Session terminated. Evacuating...');
+                window.location.href = 'index.html';
+            }
+        });
+
         try {
             // ✅ SECURITY FIX: No master_bypass backdoor. Admin status checked via DB.
-            const isAdmin = await window.AppStorage._isAdminUser();
+            let isAdmin = await window.AppStorage._isAdminUser();
+            
+            // Failsafe: Retry once if restricted (handles transient network blips during init)
+            if (!isAdmin) {
+                console.log('[MasterDispatch] Restricted access. Retrying clearance...');
+                await new Promise(r => setTimeout(r, 800));
+                isAdmin = await window.AppStorage._isAdminUser();
+            }
+
             console.log('[MasterDispatch] Admin Clearance:', isAdmin ? 'AUTHORIZED' : 'RESTRICTED');
             
             if (!isAdmin && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {

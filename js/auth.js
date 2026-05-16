@@ -21,7 +21,7 @@ const Auth = {
     async init() {
         if (this._initPromise) return this._initPromise;
 
-        this._initPromise = new Promise((resolve) => {
+        this._initPromise = new Promise(async (resolve) => {
             if (!window.supabaseClient) {
                 console.warn('[Auth] Supabase client NOT found during init.');
                 this._initialized = true;
@@ -30,8 +30,22 @@ const Auth = {
             }
 
             console.log('[Auth] Initializing session observer...');
+
+            // ─── CTO TASK FORCE: Immediate Session Recovery ───
+            // Attempt to restore session immediately from storage to prevent login page flash
+            try {
+                const { data } = await window.supabaseClient.auth.getSession();
+                if (data?.session) {
+                    this._session = data.session;
+                    this._initialized = true;
+                    console.log('[Auth] Immediate session recovery successful:', data.session.user.email);
+                    resolve(data.session);
+                }
+            } catch (e) {
+                console.warn('[Auth] Immediate recovery failed, awaiting state observer...', e);
+            }
             
-            // Listen for auth state changes (including INITIAL_SESSION)
+            // Listen for auth state changes
             const { data: { subscription } } = window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 console.info(`[Auth] State Change: ${event}`, session?.user?.email || 'No Session');
                 
@@ -44,7 +58,7 @@ const Auth = {
                 }
             });
 
-            // Failsafe: If no event fires in 3 seconds, try a manual getSession
+            // Failsafe: If no event fires in 2 seconds, try a manual getSession
             setTimeout(async () => {
                 if (!this._initialized) {
                     console.warn('[Auth] Initialization timeout. Performing manual sync...');
@@ -58,7 +72,7 @@ const Auth = {
                         resolve(null);
                     }
                 }
-            }, 3000);
+            }, 2000);
         });
 
         return this._initPromise;
@@ -167,8 +181,8 @@ const Auth = {
 
     async signOut() {
         const currentPath = window.location.pathname;
-        const isAdminPage = currentPath.includes('admin.html') || currentPath.includes('admin-login.html');
-        const redirectUrl = isAdminPage ? 'admin-login.html' : 'index.html';
+        // ✅ CTO Task Force Fix: Admins now redirect to landing page on logout
+        const redirectUrl = 'index.html';
 
         if (!window.supabaseClient) {
             localStorage.removeItem('current_patient_id');

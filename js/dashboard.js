@@ -358,6 +358,15 @@
             }
             console.log('[PersonalCommand] Auth Session Verified:', session.user?.email);
 
+            // ─── CTO TASK FORCE: Reactive Session Watcher ───
+            // Evacuate immediately if session is terminated elsewhere
+            window.supabaseClient.auth.onAuthStateChange((event) => {
+                if (event === 'SIGNED_OUT') {
+                    console.warn('[PersonalCommand] Session terminated. Redirecting...');
+                    window.location.href = 'index.html';
+                }
+            });
+
             // 2. Interconnection: Claim any profile created while logged out
             await claimPendingProfile();
 
