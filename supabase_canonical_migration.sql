@@ -8,6 +8,21 @@
 -- STEP 1: SCHEMA — Ensure all required columns exist
 -- ═══════════════════════════════════════════════════════════════
 
+-- Ensure base tables exist before adding dynamic columns
+CREATE TABLE IF NOT EXISTS public.patients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id TEXT UNIQUE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.scans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS contact1_email TEXT DEFAULT '';
 ALTER TABLE patients ADD COLUMN IF NOT EXISTS age INTEGER;
@@ -256,10 +271,30 @@ CREATE TRIGGER on_patient_deleted
 -- ═══════════════════════════════════════════════════════════════
 
 DO $$
+DECLARE
+  v_user_id UUID;
 BEGIN
-  INSERT INTO public.user_roles (user_id, role)
-  SELECT id, 'admin' FROM auth.users WHERE email = 'firstemergencyresponse4@gmail.com'
-  ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
+  SELECT id INTO v_user_id FROM auth.users WHERE email = 'firstemergencyresponse4@gmail.com';
+  
+  IF v_user_id IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = v_user_id) THEN
+      BEGIN
+        UPDATE public.user_roles SET role = 'admin' WHERE user_id = v_user_id;
+      EXCEPTION WHEN OTHERS THEN
+        -- Handle cases where role is an enum that doesn't match directly
+        UPDATE public.user_roles SET role = 'admin'::text::app_role WHERE user_id = v_user_id;
+      END;
+    ELSE
+      BEGIN
+        INSERT INTO public.user_roles (user_id, role) VALUES (v_user_id, 'admin');
+      EXCEPTION WHEN OTHERS THEN
+        INSERT INTO public.user_roles (user_id, role) VALUES (v_user_id, 'admin'::text::app_role);
+      END;
+    END IF;
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  -- Make sure the migration never fails due to role insertion details
+  RAISE NOTICE 'Skipped master admin assignment: %', SQLERRM;
 END $$;
 
 -- ═══════════════════════════════════════════════════════════════
