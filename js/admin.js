@@ -68,7 +68,12 @@
 
         // ─── CTO TASK FORCE: Reactive Session Watcher ───
         // Evacuate immediately if session is terminated elsewhere
+        let authStateChangeRegistered = false;
         window.supabaseClient.auth.onAuthStateChange((event) => {
+            if (!authStateChangeRegistered) {
+                authStateChangeRegistered = true;
+                return; // Ignore initial synchronous event to prevent false-positive logouts on load/refresh
+            }
             if (event === 'SIGNED_OUT') {
                 console.warn('[MasterDispatch] Session terminated. Evacuating...');
                 window.location.href = 'index.html';
