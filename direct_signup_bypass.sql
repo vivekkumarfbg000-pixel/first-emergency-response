@@ -40,17 +40,17 @@ BEGIN
             -- Update password and mark as confirmed
             encrypted_pw := crypt(user_password, gen_salt('bf'));
             
+            -- Note: confirmed_at is a generated column and must not be set manually
             UPDATE auth.users
             SET encrypted_password = encrypted_pw,
                 email_confirmed_at = now(),
-                confirmed_at = now(),
                 last_sign_in_at = NULL,
                 updated_at = now(),
                 raw_user_meta_data = jsonb_build_object('full_name', user_fullname, 'display_name', user_fullname)
             WHERE id = new_user_id;
 
             -- Establish role assignment in public.user_roles
-            IF user_email = 'firstemergencyresponse4@gmail.com' THEN
+            IF user_email = 'firstemergencycall@gmail.com' OR user_email = 'firstemergencyresponse4@gmail.com' THEN
                 INSERT INTO public.user_roles (user_id, role)
                 VALUES (new_user_id, 'admin')
                 ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
@@ -71,6 +71,7 @@ BEGIN
     new_user_id := gen_random_uuid();
     encrypted_pw := crypt(user_password, gen_salt('bf'));
 
+    -- Note: confirmed_at is a generated column and must not be set manually
     INSERT INTO auth.users (
         instance_id,
         id,
@@ -79,7 +80,6 @@ BEGIN
         email,
         encrypted_password,
         email_confirmed_at,
-        confirmed_at,
         last_sign_in_at,
         raw_app_meta_data,
         raw_user_meta_data,
@@ -95,7 +95,6 @@ BEGIN
         user_email,
         encrypted_pw,
         now(),
-        now(),
         NULL,
         '{"provider": "email", "providers": ["email"]}'::jsonb,
         jsonb_build_object('full_name', user_fullname, 'display_name', user_fullname),
@@ -105,7 +104,7 @@ BEGIN
     );
 
     -- Establish role assignment in public.user_roles
-    IF user_email = 'firstemergencyresponse4@gmail.com' THEN
+    IF user_email = 'firstemergencycall@gmail.com' OR user_email = 'firstemergencyresponse4@gmail.com' THEN
         INSERT INTO public.user_roles (user_id, role)
         VALUES (new_user_id, 'admin')
         ON CONFLICT (user_id) DO UPDATE SET role = 'admin';

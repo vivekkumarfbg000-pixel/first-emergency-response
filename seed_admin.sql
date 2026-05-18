@@ -26,10 +26,10 @@ BEGIN
     -- Check if user already exists in auth.users
     IF EXISTS (SELECT 1 FROM auth.users WHERE email = admin_email) THEN
         -- User exists. Reset password and ensure they are confirmed
+        -- Note: confirmed_at is a generated column and must not be set manually
         UPDATE auth.users
         SET encrypted_password = encrypted_pw,
             email_confirmed_at = now(),
-            confirmed_at = now(),
             updated_at = now()
         WHERE email = admin_email
         RETURNING id INTO new_user_id;
@@ -37,6 +37,7 @@ BEGIN
         RAISE NOTICE 'Admin account existed. Successfully updated password and confirmed status.';
     ELSE
         -- User does not exist. Create a new pre-confirmed user record
+        -- Note: confirmed_at is a generated column and must not be set manually
         INSERT INTO auth.users (
             instance_id,
             id,
@@ -45,7 +46,6 @@ BEGIN
             email,
             encrypted_password,
             email_confirmed_at,
-            confirmed_at,
             raw_app_meta_data,
             raw_user_meta_data,
             created_at,
@@ -59,7 +59,6 @@ BEGIN
             'authenticated',
             admin_email,
             encrypted_pw,
-            now(),
             now(),
             '{"provider": "email", "providers": ["email"]}'::jsonb,
             '{"full_name": "Emergency Admin", "display_name": "Admin"}'::jsonb,
