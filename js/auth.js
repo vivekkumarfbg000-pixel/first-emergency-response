@@ -30,49 +30,40 @@ const Auth = {
             }
 
             console.log('[Auth] Initializing session observer...');
+            let resolved = false;
 
-            // ─── CTO TASK FORCE: Immediate Session Recovery ───
-            // Attempt to restore session immediately from storage to prevent login page flash
-            try {
-                const { data } = await window.supabaseClient.auth.getSession();
-                if (data?.session) {
-                    this._session = data.session;
-                    this._initialized = true;
-                    console.log('[Auth] Immediate session recovery successful:', data.session.user.email);
-                    resolve(data.session);
-                }
-            } catch (e) {
-                console.warn('[Auth] Immediate recovery failed, awaiting state observer...', e);
-            }
-            
-            // Listen for auth state changes
+            // 1. Listen for background auth state changes to keep internal state sync'd
             const { data: { subscription } } = window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                console.info(`[Auth] State Change: ${event}`, session?.user?.email || 'No Session');
-                
+                console.info(`[Auth] State Observer Change: ${event}`, session?.user?.email || 'No Session');
                 this._session = session;
-                this._initialized = true;
-
-                // Resolve the promise on key events that indicate state is "settled"
-                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+                
+                // If a decisive login or token refresh occurs before getSession settles, we can resolve early.
+                // We DO NOT resolve on INITIAL_SESSION = null, as that is a transient pre-recovery state.
+                if (!this._initialized && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+                    this._initialized = true;
+                    resolved = true;
+                    console.log('[Auth] Session resolved early via auth observer event:', event);
                     resolve(session);
                 }
             });
 
-            // Failsafe: If no event fires in 2 seconds, try a manual getSession
-            setTimeout(async () => {
-                if (!this._initialized) {
-                    console.warn('[Auth] Initialization timeout. Performing manual sync...');
-                    try {
-                        const { data } = await window.supabaseClient.auth.getSession();
-                        this._session = data?.session || null;
-                        this._initialized = true;
-                        resolve(this._session);
-                    } catch (e) {
-                        this._initialized = true;
-                        resolve(null);
-                    }
+            // 2. Definitive Recovery Path: Await the primary asynchronous getSession recovery
+            try {
+                const { data } = await window.supabaseClient.auth.getSession();
+                if (!resolved) {
+                    this._session = data?.session || null;
+                    this._initialized = true;
+                    console.log('[Auth] Session resolved via primary getSession recovery:', this._session?.user?.email || 'None');
+                    resolve(this._session);
                 }
-            }, 2000);
+            } catch (e) {
+                console.warn('[Auth] Primary recovery failed during init:', e);
+                if (!resolved) {
+                    this._session = null;
+                    this._initialized = true;
+                    resolve(null);
+                }
+            }
         });
 
         return this._initPromise;

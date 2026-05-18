@@ -360,15 +360,15 @@
 
             // ─── CTO TASK FORCE: Reactive Session Watcher ───
             // Evacuate immediately if session is terminated elsewhere
-            let authStateChangeRegistered = false;
-            window.supabaseClient.auth.onAuthStateChange((event) => {
-                if (!authStateChangeRegistered) {
-                    authStateChangeRegistered = true;
-                    return; // Ignore initial synchronous event to prevent false-positive logouts on load/refresh
-                }
+            window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                console.log('[PersonalCommand] Auth State Change in Dashboard Watcher:', event, session?.user?.email || 'No Session');
                 if (event === 'SIGNED_OUT') {
-                    console.warn('[PersonalCommand] Session terminated. Redirecting...');
-                    window.location.href = 'index.html';
+                    // Double check if there's really no session to avoid false-positive logouts
+                    const activeSession = await window.Auth.getSession();
+                    if (!activeSession) {
+                        console.warn('[PersonalCommand] Session terminated. Redirecting to index.html...');
+                        window.location.href = 'index.html';
+                    }
                 }
             });
 
