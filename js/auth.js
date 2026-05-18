@@ -86,23 +86,71 @@ const Auth = {
     async signUp(email, password, fullName) {
         if (!window.supabaseClient) throw new Error('Supabase client not initialized');
 
-        const { data, error } = await window.supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { 
-                    full_name: fullName,
-                    display_name: fullName 
-                },
-                emailRedirectTo: this._getRedirectUrl()
-            }
-        });
+        let data, error;
+        try {
+            const signupResult = await window.supabaseClient.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { 
+                        full_name: fullName,
+                        display_name: fullName 
+                    },
+                    emailRedirectTo: this._getRedirectUrl()
+                }
+            });
+            data = signupResult.data;
+            error = signupResult.error;
+        } catch (e) {
+            error = e;
+        }
 
         if (error) {
-            console.error('[Auth] SignUp error:', error);
-            if (error.message.includes('not configured')) {
-                throw new Error('Supabase Email Server (SMTP) is not yet configured. Please contact the administrator OR check your Supabase Dashboard Auth settings.');
+            console.warn('[Auth] Standard SignUp failed. Checking for email limit fallback...', error);
+            
+            const isRateLimit = error.message?.includes('rate limit') || 
+                                error.message?.includes('limit exceeded') || 
+                                error.message?.includes('SMTP') ||
+                                (error.status === 429);
+                                
+            if (isRateLimit) {
+                console.info('[Auth] Intercepted email rate limit. Initiating secure database-level auto-provisioning fallback via RPC...');
+                try {
+                    const { data: rpcData, error: rpcError } = await window.supabaseClient.rpc('register_user_direct', {
+                        user_email: email,
+                        user_password: password,
+                        user_fullname: fullName
+                    });
+
+                    if (rpcError) {
+                        console.warn('[Auth] Database RPC fallback failed or not installed. Trying Edge Function fallback...', rpcError);
+                        // Fall back to original Edge function approach just in case it is deployed
+                        const tempPatientId = 'TEMP-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+                        const { data: funcData, error: funcError } = await window.supabaseClient.functions.invoke('create-user-account', {
+                            body: { 
+                                email, 
+                                password, 
+                                patientId: tempPatientId, 
+                                fullName 
+                            }
+                        });
+
+                        if (funcError) throw funcError;
+                        if (funcData?.error) throw new Error(funcData.error);
+                    } else if (rpcData && !rpcData.success) {
+                        throw new Error(rpcData.error || 'RPC registration returned failure');
+                    }
+
+                    console.log('[Auth] Fallback provisioning successful. Performing automatic sign-in...');
+                    // Automatically sign in the user to obtain a session
+                    const signinResult = await this.signIn(email, password);
+                    return signinResult;
+                } catch (fallbackErr) {
+                    console.error('[Auth] Fallback provisioning failed:', fallbackErr);
+                    throw new Error(`Account creation failed: Email verification server limit reached, and provisioning fallback failed: ${fallbackErr.message}`);
+                }
             }
+            
             throw error;
         }
         
