@@ -245,6 +245,17 @@
       <div class="auth-footer" style="border-top: 1px solid rgba(239,68,68,0.1); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
         <div style="font-size: 0.7rem; color: #ef4444; font-weight: 700; opacity: 0.8;">Unauthorized access attempts are logged.</div>
         <div style="font-size: 0.8rem; opacity: 0.8;">Are you a Patient? <a href="login.html" style="font-weight: 800; text-decoration: underline; color: #fff;">User Login</a></div>
+        <div id="resendSection" style="display: none; margin-top: 0.5rem; font-size: 0.8rem; background: rgba(239,68,68,0.05); border: 1px dashed rgba(239, 68, 68, 0.2); padding: 0.75rem; border-radius: 10px; text-align: center;">
+          <p style="margin: 0 0 0.5rem 0; color: #cbd5e1;">Email confirmation unverified.</p>
+          <button type="button" onclick="resendEmail()" class="btn-auth" style="margin: 0; padding: 0.5rem 1rem; font-size: 0.75rem; width: 100%; display: inline-flex; justify-content: center; gap: 0.25rem;">
+            <i data-lucide="mail"></i> Resend Confirmation Link
+          </button>
+        </div>
+        <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem;">
+          <a href="admin-setup.html" style="font-weight: 800; text-decoration: underline; color: #ef4444; display: inline-flex; align-items: center; gap: 0.25rem; justify-content: center;">
+            <i data-lucide="wrench" style="width: 12px; height: 12px;"></i> Setup & System Diagnostics
+          </a>
+        </div>
       </div>
     </div>
   </div>

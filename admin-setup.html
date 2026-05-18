@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Diagnostics & Setup | Sehat Point</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.460.0"></script>
+  <style>
+    :root {
+      --auth-bg: #060910;
+      --auth-accent: #ef4444;
+      --card-border: rgba(239, 68, 68, 0.2);
+    }
+
+    body {
+      background-color: var(--auth-bg);
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .setup-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .brand-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-hindi {
+      font-weight: 700;
+      color: #ef4444;
+      font-size: 1.5rem;
+    }
+
+    .brand-english {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 1.35rem;
+    }
+
+    .setup-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .setup-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .setup-subtitle {
+      color: #94a3b8;
+      font-size: 1rem;
+    }
+
+    .grid-panels {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .grid-panels {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card.accent-red {
+      border-color: var(--card-border);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.05);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-badge.connected {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.disconnected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .sql-code-box {
+      background: #090e1b;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sql-code-box pre {
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 250px;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .step-list {
+      margin: 0;
+      padding-left: 1.25rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .step-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .step-list strong {
+      color: #fff;
+    }
+
+    .input-group {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .input-group label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-group input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--auth-accent);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-action {
+      background: var(--auth-accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .console-box {
+      background: #020617;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #10b981;
+      height: 180px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+
+    .console-line {
+      margin-bottom: 0.4rem;
+      line-height: 1.4;
+    }
+
+    .console-line.info { color: #38bdf8; }
+    .console-line.warn { color: #fbbf24; }
+    .console-line.error { color: #f87171; }
+    .console-line.success { color: #34d399; }
+
+    .result-banner {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-banner.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .result-banner.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .nav-bottom {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .nav-bottom a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+
+    .nav-bottom a:hover {
+      color: #fff;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="setup-container">
+    <div class="setup-header">
+      <div class="brand-container">
+        <span class="brand-hindi">सेहत</span>
+        <span class="brand-english">Point</span>
+      </div>
+      <h1 class="setup-title">System Setup & Diagnostics</h1>
+      <p class="setup-subtitle">Resolve SMTP confirmation limits and configure administrative roles.</p>
+    </div>
+
+    <div class="grid-panels">
+      
+      <!-- Panel 1: SQL Script -->
+      <div class="glass-card accent-red">
+        <div class="card-title">
+          <i data-lucide="database" style="color: #ef4444;"></i>
+          <span>SQL Activation Helper</span>
+        </div>
+        
+        <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 0; margin-bottom: 1.25rem;">
+          Supabase free-tier accounts limit SMTP confirmation emails to 3 per hour. Copy and run this script in your Supabase SQL Editor to confirm the account and assign administrative role permissions.
+        </p>
+
+        <div class="sql-code-box">
+          <button class="copy-btn" onclick="copySQL()">
+            <i data-lucide="copy" style="width: 13px; height: 13px;"></i>
+            <span id="copyBtnText">Copy SQL</span>
+          </button>
+          <pre id="sqlCode">-- 1. Grant execute permissions on public functions to resolve permissions bugs
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO public, anon, authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO postgres, service_role;
+
+-- 2. Force confirm the email of the admin account in auth.users
+UPDATE auth.users
+SET email_confirmed_at = now(),
+    updated_at = now()
+WHERE email = 'firstemergencyresponse4@gmail.com' 
+   OR email = 'firstemergencycall@gmail.com' 
+   OR email = 'firstemergencycall4@gmail.com';
+
+-- 3. Ensure the 'admin' role is assigned in public.user_roles
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'
+FROM auth.users
+WHERE email IN (
+  'firstemergencyresponse4@gmail.com',
+  'firstemergencycall@gmail.com',
+  'firstemergencycall4@gmail.com'
+)
+ON CONFLICT (user_id) 
+DO UPDATE SET role = 'admin';</pre>
+        </div>
+
+        <ol class="step-list">
+          <li>Open the <strong><a href="https://supabase.com/dashboard" target="_blank" style="color: #ef4444; text-decoration: underline;">Supabase Dashboard</a></strong>.</li>
+          <li>Select your active project, then click the <strong>SQL Editor</strong> in the left sidebar.</li>
+          <li>Click <strong>New Query</strong>, paste the copied SQL block, and click <strong>Run</strong>.</li>
+        </ol>
+      </div>
+
+      <!-- Panel 2: Live Diagnostics -->
+      <div class="glass-card" style="display: flex; flex-direction: column;">
+        <div class="card-title">
+          <i data-lucide="activity" style="color: #38bdf8;"></i>
+          <span>Live Diagnostic Tool</span>
+        </div>
+
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.85rem; color: #94a3b8;">Client Connection:</span>
+          <span id="connStatus" class="status-badge disconnected">Checking...</span>
+        </div>
+
+        <div class="input-group">
+          <label for="adminEmail">Test Admin Email</label>
+          <input type="email" id="adminEmail" value="firstemergencyresponse4@gmail.com">
+        </div>
+
+        <div class="input-group" style="margin-bottom: 1.5rem;">
+          <label for="adminPassword">Master Password</label>
+          <input type="password" id="adminPassword" value="Admin123!">
+        </div>
+
+        <button class="btn-action" onclick="runDiagnostics()">
+          <i data-lucide="shield-check"></i>
+          <span>Run Live Test</span>
+        </button>
+
+        <div class="console-box" id="consoleLogs">
+          <div class="console-line info">[Console initialized. Click "Run Live Test" to analyze connection and credentials...]</div>
+        </div>
+
+        <div class="result-banner" id="resultBanner"></div>
+      </div>
+
+    </div>
+
+    <div class="nav-bottom">
+      <a href="admin-login.html">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Return to Dispatch Login</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js?v=17-deploy"></script>
+  <script src="js/storage.js?v=17-deploy"></script>
+  <script>
+    lucide.createIcons();
+
+    // Verify Supabase Client Connection on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      const connStatus = document.getElementById('connStatus');
+      if (window.supabaseClient) {
+        connStatus.textContent = 'CONNECTED';
+        connStatus.className = 'status-badge connected';
+      } else {
+        connStatus.textContent = 'CDN FAILURE / OFFLINE';
+        connStatus.className = 'status-badge disconnected';
+        logConsole('❌ Error: Supabase client library is not loaded. Ensure you are connected to the internet.', 'error');
+      }
+    });
+
+    function logConsole(msg, type = 'info') {
+      const consoleBox = document.getElementById('consoleLogs');
+      const div = document.createElement('div');
+      div.className = `console-line ${type}`;
+      div.textContent = `> ${msg}`;
+      consoleBox.appendChild(div);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function copySQL() {
+      const sqlText = document.getElementById('sqlCode').textContent;
+      navigator.clipboard.writeText(sqlText).then(() => {
+        const btnText = document.getElementById('copyBtnText');
+        btnText.textContent = 'Copied!';
+        setTimeout(() => {
+          btnText.textContent = 'Copy SQL';
+        }, 2000);
+      });
+    }
+
+    async function runDiagnostics() {
+      const consoleBox = document.getElementById('consoleLogs');
+      consoleBox.innerHTML = '';
+      
+      const banner = document.getElementById('resultBanner');
+      banner.style.display = 'none';
+
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+
+      logConsole('Initializing administrative diagnostic run...', 'info');
+
+      if (!window.supabaseClient) {
+        logConsole('Diagnostic failed: Supabase client is offline.', 'error');
+        showBanner('❌ Diagnostics Error: Client offline. Check your internet or CDN settings.', 'error');
+        return;
+      }
+
+      logConsole(`Checking project endpoint: ${window.supabaseClient.supabaseUrl}`, 'info');
+
+      // Step 1: Probe Auth Sign In
+      logConsole(`Attempting credentials probe for account: ${email}...`, 'info');
+      
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          logConsole(`Supabase Auth returned error code: ${error.status || 'unknown'}`, 'warn');
+          logConsole(`Message: "${error.message}"`, 'error');
+
+          if (error.message.includes('Email not confirmed')) {
+            logConsole('💡 ANALYSIS: The account exists in the database but the email is UNCONFIRMED.', 'warn');
+            logConsole('💡 ACTION REQUIRED: Run the SQL activation script in the Supabase Editor to confirm the email.', 'warn');
+            showBanner('❌ FAIL: Email unconfirmed. Paste and run the SQL Activation Helper inside your Supabase Dashboard.', 'error');
+          } else if (error.message.includes('Invalid login credentials')) {
+            logConsole('💡 ANALYSIS: Sign-in failed with invalid credentials.', 'warn');
+            logConsole('💡 POSSIBILITIES:', 'warn');
+            logConsole('  a) The account has NOT been created yet in the database.', 'warn');
+            logConsole('  b) The email is unconfirmed (causes invalid credentials error on some configurations).', 'warn');
+            logConsole('  c) The password entered does not match.', 'warn');
+            logConsole('💡 ACTION REQUIRED: Make sure the email was signed up, then run the SQL activation script.', 'warn');
+            showBanner('❌ FAIL: Invalid login credentials. Verify your email exists and run the SQL Activation helper.', 'error');
+          } else {
+            showBanner(`❌ FAIL: Auth error: ${error.message}`, 'error');
+          }
+          return;
+        }
+
+        // Step 2: Authentication Succeeded
+        const user = data.user;
+        logConsole(`✅ Success: Signed in successfully as ${user.email} (ID: ${user.id})`, 'success');
+        
+        // Step 3: Validate Role
+        logConsole('Probing database public.user_roles for administrative mapping...', 'info');
+        
+        try {
+          const { data: roleData, error: roleError } = await window.supabaseClient
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (roleError) {
+            logConsole(`Database role probe failed: ${roleError.message}`, 'error');
+            
+            if (roleError.message.includes('permission denied for function has_role')) {
+              logConsole('💡 ANALYSIS: Critical database permissions error (permission denied on function has_role).', 'error');
+              logConsole('💡 ACTION REQUIRED: Run the first part of the SQL Helper script to grant execute permissions.', 'warn');
+              showBanner('⚠️ WARNING: Signed in, but database permissions are broken. Run the SQL script to fix the has_role permission bug.', 'error');
+            } else {
+              showBanner(`⚠️ WARNING: Signed in, but role query failed: ${roleError.message}`, 'error');
+            }
+            return;
+          }
+
+          if (roleData && roleData.role === 'admin') {
+            logConsole('✅ Success: Mapped administrator role verified ("admin").', 'success');
+            logConsole('🎉 Setup complete! All systems operational.', 'success');
+            showBanner('✅ SUCCESS: System fully operational! The admin account is verified and ready. You can now return to the login page and sign in.', 'success');
+          } else {
+            logConsole(`⚠️ Role mismatch: User exists but role is "${roleData ? roleData.role : 'none'}" instead of "admin".`, 'warn');
+            logConsole('💡 ACTION REQUIRED: Run Step 3 of the SQL Helper to insert/update your role mapping.', 'warn');
+            showBanner('❌ FAIL: Signed in, but account lacks admin privileges. Run the SQL script to map the admin role.', 'error');
+          }
+
+        } catch (dbErr) {
+          logConsole(`Unexpected database error: ${dbErr.message}`, 'error');
+          showBanner(`❌ FAIL: Database error: ${dbErr.message}`, 'error');
+        }
+
+      } catch (err) {
+        logConsole(`Unexpected authentication exception: ${err.message}`, 'error');
+        showBanner(`❌ FAIL: System error: ${err.message}`, 'error');
+      }
+    }
+
+    function showBanner(msg, type) {
+      const banner = document.getElementById('resultBanner');
+      banner.textContent = msg;
+      banner.className = `result-banner ${type}`;
+      banner.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
